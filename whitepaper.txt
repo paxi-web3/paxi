@@ -6,7 +6,7 @@ Technical Foundation
 The Paxi protocol is developed using the Go programming language, known for its speed of development, operational efficiency, and clean syntax. These attributes make Paxi's core code highly attractive, drawing more technical experts to join and contribute to the development and maintenance effort within the open-source community.
 
 Core Philosophy
-The core philosophy of Paxi is "less is more," ensuring the system is fully functional without redundancy, thereby offering an ultra-simplified and high-speed blockchain network. This approach not only optimizes the system performance but also greatly enhances the user and developer experience.
+The core philosophy of Paxi is "less is more", ensuring the system is fully functional without redundancy, thereby offering an ultra-simplified and high-speed blockchain network. This approach not only optimizes the system performance but also greatly enhances the user and developer experience.
 
 Usability and Scalability
 To reduce the entry barrier for developers, Paxi will provide an easy-to-use Integrated Development Environment (IDE). This tool allows even those with little to no coding experience to develop smart contracts on the Paxi blockchain, significantly lowering the hurdle for blockchain technology and application development.
