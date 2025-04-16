@@ -1,8 +1,62 @@
-# Overview
-Paxi is a blockchain protocol based on the Proof of Stake (POS) consensus mechanism, aiming to deliver a simple, fast, low-fee, and secure blockchain network. Designed to accommodate a variety of applications, Paxi supports quick payments, financial services, GameFi, DeFi, among other functions that can be implemented via Paxi's smart contracts.
+## Overview
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/paxiweb3/paxi)](https://goreportcard.com/report/github.com/paxiweb3/paxi)
 
-# Technical Foundation
-The Paxi protocol is developed using the Go programming language, known for its speed of development, operational efficiency, and clean syntax. These attributes make Paxi's core code highly attractive, drawing more technical experts to join and contribute to the development and maintenance effort within the open-source community.
+## 🌌 Paxi Blockchain
 
-# Core Philosophy
-The core philosophy of Paxi is "less is more", ensuring the system is fully functional without redundancy, thereby offering an ultra-simplified and high-speed blockchain network. This approach not only optimizes the system performance but also greatly enhances the user and developer experience.
+**Paxi** is a next-generation blockchain built for simplicity, speed, and radical decentralization.
+
+Founded on the principle that *less is more*, Paxi is designed to strip away unnecessary complexity and deliver a clean, efficient, and developer-friendly experience. Every part of the system is purpose-driven — from its modular [Cosmos SDK](https://docs.cosmos.network) architecture to its blazing-fast [CometBFT](https://cometbft.com) consensus engine — enabling a blockchain network that is both powerful and beautifully minimal.
+
+Unlike many Layer 1s that concentrate validator power, **Paxi lowers the barrier to participation**, allowing anyone to become a validator — not just those with deep pockets. This ensures a more inclusive and decentralized network, where governance and consensus are open to all.
+
+Powered by **Go**, Paxi delivers high performance, fast development cycles, and easy onboarding for technical contributors. Whether you're building DeFi protocols, Web3 apps, or next-gen games, Paxi gives you a solid, secure, and intuitive platform to build on.
+
+> **Paxi is not trying to do everything — just everything that matters.**
+
+---
+
+### 🔑 Core Values
+
+- **⚙️ Minimal but complete** system architecture — no bloat, just the essentials
+- **⚡ Fast** – Optimized consensus and state execution, supporting >1,000 TPS
+- **🔐 Secure** – Proven Tendermint-based BFT consensus with enhanced validator safety
+- **🧩 Simple is beautiful** – Intuitive module system, CLI & GUI interfaces, developer-friendly SDK
+- **🛠️ Developer-first** — with future IDE and low-code support
+
+### 🪙 Key Features
+
+- 🧠 **Smart Contract Support** – Deploy custom logic using Wasm (or native modules)
+- 🌍 **Open Participation** – Anyone can run a node, low entry barrier for validators
+- 🏛️ **On-chain Governance & DAO Ready** – Built-in support for decentralized proposals, voting, and community coordination
+- 🔄 **Truly Decentralized** – Designed to maximize validator distribution and community sovereignty
+- 💸 **Ideal for DeFi & GameFi** – High performance and developer freedom make Paxi a perfect foundation for next-gen apps
+
+Paxi is not just a Cosmos-based chain — it's an **evolution** of the Cosmos model, bringing deeper performance optimizations and a smoother path to sovereignty for any project.
+
+## 📚 Documentation
+
+- [Cosmos SDK Documentation](https://docs.cosmos.network/v0.53/learn/intro/overview)
+- [CometBFT Documentation](https://docs.cometbft.com/v1.0/)
+
+
+## 🧪 Getting Started
+
+### 1. Clone & Build
+
+```bash
+git clone https://github.com/paxiweb3/paxi
+cd paxi
+make install
+# or
+go build -o build/paxid ./cmd/paxid
+
+## 📄 Whitepaper
+
+- [📘 English Whitepaper (Markdown)](docs/whitepaper.md)
+- [📗 中文白皮書 (Markdown)](docs/whitepaper.zh.md)
+
+## License
+
+MIT © 2024 Paxi Team
+
