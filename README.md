@@ -1,12 +1,13 @@
 ## Overview
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/paxiweb3/paxi)](https://goreportcard.com/report/github.com/paxiweb3/paxi)
+[![Go Report Card](https://goreportcard.com/badge/github.com/paxi-web3/paxi)](https://goreportcard.com/report/github.com/paxi-web3/paxi)
 
 ## 🌌 Paxi Blockchain
+<img src="assets/icon_text.png" alt="Paxi Logo" width="120"/>
 
 **Paxi** is a next-generation blockchain built for simplicity, speed, and radical decentralization.
 
-Founded on the principle that *less is more*, Paxi is designed to strip away unnecessary complexity and deliver a clean, efficient, and developer-friendly experience. Every part of the system is purpose-driven — from its modular [Cosmos SDK](https://docs.cosmos.network) architecture to its blazing-fast [CometBFT](https://cometbft.com) consensus engine — enabling a blockchain network that is both powerful and beautifully minimal.
+Founded on the principle that *less is more*, Paxi is designed to strip away unnecessary complexity and deliver a clean, efficient, and developer-friendly experience. Every part of the system is purpose-driven — from its modular [Cosmos SDK](https://docs.cosmos.network/v0.53/learn/intro/overview) architecture to its blazing-fast [CometBFT](https://cometbft.com) consensus engine — enabling a blockchain network that is both powerful and beautifully minimal.
 
 Unlike many Layer 1s that concentrate validator power, **Paxi lowers the barrier to participation**, allowing anyone to become a validator — not just those with deep pockets. This ensures a more inclusive and decentralized network, where governance and consensus are open to all.
 
@@ -45,11 +46,12 @@ Paxi is not just a Cosmos-based chain — it's an **evolution** of the Cosmos mo
 ### 1. Clone & Build
 
 ```bash
-git clone https://github.com/paxiweb3/paxi
+git clone https://github.com/paxi-web3/paxi
 cd paxi
 make install
 # or
 go build -o build/paxid ./cmd/paxid
+```
 
 ## 📄 Whitepaper
 
@@ -58,5 +60,5 @@ go build -o build/paxid ./cmd/paxid
 
 ## License
 
-MIT © 2024 Paxi Team
+MIT © 2025 Paxi Team
 
