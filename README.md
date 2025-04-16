@@ -55,8 +55,8 @@ go build -o build/paxid ./cmd/paxid
 
 ## 📄 Whitepaper
 
-- [📘 English Whitepaper (Markdown)](docs/whitepaper.md)
-- [📗 中文白皮書 (Markdown)](docs/whitepaper.zh.md)
+- [📘 English Whitepaper ](docs/whitepaper.md)
+- [📗 中文白皮書 ](docs/whitepaper.zh.md)
 
 ## License
 
