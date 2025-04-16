@@ -9,7 +9,7 @@
 
 Founded on the principle that *less is more*, Paxi is designed to strip away unnecessary complexity and deliver a clean, efficient, and developer-friendly experience. Every part of the system is purpose-driven — from its modular [Cosmos SDK](https://docs.cosmos.network/v0.53/learn/intro/overview) architecture to its blazing-fast [CometBFT](https://cometbft.com) consensus engine — enabling a blockchain network that is both powerful and beautifully minimal.
 
-Unlike many Layer 1s that concentrate validator power, **Paxi lowers the barrier to participation**, allowing anyone to become a validator — not just those with deep pockets. This ensures a more inclusive and decentralized network, where governance and consensus are open to all.
+**Paxi lowers the barrier to participation**, allowing anyone to become a validator — not just those with deep pockets. This ensures a more inclusive and decentralized network, where governance and consensus are open to all.
 
 Powered by **Go**, Paxi delivers high performance, fast development cycles, and easy onboarding for technical contributors. Whether you're building DeFi protocols, Web3 apps, or next-gen games, Paxi gives you a solid, secure, and intuitive platform to build on.
 
@@ -57,6 +57,11 @@ go build -o build/paxid ./cmd/paxid
 
 - [📘 English Whitepaper ](docs/whitepaper.md)
 - [📗 中文白皮書 ](docs/whitepaper.zh.md)
+
+
+## 🌐 Official Website
+
+👉 [https://x.com](https://x.com)
 
 ## License
 
