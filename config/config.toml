@@ -1,0 +1,102 @@
+# Optimized config.toml for Paxi Blockchain (CometBFT Layer)
+
+version = "0.38.17"  # Do not modify
+proxy_app = "tcp://127.0.0.1:26658"  # ABCI app address
+moniker = "paxi-validator"  # Node name
+db_backend = "rocksdb"  # Fast, stable DB
+db_dir = "data"  # DB folder
+log_level = "info"  # Logging level
+log_format = "plain"  # Log output format
+genesis_file = "config/genesis.json"  # Chain genesis file
+priv_validator_key_file = "config/priv_validator_key.json"
+priv_validator_state_file = "data/priv_validator_state.json"
+node_key_file = "config/node_key.json"
+abci = "socket"  # Communication type with app
+filter_peers = false  # Let app filter peers
+
+[rpc]
+laddr = "tcp://0.0.0.0:26657"  # RPC server address
+cors_allowed_origins = ["*"]  # Allow all CORS origins
+cors_allowed_methods = ["HEAD", "GET", "POST"]
+cors_allowed_headers = ["Origin", "Accept", "Content-Type"]
+grpc_max_open_connections = 1024  # gRPC max connections
+unsafe = false  # Disable unsafe RPC
+max_open_connections = 1024  # HTTP/WebSocket max
+max_subscription_clients = 200  # Max RPC clients
+max_subscriptions_per_client = 10
+experimental_subscription_buffer_size = 256
+experimental_websocket_write_buffer_size = 300
+experimental_close_on_slow_client = true  # Disconnect slow clients
+timeout_broadcast_tx_commit = "5s"
+max_request_batch_size = 20
+max_body_bytes = 2000000
+max_header_bytes = 1048576
+pprof_laddr = "localhost:6060"  # Debugging port
+
+[p2p]
+laddr = "tcp://0.0.0.0:26656"  # P2P listening address
+addr_book_file = "config/addrbook.json"
+addr_book_strict = true  # Strict peer filtering
+max_num_inbound_peers = 60
+max_num_outbound_peers = 20
+pex = true  # Peer exchange enabled
+flush_throttle_timeout = "100ms"
+max_packet_msg_payload_size = 2048
+send_rate = 10240000  # 10MB/s send
+recv_rate = 10240000  # 10MB/s recv
+allow_duplicate_ip = false
+handshake_timeout = "20s"
+dial_timeout = "5s"
+
+[mempool]
+type = "flood"  # Default mempool
+recheck = true
+recheck_timeout = "1s"
+broadcast = true
+size = 10000  # Max txs in mempool
+max_txs_bytes = 52428800  # Max tx size in bytes
+cache_size = 20000
+keep-invalid-txs-in-cache = false
+max_tx_bytes = 2097152
+
+[statesync]
+enable = true  # Enable state sync
+rpc_servers = ""  # Add your RPC nodes
+trust_height = 0
+trust_hash = ""
+trust_period = "168h0m0s"
+discovery_time = "10s"
+chunk_request_timeout = "10s"
+chunk_fetchers = "4"
+
+[blocksync]
+version = "v0"  # Use default blocksync
+
+[consensus]
+wal_file = "data/cs.wal/wal"
+timeout_propose = "2s"
+timeout_propose_delta = "500ms"
+timeout_prevote = "1s"
+timeout_prevote_delta = "500ms"
+timeout_precommit = "1s"
+timeout_precommit_delta = "500ms"
+timeout_commit = "3s"
+double_sign_check_height = 0
+skip_timeout_commit = false
+create_empty_blocks = true  # Avoid useless blocks
+create_empty_blocks_interval = "5s"
+peer_gossip_sleep_duration = "100ms"
+peer_query_maj23_sleep_duration = "2s"
+
+[storage]
+discard_abci_responses = false  # Keep ABCI results
+
+[tx_index]
+indexer = "kv"  # Use key-value index
+psql-conn = ""
+
+[instrumentation]
+prometheus = true  # Enable metrics
+prometheus_listen_addr = ":26660"
+max_open_connections = 5
+namespace = "paxi"  # Metrics prefix

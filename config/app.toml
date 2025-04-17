@@ -1,0 +1,53 @@
+# Optimized app.toml for Paxi Blockchain
+
+minimum-gas-prices = "0.01upaxi"            # Minimum fee to accept transactions
+gas-limit = "300000"                        # Max gas for queries (0 = unlimited)
+pruning = "default"                         # Prune recent state, balanced storage
+pruning-keep-recent = "1000"                # Keep last 100 blocks of app state
+pruning-interval = "20"                     # Prune every 10 blocks
+halt-height = 0                             # Block height to auto-shutdown (0 = off)
+halt-time = 0                               # Time to auto-shutdown (0 = off)
+min-retain-blocks = 0                       # No CometBFT block pruning (0 = off)
+inter-block-cache = true                    # Enable inter-block state cache
+index-events = ["tx.hash", "message.sender", "message.recipient"]  # Index common message events
+iavl-cache-size = 2000000                   # Optimize IAVL node caching
+iavl-disable-fastnode = false               # Enable fast node DB mode
+app-db-backend = "rocksdb"                  # Use Rocksdb
+
+[telemetry]
+enabled = true                              # Enable Prometheus/metrics export
+prometheus-retention-time = 120             # Keep metrics in memory for 2 minutes
+
+[api]
+enable = true                               # Enable REST API server
+swagger = true                              # Serve Swagger docs on /swagger/
+address = "tcp://0.0.0.0:1317"              # API server binding address
+max-open-connections = 1000                 # Max open TCP connections
+rpc-read-timeout = 10                       # Timeout for read requests
+rpc-write-timeout = 5                       # Timeout for write requests
+rpc-max-body-bytes = 2000000                # Limit request body size
+enabled-unsafe-cors = false                  # Enable CORS for dev/test (use with caution)
+
+[grpc]
+enable = true                               # Enable gRPC server
+address = "0.0.0.0:9090"                    # gRPC server address
+max-recv-msg-size = "10485760"             # Max incoming message size (10MB)
+max-send-msg-size = "2147483647"           # Max outgoing message size (max int)
+
+[grpc-web]
+enable = true                               # Enable gRPC-Web support (frontend use)
+
+[state-sync]
+snapshot-interval = 1000                    # Take state snapshot every 1000 blocks
+snapshot-keep-recent = 5                    # Keep latest 5 snapshots
+
+[streaming.abci]
+keys = ["*"]                                 # Stream all module store keys
+plugin = "abci"                             # Use default ABCI plugin for export
+stop-node-on-err = true                     # Stop node on export failure
+
+[mempool]
+max-txs = 10000                              # Max 10,000 txs in mempool
+
+[custom]
+custom-field = "paxi-chain"                 # Custom placeholder (optional)

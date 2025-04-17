@@ -57,7 +57,7 @@ go build -o build/paxid ./cmd/paxid
 ## 📄 Whitepaper
 
 - [📘 English Whitepaper ](docs/whitepaper.md)
-- [📗 中文白皮書 ](docs/whitepaper.zh.md)
+- [📗 中文白皮書 ](docs/whitepaper_zh.md)
 
 
 ## 🌐 Official Website

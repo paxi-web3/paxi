@@ -1,0 +1,49 @@
+# Makefile for building and managing the Paxi blockchain (Cosmos SDK + CometBFT)
+
+APP_NAME = paxid
+BUILD_TAGS = rocksdb
+VERSION ?= v1.0.0
+DOCKER_IMAGE = paxi-chain/node
+
+.PHONY: all build install clean proto config run test
+
+all: build
+
+build:
+	@echo "🔨 Building $(APP_NAME)..."
+	go build -mod=readonly -tags '$(BUILD_TAGS)' -o build/$(APP_NAME) ./cmd/$(APP_NAME)
+
+install:
+	@echo "📦 Installing $(APP_NAME) to GOPATH/bin..."
+	go install -mod=readonly -tags '$(BUILD_TAGS)' ./cmd/$(APP_NAME)
+
+clean:
+	@echo "🧹 Cleaning build files..."
+	rm -rf build
+
+run:
+	@echo "🚀 Running Paxi node..."
+	build/$(APP_NAME) start
+
+version:
+	@echo "📄 Version: $(VERSION)"
+
+config:
+	@echo "⚙️  Initializing default node configuration..."
+	build/$(APP_NAME) init localnode --chain-id paxi-dev
+	cp -r ./config/* $$(HOME)/.paxi/config/
+	echo "✅ Config applied to ~/.paxi/config"
+
+proto:
+	@echo "📚 Generating protobuf files..."
+	buf generate
+	echo "✅ Protobufs generated."
+
+test:
+	@echo "🧪 Running unit tests..."
+	go test ./... -v
+
+docker:
+	@echo "🐳 Building Docker image $(DOCKER_IMAGE)..."
+	docker build -t $(DOCKER_IMAGE):latest .
+	echo "✅ Docker image built: $(DOCKER_IMAGE):latest"
