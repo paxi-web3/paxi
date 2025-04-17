@@ -4,6 +4,8 @@ package app
 import (
 	"io"
 
+	version "github.com/paxi-web3/paxi"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
@@ -120,7 +122,7 @@ func NewPaxiApp(logger io.Writer, db store.CommitMultiStore, traceStore io.Write
 
 	app := baseapp.NewBaseApp("paxi", logger, db, encodingConfig.TxConfig.TxDecoder(), nil)
 	app.SetCommitMultiStoreTracer(traceStore)
-	app.SetVersion("v0.1.0")
+	app.SetVersion(version.Version)
 
 	ParamsKeeper = paramskeeper.NewKeeper(encodingConfig.Marshaler, encodingConfig.Amino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
 	AccountKeeper = authkeeper.NewAccountKeeper(encodingConfig.Marshaler, keys[authtypes.StoreKey], ParamsKeeper.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, map[string][]string{})
