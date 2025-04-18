@@ -2,7 +2,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/paxi-web3/paxi)](https://goreportcard.com/report/github.com/paxi-web3/paxi)
 [![Version](https://img.shields.io/badge/version-v1.0.0-blue?style=flat-square)](https://github.com/paxi-web3/paxi/releases/tag/v1.0.0)
-[![Version](https://img.shields.io/badge/version-v0.53.0-rc.4-blue?style=flat-square)](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.53.0-rc.4)
+[![Version](https://img.shields.io/badge/version-v0.53.0-blue?style=flat-square)](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.53.0-rc.4)
 
 
 <img src="assets/banner.png" alt="Paxi Logo" width="100%"/>
