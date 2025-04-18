@@ -223,12 +223,12 @@ func appExport(
 	if height != -1 {
 		paxiApp = app.NewPaxiApp(logger, db, traceStore, false, appOpts)
 
-		if err := app.LoadHeight(height); err != nil {
+		if err := paxiApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {
 		paxiApp = app.NewPaxiApp(logger, db, traceStore, true, appOpts)
 	}
 
-	return app.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+	return paxiApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"os"
 	"path/filepath"
-	"runtime"
 
 	version "github.com/paxi-web3/paxi"
 
@@ -105,12 +105,16 @@ var (
 	// DefaultNodeHome is the default home directory for the application
 	DefaultNodeHome string = (func() string {
 		// Get the directory of the executable (not working dir)
-		_, exePath, _, ok := runtime.Caller(0)
-		if !ok {
-			panic("failed to get executable path")
+		exePath, err := os.Executable()
+		if err != nil {
+			panic(err)
 		}
-		exeDir := filepath.Dir(exePath)
-		return filepath.Join(exeDir, ".paxi")
+		absPath, err := filepath.Abs(exePath)
+		dir := filepath.Dir(absPath)
+		if err != nil {
+			panic(err)
+		}
+		return dir
 	})()
 
 	// module account permissions
@@ -174,6 +178,10 @@ func NewPaxiApp(
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *PaxiApp {
+	// Set the address rules for the application
+	//params.SetBech32AddressPrefixes()
+	//params.RegisterCrypto()
+
 	interfaceRegistry, _ := types.NewInterfaceRegistryWithOptions(types.InterfaceRegistryOptions{
 		ProtoFiles: proto.HybridResolver,
 		SigningOptions: signing.Options{
@@ -401,27 +409,29 @@ func NewPaxiApp(
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	app.EvidenceKeeper = *evidenceKeeper
 
+	// create the wasm keeper
+	nodeConfig, err := wasm.ReadNodeConfig(appOpts)
+	if err != nil {
+		panic(fmt.Sprintf("error while reading wasm config: %s", err))
+	}
+
 	app.WasmKeeper = wasmkeeper.NewKeeper(
-		appCodec, // cdc
+		appCodec,
 		cosmosruntime.NewKVStoreService(keys[wasmtypes.StoreKey]),
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.StakingKeeper,
-
-		nil, // DistributionKeeper
-		nil, // ICS4Wrapper
-		nil, // ChannelKeeper
-		nil, // PortKeeper
-		nil, // CapabilityKeeper
-		nil, // ICS20TransferPortSource
-
+		distrkeeper.NewQuerier(app.DistrKeeper),
+		nil,
+		nil,
+		nil,
 		app.MsgServiceRouter(),
 		app.GRPCQueryRouter(),
-		filepath.Join(DefaultNodeHome, "wasm"),                   // homeDir
-		wasmtypes.DefaultWasmConfig(),                            // WasmConfig
-		"iterator,staking,stargate",                              // availableCapabilities (string)
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(), // authority
-		wasmkeeper.WithMessageHandlerDecorator(nil),              // opts...
+		filepath.Join(DefaultNodeHome, "wasm"),
+		nodeConfig,
+		wasmtypes.VMConfig{},
+		wasmkeeper.BuiltInCapabilities(),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	/****  Module Options ****/
@@ -446,15 +456,8 @@ func NewPaxiApp(
 		nftmodule.NewAppModule(appCodec, app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
 		circuit.NewAppModule(appCodec, app.CircuitKeeper),
-		wasm.NewAppModule(
-			appCodec,        // codec.Codec
-			&app.WasmKeeper, // *keeper.Keeper
-			app.StakingKeeper,
-			app.AccountKeeper,      // AccountKeeper
-			app.BankKeeper,         // BankKeeper
-			app.MsgServiceRouter(), // *baseapp.MsgServiceRouter
-			nil,
-		),
+
+		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
@@ -488,6 +491,7 @@ func NewPaxiApp(
 		evidencetypes.ModuleName,
 		stakingtypes.ModuleName,
 		genutiltypes.ModuleName,
+		wasmtypes.ModuleName,
 	)
 	app.ModuleManager.SetOrderEndBlockers(
 		govtypes.ModuleName,
@@ -515,6 +519,7 @@ func NewPaxiApp(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		circuittypes.ModuleName,
+		wasmtypes.ModuleName,
 	}
 
 	exportModuleOrder := []string{
@@ -532,6 +537,7 @@ func NewPaxiApp(
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
 		circuittypes.ModuleName,
+		wasmtypes.ModuleName,
 	}
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
