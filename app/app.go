@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	version "github.com/paxi-web3/paxi"
+	"github.com/paxi-web3/paxi/app/params"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -103,7 +104,26 @@ var (
 
 var (
 	// DefaultNodeHome is the default home directory for the application
-	DefaultNodeHome string = (func() string {
+	DefaultNodeHome string
+
+	// module account permissions
+	maccPerms = map[string][]string{
+		authtypes.FeeCollectorName:     nil,
+		distrtypes.ModuleName:          nil,
+		minttypes.ModuleName:           {authtypes.Minter},
+		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:            {authtypes.Burner},
+		nft.ModuleName:                 nil}
+)
+
+func init() {
+	// Set the Bech32 address prefixes and register crypto
+	// and seal config
+	params.InitAddressRules()
+
+	// DefaultNodeHome is set to the home directory of the application
+	DefaultNodeHome = (func() string {
 		// Get the directory of the executable (not working dir)
 		exePath, err := os.Executable()
 		if err != nil {
@@ -116,17 +136,7 @@ var (
 		}
 		return dir
 	})()
-
-	// module account permissions
-	maccPerms = map[string][]string{
-		authtypes.FeeCollectorName:     nil,
-		distrtypes.ModuleName:          nil,
-		minttypes.ModuleName:           {authtypes.Minter},
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:            {authtypes.Burner},
-		nft.ModuleName:                 nil}
-)
+}
 
 // PaxiApp extends an ABCI application, but with most of its parameters exported.
 // They are exported for convenience in creating helper functions, as object
@@ -178,18 +188,14 @@ func NewPaxiApp(
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *PaxiApp {
-	// Set the address rules for the application
-	//params.SetBech32AddressPrefixes()
-	//params.RegisterCrypto()
-
 	interfaceRegistry, _ := types.NewInterfaceRegistryWithOptions(types.InterfaceRegistryOptions{
 		ProtoFiles: proto.HybridResolver,
 		SigningOptions: signing.Options{
 			AddressCodec: address.Bech32Codec{
-				Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
+				Bech32Prefix: params.Bech32PrefixAccAddr,
 			},
 			ValidatorAddressCodec: address.Bech32Codec{
-				Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix(),
+				Bech32Prefix: params.Bech32PrefixValAddr,
 			},
 		},
 	})
@@ -257,8 +263,8 @@ func NewPaxiApp(
 		cosmosruntime.NewKVStoreService(keys[authtypes.StoreKey]),
 		authtypes.ProtoBaseAccount,
 		maccPerms,
-		authcodec.NewBech32Codec(sdk.Bech32MainPrefix),
-		sdk.Bech32MainPrefix,
+		authcodec.NewBech32Codec(params.Bech32PrefixAccAddr),
+		params.Bech32PrefixAccAddr,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
@@ -292,8 +298,8 @@ func NewPaxiApp(
 		app.AccountKeeper,
 		app.BankKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		authcodec.NewBech32Codec(sdk.Bech32PrefixValAddr),
-		authcodec.NewBech32Codec(sdk.Bech32PrefixConsAddr),
+		authcodec.NewBech32Codec(params.Bech32PrefixValAddr),
+		authcodec.NewBech32Codec(params.Bech32PrefixConsAddr),
 	)
 	app.MintKeeper = mintkeeper.NewKeeper(
 		appCodec,
@@ -731,9 +737,9 @@ func (app *PaxiApp) AutoCliOpts() autocli.AppOptions {
 	return autocli.AppOptions{
 		Modules:               modules,
 		ModuleOptions:         runtimeservices.ExtractAutoCLIOptions(app.ModuleManager.Modules),
-		AddressCodec:          authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
-		ValidatorAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix()),
-		ConsensusAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
+		AddressCodec:          authcodec.NewBech32Codec(params.Bech32PrefixAccAddr),
+		ValidatorAddressCodec: authcodec.NewBech32Codec(params.Bech32PrefixValAddr),
+		ConsensusAddressCodec: authcodec.NewBech32Codec(params.Bech32PrefixConsAddr),
 	}
 }
 

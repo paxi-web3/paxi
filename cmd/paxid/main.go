@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-
 	rootCmd := paxicmd.NewRootCmd()
 	if err := svrcmd.Execute(rootCmd, clientv2helpers.EnvPrefix, app.DefaultNodeHome); err != nil {
 		fmt.Fprintln(rootCmd.OutOrStderr(), err)
