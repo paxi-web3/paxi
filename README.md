@@ -11,6 +11,8 @@
 
 Founded on the principle that *less is more*, Paxi is designed to strip away unnecessary complexity and deliver a clean, efficient, and developer-friendly experience. Every part of the system is purpose-driven — from its modular [Cosmos SDK](https://docs.cosmos.network/v0.53/learn/intro/overview) architecture to its blazing-fast [CometBFT](https://cometbft.com) consensus engine — enabling a blockchain network that is both powerful and beautifully minimal.
 
+**Built upon deep optimizations of the Cosmos SDK and CometBFT**, Paxi achieves enhanced performance and security, making it an ideal foundation for scalable and resilient blockchain applications.
+
 **Paxi lowers the barrier to participation**, allowing anyone to become a validator — not just those with deep pockets. This ensures a more inclusive and decentralized network, where governance and consensus are open to all.
 
 Powered by **Go**, Paxi delivers high performance, fast development cycles, and easy onboarding for technical contributors. Whether you're building DeFi protocols, Web3 apps, or next-gen games, Paxi gives you a solid, secure, and intuitive platform to build on.
