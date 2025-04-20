@@ -65,7 +65,7 @@ go build -o build/paxid ./cmd/paxid
 
 ## 🌐 Official Website
 
-👉 [https://x.com](https://x.com)
+👉 [https://x.com/paxiweb3](https://x.com/paxiweb3)
 
 ## License
 
