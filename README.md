@@ -2,8 +2,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/paxi-web3/paxi)](https://goreportcard.com/report/github.com/paxi-web3/paxi)
 [![Version](https://img.shields.io/badge/version-v1.0.0-blue?style=flat-square)](https://github.com/paxi-web3/paxi/releases/tag/v1.0.0)
-v0.38.17
-[![Cosmos SDK](https://img.shields.io/badge/cosmos%20sdk-v0.53.0-blue?style=flat-square)](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.53.0-rc.4)
+[![Cosmos SDK](https://img.shields.io/badge/Cosmos%20SDK-v0.53.0-blue?style=flat-square)](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.53.0-rc.4)
 [![CometBFT](https://img.shields.io/badge/CometBFT-v0.38.0-blue?style=flat-square)](https://docs.cometbft.com/v0.38/)
 
 
