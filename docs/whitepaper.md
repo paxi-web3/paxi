@@ -1,7 +1,7 @@
 # Paxi Whitepaper
 
 ## Introduction
-Paxi is a next-generation blockchain protocol designed with simplicity, speed, and radical decentralization at its core. Built on the Cosmos SDK and CometBFT consensus engine, and implemented in the Go programming language, Paxi aims to provide a highly efficient, low-fee, and user-friendly blockchain infrastructure that is open to all.
+Paxi is a next-generation blockchain protocol designed with simplicity, speed, and radical decentralization at its core. Built on the Cosmos SDK and CometBFT consensus engine — with deep optimizations tailored for enhanced performance and security — and implemented in the Go programming language, Paxi aims to provide a highly efficient, low-fee, and user-friendly blockchain infrastructure that is open to all.
 
 Paxi believes in the philosophy of "less is more" — every feature exists to serve purpose and efficiency. By focusing on essential functionality and avoiding unnecessary complexity, Paxi ensures a seamless experience for developers, validators, and end users alike.
 
