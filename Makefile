@@ -3,6 +3,10 @@
 APP_NAME = paxid
 VERSION ?= v1.0.0
 DOCKER_IMAGE = paxi-chain/node
+BUILD_TAGS = "rocksdb"
+CGO_ENABLED=1
+CGO_CFLAGS="-I/usr/local/include" 
+CGO_LDFLAGS="-L/usr/local/lib -lrocksdb"
 
 .PHONY: all build install clean proto config run test
 
@@ -10,11 +14,11 @@ all: build
 
 build:
 	@echo "🔨 Building $(APP_NAME)..."
-	go build -mod=readonly -tags '$(BUILD_TAGS)' -o build/$(APP_NAME) ./cmd/$(APP_NAME)
+	go build -mod=readonly -tags $(BUILD_TAGS) -o build/$(APP_NAME) ./cmd/$(APP_NAME)
 
 install:
 	@echo "📦 Installing $(APP_NAME) to GOPATH/bin..."
-	go install -mod=readonly -tags '$(BUILD_TAGS)' ./cmd/$(APP_NAME)
+	go install -mod=readonly -tags $(BUILD_TAGS) ./cmd/$(APP_NAME)
 
 clean:
 	@echo "🧹 Cleaning build files..."

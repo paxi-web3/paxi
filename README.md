@@ -48,14 +48,31 @@ Paxi is not just a Cosmos-based chain — it's an **evolution** of the Cosmos mo
 
 ## 🧪 Getting Started
 
-### 1. Clone & Build
+### 1. Clone & Build rocksdb
 
 ```bash
+# In order to speed up Paxi node, we use rocksdb instead of goleveldb
+# First of all you need to build rocksdb before going to the next step
+git clone https://github.com/facebook/rocksdb.git
+cd rocksdb
+git checkout v9.2.1 # or the version you want
+
+# Compile and install to /usr/local
+make -j$(nproc) shared_lib
+sudo make install-shared INSTALL_PATH=/usr/local
+
+# Add /usr/local/lib to the dynamic linker search paths
+echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/rocksdb.conf
+sudo ldconfig
+```
+
+### 2. Clone & Build Paxi
+
+```bash
+# Build Paxid
 git clone https://github.com/paxi-web3/paxi
 cd paxi
 make install
-# or
-go build -o build/paxid ./cmd/paxid
 ```
 
 ## 📄 Whitepaper

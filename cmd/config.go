@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	time "time"
+
 	cmtcfg "github.com/cometbft/cometbft/config"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 )
@@ -10,9 +12,51 @@ import (
 func initCometBFTConfig() *cmtcfg.Config {
 	cfg := cmtcfg.DefaultConfig()
 
-	// these values put a higher strain on node memory
-	// cfg.P2P.MaxNumInboundPeers = 100
-	// cfg.P2P.MaxNumOutboundPeers = 40
+	// P2P networking settings
+	cfg.P2P.MaxNumInboundPeers = 80                      // Max inbound peers allowed to connect
+	cfg.P2P.MaxNumOutboundPeers = 30                     // Max outbound peers this node will dial
+	cfg.P2P.AllowDuplicateIP = false                     // Avoid duplicate IP connections
+	cfg.P2P.FlushThrottleTimeout = 50 * time.Millisecond // Delay between sending messages
+	cfg.P2P.SendRate = 10 * 1024 * 1024                  // Max bytes per second to send (10MB/s)
+	cfg.P2P.RecvRate = 10 * 1024 * 1024                  // Max bytes per second to receive (10MB/s)
+	cfg.P2P.PexReactor = true                            // Enable peer exchange
+	cfg.P2P.AllowDuplicateIP = false                     // Avoid duplicate IP connections
+
+	// RPC server settings
+	cfg.RPC.CORSAllowedOrigins = []string{}                                   // Restrict CORS origins
+	cfg.RPC.CORSAllowedMethods = []string{"HEAD", "GET", "POST"}              // Allow these HTTP methods
+	cfg.RPC.CORSAllowedHeaders = []string{"Origin", "Accept", "Content-Type"} // CORS headers
+	cfg.RPC.MaxBodyBytes = 1_000_000                                          // Max request body size in bytes
+	cfg.RPC.MaxHeaderBytes = 1_048_576                                        // Max request header size in bytes
+
+	// Consensus configuration
+	cfg.Consensus.TimeoutCommit = 1 * time.Second              // Time to wait for commit before proposing next block
+	cfg.Consensus.CreateEmptyBlocks = true                     // Create blocks even with no transactions
+	cfg.Consensus.CreateEmptyBlocksInterval = 10 * time.Second // Time between empty blocks
+
+	// Consensus configuration
+	cfg.Consensus.TimeoutPropose = 3 * time.Second // Timeout before proposing a block
+	cfg.Consensus.TimeoutProposeDelta = 500 * time.Millisecond
+	cfg.Consensus.TimeoutPrevote = 1 * time.Second
+	cfg.Consensus.TimeoutPrevoteDelta = 500 * time.Millisecond
+	cfg.Consensus.TimeoutPrecommit = 1 * time.Second
+	cfg.Consensus.TimeoutPrecommitDelta = 500 * time.Millisecond
+	cfg.Consensus.TimeoutCommit = 1 * time.Second              // Time allowed to finalize block
+	cfg.Consensus.CreateEmptyBlocks = true                     // Create blocks even with no transactions
+	cfg.Consensus.CreateEmptyBlocksInterval = 10 * time.Second // Time between empty blocks
+	cfg.Consensus.PeerGossipSleepDuration = 100 * time.Millisecond
+	cfg.Consensus.PeerQueryMaj23SleepDuration = 2 * time.Second
+
+	// Mempool configuration
+	cfg.Mempool.Size = 10000                         // Max txs in mempool
+	cfg.Mempool.MaxTxsBytes = 2 * 1024 * 1024 * 1024 // 2 GB mempool capacity
+	cfg.Mempool.MaxTxBytes = 1 * 1024 * 1024         // 1 MB per tx
+	cfg.Mempool.CacheSize = 20000                    // Tx cache size
+	cfg.Mempool.Recheck = true                       // Recheck mempool on reorg
+	cfg.Mempool.Broadcast = true                     // Enable gossip broadcast
+
+	// Database backend for storing blockchain data
+	cfg.BaseConfig.DBBackend = "rocksdb" // Options: goleveldb, rocksdb, etc.
 
 	return cfg
 }
@@ -20,56 +64,58 @@ func initCometBFTConfig() *cmtcfg.Config {
 // initAppConfig helps to override default appConfig template and configs.
 // return "", nil if no custom configuration is required for the application.
 func initAppConfig() (string, interface{}) {
-	// The following code snippet is just for reference.
-
-	// CustomConfig defines an arbitrary custom config to extend app.toml.
-	// If you don't need it, you can remove it.
-	// If you wish to add fields that correspond to flags that aren't in the SDK server config,
-	// this custom config can as well help.
+	// Define a custom config structure to inject additional metadata into app.toml
 	type CustomConfig struct {
-		CustomField string `mapstructure:"custom-field"`
+		ChainTitle string `mapstructure:"chain-title"` // Name of the chain (custom field)
 	}
 
+	// Combine SDK server config with custom fields
 	type CustomAppConfig struct {
-		serverconfig.Config `mapstructure:",squash"`
-
-		Custom CustomConfig `mapstructure:"custom"`
+		serverconfig.Config `mapstructure:",squash"` // Base Cosmos SDK config
+		Custom              CustomConfig             `mapstructure:"custom"`
 	}
 
-	// Optionally allow the chain developer to overwrite the SDK's default
-	// server config.
+	// Start from default SDK configuration
 	srvCfg := serverconfig.DefaultConfig()
-	// The SDK's default minimum gas price is set to "" (empty value) inside
-	// app.toml. If left empty by validators, the node will halt on startup.
-	// However, the chain developer can set a default app.toml value for their
-	// validators here.
-	//
-	// In summary:
-	// - if you leave srvCfg.MinGasPrices = "", all validators MUST tweak their
-	//   own app.toml config,
-	// - if you set srvCfg.MinGasPrices non-empty, validators CAN tweak their
-	//   own app.toml to override, or use this default value.
-	//
-	// In simapp, we set the min gas prices to 0.
-	srvCfg.MinGasPrices = "0stake"
-	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
 
-	// Now we set the custom config default values.
+	// Set a minimum gas price (required for node startup)
+	// This avoids the validator node halting due to missing gas price
+	srvCfg.MinGasPrices = "0.1stake"
+	srvCfg.QueryGasLimit = 100000 // Set a reasonable gas limit for queries
+
+	// Use a custom database backend
+	srvCfg.AppDBBackend = "rocksdb" // Use RocksDB as the database backend
+
+	// Enable essential APIs and endpoints
+	srvCfg.API.Enable = true
+	srvCfg.API.Swagger = true
+	srvCfg.GRPC.Enable = true
+	srvCfg.GRPCWeb.Enable = true
+
+	// Optional: disable telemetry unless needed
+	srvCfg.Telemetry.Enabled = true
+	srvCfg.Telemetry.PrometheusRetentionTime = 120
+
+	// Enable snapshots to support state sync and archiving
+	srvCfg.StateSync.SnapshotInterval = 1000
+	srvCfg.StateSync.SnapshotKeepRecent = 5
+
+	// IavlCacheSize set the size of the iavl tree cache (in number of nodes).
+	srvCfg.IAVLCacheSize = 2_000_000
+
+	// Set default values for the custom configuration section
 	customAppConfig := CustomAppConfig{
 		Config: *srvCfg,
 		Custom: CustomConfig{
-			CustomField: "anything",
+			ChainTitle: "Paxi", // Set your own chain title here
 		},
 	}
 
-	// The default SDK app template is defined in serverconfig.DefaultConfigTemplate.
-	// We append the custom config template to the default one.
-	// And we set the default config to the custom app template.
+	// Append custom config template to the default app.toml template
 	customAppTemplate := serverconfig.DefaultConfigTemplate + `
 [custom]
-# That field will be parsed by server.InterceptConfigsPreRunHandler and held by viper.
-# Do not forget to add quotes around the value if it is a string.
-custom-field = "{{ .Custom.CustomField }}"`
+# The title of your blockchain, used for display or branding.
+chain-title = "{{ .Custom.ChainTitle }}"`
 
 	return customAppTemplate, customAppConfig
 }

@@ -185,6 +185,7 @@ func NewPaxiApp(
 	traceStore io.Writer,
 	loadLatest bool,
 	appOpts servertypes.AppOptions,
+	enableWasm bool,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *PaxiApp {
 	interfaceRegistry, _ := types.NewInterfaceRegistryWithOptions(types.InterfaceRegistryOptions{
@@ -415,29 +416,31 @@ func NewPaxiApp(
 	app.EvidenceKeeper = *evidenceKeeper
 
 	// create the wasm keeper
-	nodeConfig, err := wasm.ReadNodeConfig(appOpts)
-	if err != nil {
-		panic(fmt.Sprintf("error while reading wasm config: %s", err))
-	}
+	if enableWasm {
+		nodeConfig, err := wasm.ReadNodeConfig(appOpts)
+		if err != nil {
+			panic(fmt.Sprintf("error while reading wasm config: %s", err))
+		}
 
-	app.WasmKeeper = wasmkeeper.NewKeeper(
-		appCodec,
-		cosmosruntime.NewKVStoreService(keys[wasmtypes.StoreKey]),
-		app.AccountKeeper,
-		app.BankKeeper,
-		app.StakingKeeper,
-		distrkeeper.NewQuerier(app.DistrKeeper),
-		nil,
-		nil,
-		nil,
-		app.MsgServiceRouter(),
-		app.GRPCQueryRouter(),
-		filepath.Join(DefaultNodeHome, "wasm"),
-		nodeConfig,
-		wasmtypes.VMConfig{},
-		wasmkeeper.BuiltInCapabilities(),
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-	)
+		app.WasmKeeper = wasmkeeper.NewKeeper(
+			appCodec,
+			cosmosruntime.NewKVStoreService(keys[wasmtypes.StoreKey]),
+			app.AccountKeeper,
+			app.BankKeeper,
+			app.StakingKeeper,
+			distrkeeper.NewQuerier(app.DistrKeeper),
+			nil,
+			nil,
+			nil,
+			app.MsgServiceRouter(),
+			app.GRPCQueryRouter(),
+			filepath.Join(DefaultNodeHome, "wasm"),
+			nodeConfig,
+			wasmtypes.VMConfig{},
+			wasmkeeper.BuiltInCapabilities(),
+			authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		)
+	}
 
 	/****  Module Options ****/
 
@@ -461,9 +464,11 @@ func NewPaxiApp(
 		nftmodule.NewAppModule(appCodec, app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
 		circuit.NewAppModule(appCodec, app.CircuitKeeper),
-
-		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
+
+	if enableWasm {
+		app.ModuleManager.Modules[wasm.ModuleName] = wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil)
+	}
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration and genesis verification.
@@ -476,6 +481,7 @@ func NewPaxiApp(
 			govtypes.ModuleName: gov.NewAppModuleBasic(
 				[]govclient.ProposalHandler{},
 			),
+			wasmtypes.ModuleName: wasm.AppModuleBasic{},
 		})
 	app.BasicModuleManager.RegisterLegacyAminoCodec(legacyAmino)
 	app.BasicModuleManager.RegisterInterfaces(interfaceRegistry)

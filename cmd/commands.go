@@ -120,6 +120,23 @@ func newApp(
 	return app.NewPaxiApp(
 		logger, db, traceStore, true,
 		appOpts,
+		false,
+		baseappOptions...,
+	)
+}
+
+// newApp creates the application with wasm enabled
+func newAppWithWasm(
+	logger log.Logger,
+	db dbm.DB,
+	traceStore io.Writer,
+	appOpts servertypes.AppOptions,
+) servertypes.Application {
+	baseappOptions := server.DefaultBaseappOptions(appOpts)
+	return app.NewPaxiApp(
+		logger, db, traceStore, true,
+		appOpts,
+		true, // enable Wasm
 		baseappOptions...,
 	)
 }
@@ -146,13 +163,13 @@ func appExport(
 
 	var paxiApp *app.PaxiApp
 	if height != -1 {
-		paxiApp = app.NewPaxiApp(logger, db, traceStore, false, appOpts)
+		paxiApp = app.NewPaxiApp(logger, db, traceStore, false, appOpts, false)
 
 		if err := paxiApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {
-		paxiApp = app.NewPaxiApp(logger, db, traceStore, true, appOpts)
+		paxiApp = app.NewPaxiApp(logger, db, traceStore, true, appOpts, false)
 	}
 
 	return paxiApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
