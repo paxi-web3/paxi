@@ -29,9 +29,10 @@ func initRootCmd(
 	rootCmd *cobra.Command,
 	txConfig client.TxConfig,
 	basicManager module.BasicManager,
+	a *app.PaxiApp,
 ) {
 	rootCmd.AddCommand(
-		genutilcli.InitCmd(basicManager, app.DefaultNodeHome),
+		InitCmd(a, app.DefaultNodeHome),
 		debug.Cmd(),
 		confixcmd.ConfigCommand(),
 		pruning.Cmd(newApp, app.DefaultNodeHome),
