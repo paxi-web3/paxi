@@ -751,32 +751,8 @@ func (app *PaxiApp) AutoCliOpts() autocli.AppOptions {
 // DefaultGenesis returns a default genesis from the registered AppModuleBasic's.
 func (a *PaxiApp) DefaultGenesis() map[string]json.RawMessage {
 	genesisData := a.BasicModuleManager.DefaultGenesis(a.appCodec)
-
-	// Add custom genesis state here
-	bankGenesis := banktypes.DefaultGenesisState()
-
-	bankGenesis.DenomMetadata = append(bankGenesis.DenomMetadata, banktypes.Metadata{
-		Description: "The native token of the Paxi network.",
-		DenomUnits: []*banktypes.DenomUnit{
-			{
-				Denom:    "stake", // base denom
-				Exponent: 0,
-				Aliases:  []string{},
-			},
-			{
-				Denom:    "paxi", // display denom
-				Exponent: 6,
-				Aliases:  []string{"PAXI"},
-			},
-		},
-		Base:    "stake",
-		Display: "paxi",
-		Name:    "Paxi",
-		Symbol:  "PAXI",
-	})
-
-	genesisData[banktypes.ModuleName] = a.appCodec.MustMarshalJSON(bankGenesis)
-
+	// add custom genesis data here
+	AddCustomGenesis(a.appCodec, &genesisData)
 	return genesisData
 }
 
