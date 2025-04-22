@@ -3,6 +3,8 @@
 ## Introduction
 Paxi is a next-generation blockchain protocol designed with simplicity, speed, and radical decentralization at its core. Built on the Cosmos SDK and CometBFT consensus engine — with deep optimizations tailored for enhanced performance and security — and implemented in the Go programming language, Paxi aims to provide a highly efficient, low-fee, and user-friendly blockchain infrastructure that is open to all.
 
+Paxi also supports CosmWasm, a smart contract platform based on Wasm, enabling developers to build secure and efficient contracts in Rust — perfect for DeFi, DAOs, and cross-chain dApps.
+
 Paxi believes in the philosophy of "less is more" — every feature exists to serve purpose and efficiency. By focusing on essential functionality and avoiding unnecessary complexity, Paxi ensures a seamless experience for developers, validators, and end users alike.
 
 ---
@@ -26,6 +28,7 @@ To create a fast, secure, and truly decentralized blockchain ecosystem that empo
 
 - **Cosmos SDK**: Modular framework for blockchain application development
 - **CometBFT**: BFT consensus engine providing fast finality and secure networking
+- **CosmWasm**: Smart contract platform based on WebAssembly (Wasm), allowing developers to build secure and efficient contracts in Rust 
 - **Go Language**: Known for its speed, simplicity, and concurrency support — ideal for high-performance blockchain infrastructure
 
 ---
