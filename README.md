@@ -49,6 +49,8 @@ Paxi is not just a Cosmos-based chain — it's an **evolution** of the Cosmos mo
 - [CometBFT Documentation](https://docs.cometbft.com/v0.38/)
 - [CosmWasm Documentation](https://cosmwasm.cosmos.network/)
 
+
+## 🔧 Structure
 ```mermaid
 graph TD
   A[Paxi Blockchain] --> B[Cosmos SDK]
