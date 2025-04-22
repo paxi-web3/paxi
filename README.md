@@ -49,6 +49,33 @@ Paxi is not just a Cosmos-based chain — it's an **evolution** of the Cosmos mo
 - [CometBFT Documentation](https://docs.cometbft.com/v0.38/)
 - [CosmWasm Documentation](https://cosmwasm.cosmos.network/)
 
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad: true });
+</script>
+
+<div class="mermaid">
+graph TD
+    A[Paxi Blockchain] --> B[Cosmos SDK]
+    B --> B1[Auth Module]
+    B --> B2[Bank Module]
+    B --> B3[Staking Module]
+    B --> B4[Vesting Module]
+    B --> B5[Slashing Module]
+    B --> B6[Mint Module]
+    B --> B7[Distribution Module]
+    B --> B8[Gov Module]
+    B --> B9[Upgrade Module]
+    B --> B10[Evidence Module]
+    B --> B11[Consensus Module]
+    B --> B12[Circuit Module]
+    B --> B13[NFT Module]
+
+    A --> C[CometBFT]
+    A --> D[CosmWasm]
+    A --> E[Paxi Custom Modules]
+</div>
+
 
 ## 🧪 Getting Started
 

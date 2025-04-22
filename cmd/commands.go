@@ -38,7 +38,7 @@ func initRootCmd(
 		snapshot.Cmd(newApp),
 	)
 
-	server.AddCommandsWithStartCmdOptions(rootCmd, app.DefaultNodeHome, newApp, appExport, server.StartCmdOptions{
+	server.AddCommandsWithStartCmdOptions(rootCmd, app.DefaultNodeHome, newAppWithWasm, appExport, server.StartCmdOptions{
 		AddFlags: func(startCmd *cobra.Command) {
 		},
 	})
