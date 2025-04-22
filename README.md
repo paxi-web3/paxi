@@ -54,20 +54,6 @@ Paxi is not just a Cosmos-based chain — it's an **evolution** of the Cosmos mo
 ```mermaid
 graph TD
   A[Paxi Blockchain] --> B[Cosmos SDK]
-  B --> B1[Auth]
-  B --> B2[Bank]
-  B --> B3[Staking]
-  B --> B4[Vesting]
-  B --> B5[Slashing]
-  B --> B6[Mint]
-  B --> B7[Distribution]
-  B --> B8[Gov]
-  B --> B9[Upgrade]
-  B --> B10[Evidence]
-  B --> B11[Consensus]
-  B --> B12[Circuit]
-  B --> B13[NFT]
-
   A --> C[CometBFT]
   A --> D[CosmWasm]
   A --> E[Paxi Custom Modules]
