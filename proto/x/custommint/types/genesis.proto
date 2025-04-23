@@ -4,7 +4,7 @@ package x.custommint.types;
 
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/paxi-chain/paxi/x/custommint/types";
+option go_package = "github.com/paxi-web3/paxi/x/custommint/types";
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.equal_all) = true;

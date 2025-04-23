@@ -53,6 +53,8 @@ proto:
 	protoc \
 	-I=proto \
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
 	--gogofaster_out=plugins=grpc,paths=source_relative:./ \
-	./proto/x/custommint/types/genesis.proto
+	./proto/x/custommint/types/genesis.proto \
+	./proto/x/custommint/types/query.proto

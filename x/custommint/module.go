@@ -87,14 +87,18 @@ func NewAppModule(
 	}
 }
 
-func (am AppModule) Name() string                                { return customminttypes.ModuleName }
-func (am AppModule) RegisterServices(cfg module.Configurator)    {}
+func (am AppModule) Name() string { return customminttypes.ModuleName }
+
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
+
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	customminttypes.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServer(am.keeper))
+}
 
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
 	var genesisState customminttypes.GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	am.keeper.InitGenesis(ctx, &genesisState)
+	am.keeper.InitGenesis(ctx, genesisState)
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {

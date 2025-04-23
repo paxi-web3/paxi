@@ -10,9 +10,8 @@ import (
 var ParamsKey = []byte("custommint_params")
 
 // GetParams returns the current x/slashing module parameters.
-func (k Keeper) GetParams(ctx context.Context) (params *types.GenesisState, err error) {
+func (k Keeper) GetParams(ctx context.Context) (params types.GenesisState, err error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	params = &types.GenesisState{}
 	store := k.storeService.OpenKVStore(sdkCtx)
 
 	bz, err := store.Get(ParamsKey)
@@ -24,7 +23,7 @@ func (k Keeper) GetParams(ctx context.Context) (params *types.GenesisState, err 
 		return params, nil
 	}
 
-	err = k.cdc.Unmarshal(bz, params)
+	err = k.cdc.Unmarshal(bz, &params)
 	return params, err
 }
 

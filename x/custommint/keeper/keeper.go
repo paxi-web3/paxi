@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"math/big"
 
 	storetypes "cosmossdk.io/core/store"
 	sdkmath "cosmossdk.io/math"
@@ -81,11 +82,15 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 			mintAmount = mintAmount.Sub(excess)
 
 			// If nothing remains after burn, exit early
-			if mintAmount.IsZero() {
+			if mintAmount.LTE(sdkmath.ZeroInt()) {
 				k.SetAccumulator(ctx, acc)
 				return nil
 			}
 		}
+
+		// Get total minted amount from store
+		totalMinted := k.GetTotalMinted(ctx)
+		k.SetTotalMinted(ctx, totalMinted.Add(totalMinted))
 
 		// Send the remaining minted coins to the distribution module for staking rewards
 		distributeCoin := sdk.NewCoin(k.mintDenom, mintAmount)
@@ -151,14 +156,11 @@ func (k Keeper) ExpectedSupplyByHeight(height int64) sdkmath.Int {
 	return growth.MulInt(baseSupply).TruncateInt()
 }
 
-func (k Keeper) InitGenesis(ctx sdk.Context, data *customminttypes.GenesisState) {
-	err := k.SetParams(ctx, data)
+func (k Keeper) InitGenesis(ctx sdk.Context, data customminttypes.GenesisState) {
+	err := k.SetParams(ctx, &data)
 	if err != nil {
 		panic(err)
 	}
-
-	params, err := k.GetParams(ctx)
-	fmt.Println("key value:", params)
 }
 
 func (k Keeper) ExportGenesis(ctx sdk.Context) *customminttypes.GenesisState {
@@ -166,5 +168,20 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *customminttypes.GenesisState {
 	if err != nil {
 		panic(err)
 	}
-	return params
+	return &params
+}
+
+func (k Keeper) SetTotalMinted(ctx sdk.Context, amount sdkmath.Int) {
+	store := k.storeService.OpenKVStore(ctx)
+	bz := amount.BigInt().Bytes()
+	store.Set([]byte(customminttypes.TotalMinted), bz)
+}
+
+func (k Keeper) GetTotalMinted(ctx sdk.Context) sdkmath.Int {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := store.Get([]byte(customminttypes.TotalMinted))
+	if err != nil || bz == nil {
+		return sdkmath.ZeroInt()
+	}
+	return sdkmath.NewIntFromBigInt(new(big.Int).SetBytes(bz))
 }

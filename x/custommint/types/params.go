@@ -10,5 +10,6 @@ const (
 	ModuleName     = "custommint"
 	StoreKey       = ModuleName
 	AccumulatorKey = "block_provision_accumulator"
+	TotalMinted    = "total_minted"
 	DefaultDenom   = "stake"
 )
