@@ -44,3 +44,15 @@ docker:
 	@echo "🐳 Building Docker image $(DOCKER_IMAGE)..."
 	docker build -t $(DOCKER_IMAGE):latest .
 	echo "✅ Docker image built: $(DOCKER_IMAGE):latest"
+
+
+PROTOC_GEN_GOGO := $(shell which protoc-gen-gogofaster)
+
+proto:
+	@echo "Generating gogofaster protos..."
+	protoc \
+	-I=proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
+	--gogofaster_out=plugins=grpc,paths=source_relative:./ \
+	./proto/x/custommint/types/genesis.proto

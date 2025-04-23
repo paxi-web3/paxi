@@ -6,5 +6,9 @@ var (
 	MintThreshold = int64(1_000_000_000)       // 1 billion
 )
 
-const ModuleName = "custommint"
-const AccumulatorKey = "block_provision_accumulator"
+const (
+	ModuleName     = "custommint"
+	StoreKey       = ModuleName
+	AccumulatorKey = "block_provision_accumulator"
+	DefaultDenom   = "stake"
+)

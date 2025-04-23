@@ -83,15 +83,15 @@ import (
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
-	"github.com/cosmos/cosmos-sdk/x/mint"
-	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/paxi-web3/paxi/x/custommint"
+	custommintkeeper "github.com/paxi-web3/paxi/x/custommint/keeper"
+	customminttypes "github.com/paxi-web3/paxi/x/custommint/types"
 )
 
 const appName = "PaxiApp"
@@ -109,7 +109,7 @@ var (
 	maccPerms = map[string][]string{
 		authtypes.FeeCollectorName:     nil,
 		distrtypes.ModuleName:          nil,
-		minttypes.ModuleName:           {authtypes.Minter},
+		customminttypes.ModuleName:     {authtypes.Minter},
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
@@ -155,7 +155,7 @@ type PaxiApp struct {
 	BankKeeper            bankkeeper.BaseKeeper
 	StakingKeeper         *stakingkeeper.Keeper
 	SlashingKeeper        slashingkeeper.Keeper
-	MintKeeper            mintkeeper.Keeper
+	MintKeeper            custommintkeeper.Keeper
 	DistrKeeper           distrkeeper.Keeper
 	GovKeeper             govkeeper.Keeper
 	UpgradeKeeper         *upgradekeeper.Keeper
@@ -222,7 +222,7 @@ func NewPaxiApp(
 		authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
-		minttypes.StoreKey,
+		customminttypes.StoreKey,
 		distrtypes.StoreKey,
 		slashingtypes.StoreKey,
 		govtypes.StoreKey,
@@ -301,15 +301,13 @@ func NewPaxiApp(
 		authcodec.NewBech32Codec(apptypes.Bech32PrefixValAddr),
 		authcodec.NewBech32Codec(apptypes.Bech32PrefixConsAddr),
 	)
-	app.MintKeeper = mintkeeper.NewKeeper(
+
+	app.MintKeeper = custommintkeeper.NewKeeper(
 		appCodec,
-		cosmosruntime.NewKVStoreService(keys[minttypes.StoreKey]),
-		app.StakingKeeper,
-		app.AccountKeeper,
 		app.BankKeeper,
-		authtypes.FeeCollectorName,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		// mintkeeper.WithMintFn(mintkeeper.DefaultMintFn(minttypes.DefaultInflationCalculationFn)), custom mintFn can be added here
+		cosmosruntime.NewKVStoreService(keys[customminttypes.StoreKey]),
+		authtypes.NewModuleAddress(customminttypes.ModuleName).String(),
+		customminttypes.DefaultDenom,
 	)
 
 	app.DistrKeeper = distrkeeper.NewKeeper(
@@ -455,7 +453,7 @@ func NewPaxiApp(
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
 		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, nil),
 		gov.NewAppModule(appCodec, &app.GovKeeper, app.AccountKeeper, app.BankKeeper, nil),
-		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper, nil, nil),
+		custommint.NewAppModule(appCodec, app.MintKeeper),
 		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, nil, app.interfaceRegistry),
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, nil),
 		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, nil),
@@ -496,7 +494,7 @@ func NewPaxiApp(
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.ModuleManager.SetOrderBeginBlockers(
-		minttypes.ModuleName,
+		customminttypes.ModuleName,
 		distrtypes.ModuleName,
 		slashingtypes.ModuleName,
 		evidencetypes.ModuleName,
@@ -522,7 +520,7 @@ func NewPaxiApp(
 		stakingtypes.ModuleName,
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
-		minttypes.ModuleName,
+		customminttypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		nft.ModuleName,
@@ -541,7 +539,7 @@ func NewPaxiApp(
 		stakingtypes.ModuleName,
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
-		minttypes.ModuleName,
+		customminttypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		nft.ModuleName,

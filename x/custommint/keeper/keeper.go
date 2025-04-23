@@ -3,8 +3,9 @@ package keeper
 import (
 	"fmt"
 
+	storetypes "cosmossdk.io/core/store"
 	sdkmath "cosmossdk.io/math"
-	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -12,18 +13,20 @@ import (
 )
 
 type Keeper struct {
-	bankKeeper bankkeeper.Keeper
-	storeKey   storetypes.StoreKey
-	authority  string
-	mintDenom  string
+	cdc          codec.BinaryCodec
+	bankKeeper   bankkeeper.Keeper
+	storeService storetypes.KVStoreService
+	authority    string
+	mintDenom    string
 }
 
-func NewKeeper(bankKeeper bankkeeper.Keeper, storeKey storetypes.StoreKey, authority string, denom string) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, storeService storetypes.KVStoreService, authority string, denom string) Keeper {
 	return Keeper{
-		bankKeeper: bankKeeper,
-		storeKey:   storeKey,
-		authority:  authority,
-		mintDenom:  denom,
+		cdc:          cdc,
+		bankKeeper:   bankKeeper,
+		storeService: storeService,
+		authority:    authority,
+		mintDenom:    denom,
 	}
 }
 
@@ -97,9 +100,9 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 }
 
 func (k Keeper) GetAccumulator(ctx sdk.Context) sdkmath.LegacyDec {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get([]byte(customminttypes.AccumulatorKey))
-	if bz == nil {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := store.Get([]byte(customminttypes.AccumulatorKey))
+	if err != nil {
 		return sdkmath.LegacyZeroDec()
 	}
 	dec := sdkmath.LegacyDec{}
@@ -110,7 +113,7 @@ func (k Keeper) GetAccumulator(ctx sdk.Context) sdkmath.LegacyDec {
 }
 
 func (k Keeper) SetAccumulator(ctx sdk.Context, dec sdkmath.LegacyDec) {
-	store := ctx.KVStore(k.storeKey)
+	store := k.storeService.OpenKVStore(ctx)
 	bz, err := dec.Marshal()
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal accumulator: %w", err))
@@ -146,4 +149,22 @@ func (k Keeper) ExpectedSupplyByHeight(height int64) sdkmath.Int {
 	}
 
 	return growth.MulInt(baseSupply).TruncateInt()
+}
+
+func (k Keeper) InitGenesis(ctx sdk.Context, data *customminttypes.GenesisState) {
+	err := k.SetParams(ctx, data)
+	if err != nil {
+		panic(err)
+	}
+
+	params, err := k.GetParams(ctx)
+	fmt.Println("key value:", params)
+}
+
+func (k Keeper) ExportGenesis(ctx sdk.Context) *customminttypes.GenesisState {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return params
 }

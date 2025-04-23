@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package x.custommint.types;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/paxi-chain/paxi/x/custommint/types";
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.equal_all) = true;
+
+message GenesisState {
+  string mint_denom = 1 [(gogoproto.moretags) = "yaml:\"mint_denom\""];
+  int64 mint_threshold = 2 [(gogoproto.moretags) = "yaml:\"mint_threshold\""];
+  int64 total_supply = 3 [(gogoproto.moretags) = "yaml:\"total_supply\""];
+  int64 blocks_per_year = 4 [(gogoproto.moretags) = "yaml:\"blocks_per_year\""];
+}
