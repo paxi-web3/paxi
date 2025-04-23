@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	version "github.com/paxi-web3/paxi"
-	"github.com/paxi-web3/paxi/app/params"
+	apptypes "github.com/paxi-web3/paxi/app/types"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -119,7 +119,7 @@ var (
 func init() {
 	// Set the Bech32 address prefixes and register crypto
 	// and seal config
-	params.InitAddressRules()
+	apptypes.InitAddressRules()
 
 	// DefaultNodeHome is set to the home directory of the application
 	DefaultNodeHome = (func() string {
@@ -192,10 +192,10 @@ func NewPaxiApp(
 		ProtoFiles: proto.HybridResolver,
 		SigningOptions: signing.Options{
 			AddressCodec: address.Bech32Codec{
-				Bech32Prefix: params.Bech32PrefixAccAddr,
+				Bech32Prefix: apptypes.Bech32PrefixAccAddr,
 			},
 			ValidatorAddressCodec: address.Bech32Codec{
-				Bech32Prefix: params.Bech32PrefixValAddr,
+				Bech32Prefix: apptypes.Bech32PrefixValAddr,
 			},
 		},
 	})
@@ -263,8 +263,8 @@ func NewPaxiApp(
 		cosmosruntime.NewKVStoreService(keys[authtypes.StoreKey]),
 		authtypes.ProtoBaseAccount,
 		maccPerms,
-		authcodec.NewBech32Codec(params.Bech32PrefixAccAddr),
-		params.Bech32PrefixAccAddr,
+		authcodec.NewBech32Codec(apptypes.Bech32PrefixAccAddr),
+		apptypes.Bech32PrefixAccAddr,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
@@ -298,8 +298,8 @@ func NewPaxiApp(
 		app.AccountKeeper,
 		app.BankKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		authcodec.NewBech32Codec(params.Bech32PrefixValAddr),
-		authcodec.NewBech32Codec(params.Bech32PrefixConsAddr),
+		authcodec.NewBech32Codec(apptypes.Bech32PrefixValAddr),
+		authcodec.NewBech32Codec(apptypes.Bech32PrefixConsAddr),
 	)
 	app.MintKeeper = mintkeeper.NewKeeper(
 		appCodec,
@@ -742,9 +742,9 @@ func (app *PaxiApp) AutoCliOpts() autocli.AppOptions {
 	return autocli.AppOptions{
 		Modules:               modules,
 		ModuleOptions:         runtimeservices.ExtractAutoCLIOptions(app.ModuleManager.Modules),
-		AddressCodec:          authcodec.NewBech32Codec(params.Bech32PrefixAccAddr),
-		ValidatorAddressCodec: authcodec.NewBech32Codec(params.Bech32PrefixValAddr),
-		ConsensusAddressCodec: authcodec.NewBech32Codec(params.Bech32PrefixConsAddr),
+		AddressCodec:          authcodec.NewBech32Codec(apptypes.Bech32PrefixAccAddr),
+		ValidatorAddressCodec: authcodec.NewBech32Codec(apptypes.Bech32PrefixValAddr),
+		ConsensusAddressCodec: authcodec.NewBech32Codec(apptypes.Bech32PrefixConsAddr),
 	}
 }
 
@@ -752,7 +752,7 @@ func (app *PaxiApp) AutoCliOpts() autocli.AppOptions {
 func (a *PaxiApp) DefaultGenesis() map[string]json.RawMessage {
 	genesisData := a.BasicModuleManager.DefaultGenesis(a.appCodec)
 	// add custom genesis data here
-	AddCustomGenesis(a.appCodec, &genesisData)
+	apptypes.AddCustomGenesis(a.appCodec, &genesisData)
 	return genesisData
 }
 

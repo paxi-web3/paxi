@@ -56,17 +56,29 @@ Paxi democratizes consensus by reducing the technical and economic requirements 
 
 ---
 
-## Inflation Model
+## Inflation Mechanism
 
-Paxi starts with an initial token supply of **100 million tokens** and follows an **annual inflation model** to incentivize staking and secure the network.
+Paxi's native token has an initial supply of **100 million tokens** and adopts a gradually decreasing annual inflation model to incentivize staking participants, enhance network security, and maintain long-term supply stability.
 
-- **Year 1**: Inflation capped at **10%** of total supply
-- **Year 2**: Inflation capped at **5%**
-- **Year 3 onward**: Inflation capped at **2.5%** annually
-- All block rewards go to stakers (validators and delegators)
-- The system includes an **automatic burn mechanism** to reduce excess tokens based on supply-demand dynamics
+### Annual Inflation Schedule
+- **Year 1**: Maximum inflation rate of **10%** of the total supply
+- **Year 2**: Fixed inflation rate of **5%**
+- **Year 3 and beyond**: Inflation rate capped at **2.5%**
 
-This model ensures long-term sustainability while aligning incentives for active participation and economic security.
+### Block Reward Distribution
+- **100% of newly minted tokens** (block rewards) are distributed to staking participants: Including **validators** and **delegators**
+- The system will **automatically burn excess tokens** if the actual supply exceeds the expected supply, helping to stabilize inflation.
+
+### Important Note: Concentrated Rewards Under Low Staking Ratio
+For example, in Year 1:
+- Annual inflation of 10% → **10 million tokens** minted
+- If only **10% of the total supply** (10 million tokens) is staked,
+- Then these **10 million reward tokens** will be **fully distributed among that 10%**
+
+### This design ensures a powerful economic incentive:
+- Encourages more users to stake  
+- Increases network security and consensus participation  
+- Prevents long-term overinflation and excessive value dilution
 
 ---
 

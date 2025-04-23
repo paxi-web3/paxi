@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/paxi-web3/paxi/app"
-	"github.com/paxi-web3/paxi/app/params"
+	apptypes "github.com/paxi-web3/paxi/app/types"
 
 	"cosmossdk.io/log"
 	dbm "github.com/cosmos/cosmos-db"
@@ -26,7 +26,7 @@ import (
 func NewRootCmd() *cobra.Command {
 	// we "pre"-instantiate the application for getting the injected/configured encoding configuration
 	tempApp := app.NewPaxiApp(log.NewNopLogger(), dbm.NewMemDB(), nil, true, simtestutil.NewAppOptionsWithFlagHome(app.DefaultNodeHome), false)
-	encodingConfig := params.EncodingConfig{
+	encodingConfig := apptypes.EncodingConfig{
 		InterfaceRegistry: tempApp.InterfaceRegistry(),
 		Codec:             tempApp.AppCodec(),
 		TxConfig:          tempApp.TxConfig(),
