@@ -37,19 +37,6 @@ We believe that only through the collective power of the community can we achiev
 
 ---
 
-## Developer Experience
-
-Paxi is committed to lowering the barrier to entry for blockchain application development. To achieve this, it will include:
-
-- An integrated development environment (IDE) tailored for Paxi smart contracts
-- Intuitive SDKs and APIs
-- No-code/low-code smart contract options
-- Rich documentation and tutorials
-
-Even non-programmers will be able to deploy decentralized applications (dApps) on Paxi.
-
----
-
 ## Validator Participation
 
 Paxi democratizes consensus by reducing the technical and economic requirements needed to run a validator node. This ensures that the network remains open and inclusive, minimizing the concentration of power and enhancing decentralization.
@@ -88,24 +75,14 @@ For example, in Year 1:
 
 ## Token Distribution
 
-Category | Allocation | Unlock Schedule | Purpose & Description
-Founding Team & Advisors | 15% | 3% released at launch, remaining unlocked over 4 phases (every 4 months) | Incentivizes long-term commitment and contribution from the core team and advisors. Vesting ensures alignment with long-term ecosystem growth and prevents short-term profit-taking.
-Paxi Foundation | 10% | 4% released at launch, remaining unlocked over 4 phases (every 4 months) | Funds core infrastructure, legal compliance, branding, and strategic initiatives including global developer events and marketing to ensure long-term sustainability.
-Paxi DAO | 5% | Fully unlocked at launch | Entirely governed by the community via DAO proposals. Used for ecosystem support, proposal implementation incentives, tooling grants, and promoting transparent decentralized governance.
-Private & Strategic Investors | 15% | 3% released at launch, remaining unlocked over 4 phases (every 4 months) | Engages long-term strategic partners for technical, infrastructure, and market expansion collaborations. Also supports alliances with funds, incubators, and exchanges.
-Public Sale | 45% | Fully or strategically unlocked in phases | Drives broad user participation and decentralization. Funds are used for exchange listings, liquidity bootstrapping, market making, community operations, and early dApp builder support.
-User Incentives & Promotions | 10% | Dynamically distributed via task campaigns, referrals, community activities | Designed to accelerate user adoption and brand awareness through missions, referral programs, guild incentives, and content rewards that foster organic growth.
-
----
-
-## Use Cases
-
-Paxi is designed to support a wide range of real-world applications:
-
-- **DeFi**: Low-fee, high-speed infrastructure for decentralized finance
-- **GameFi**: Scalable engine for blockchain gaming and NFT integration
-- **Social & Identity**: Trustless systems for social apps, identity, and credentialing
-- **Enterprise & IoT**: Minimalist design makes it suitable for enterprise-grade and embedded devices
+| Category                      | Allocation | Unlock Schedule                                         | Purpose & Description |
+|-------------------------------|------------|---------------------------------------------------------|------------------------|
+| **Founding Team & Advisors**  | 15%        | 3% released at launch, remaining over 4 phases (every 4 months) | Incentivizes long-term commitment and prevents short-term profit-taking. Aligns team with project success. |
+| **Paxi Foundation**           | 10%        | 4% released at launch, remaining over 4 phases (every 4 months) | Funds core maintenance, legal compliance, branding, and global strategic initiatives. |
+| **Paxi DAO**                  | 5%         | Fully unlocked at launch                                | Managed by community through DAO. Funds ecosystem development, tooling, and decentralized governance. |
+| **Private & Strategic Investors** | 15%    | 3% released at launch, remaining over 4 phases (every 4 months) | Supports partnerships in infrastructure, tech, marketing, and exchange listings. Encourages strategic collaboration. |
+| **Public Sale**               | 45%        | Fully released or unlocked in strategic phases          | Provides liquidity, enables wide user participation, and funds exchange listings, marketing, and ecosystem support. |
+| **User Incentives & Promotions** | 10%     | Dynamically released via tasks, referrals, and campaigns | Fuels user acquisition, community growth, and viral engagement through incentivized activities. |
 
 ---
 
@@ -130,6 +107,30 @@ A DAO (Decentralized Autonomous Organization) is an organizational structure man
 - **Permission Management**: Granting or revoking governance permissions to specific smart contracts, ensuring decentralized and transparent authority management.
 
 Through the DAO model, Paxi achieves true decentralized autonomy, allowing the community to collectively shape the future direction of the ecosystem, thereby enhancing sustainability and community engagement.
+
+---
+
+## Use Cases
+
+Paxi is designed to support a wide range of real-world applications:
+
+- **DeFi**: Low-fee, high-speed infrastructure for decentralized finance
+- **GameFi**: Scalable engine for blockchain gaming and NFT integration
+- **Social & Identity**: Trustless systems for social apps, identity, and credentialing
+- **Enterprise & IoT**: Minimalist design makes it suitable for enterprise-grade and embedded devices
+
+---
+
+## Developer Experience
+
+Paxi is committed to lowering the barrier to entry for blockchain application development. To achieve this, it will include:
+
+- An integrated development environment (IDE) tailored for Paxi smart contracts
+- Intuitive SDKs and APIs
+- No-code/low-code smart contract options
+- Rich documentation and tutorials
+
+Even non-programmers will be able to deploy decentralized applications (dApps) on Paxi.
 
 ---
 
