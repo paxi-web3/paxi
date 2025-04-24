@@ -84,10 +84,10 @@ For example, in Year 1:
 
 ## Token Distribution
 
-| Category                          | Allocation | Release Schedule                         |
+| Category                         | Allocation | Release Schedule                          |
 |----------------------------------|------------|-------------------------------------------|
 | Founding Team & Advisors         | 15%        | 3% at TGE, then 4 unlocks every 4 months  |
-| Paxi Foundation                  | 10%        | 3% at TGE, then 4 unlocks every 4 months  |
+| Paxi Foundation                  | 10%        | 4% at TGE, then 4 unlocks every 4 months  |
 | Paxi Dao                         | 5%         | Fully unlocked or phased by strategy      |
 | Private Sale & Strategic Partners| 15%        | 3% at TGE, then 4 unlocks every 4 months  |
 | Public Sale                      | 45%        | Fully unlocked or phased by strategy      |

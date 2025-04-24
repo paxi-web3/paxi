@@ -22,7 +22,6 @@ const (
 
 var (
 	_ module.AppModuleBasic = AppModule{}
-	//_ module.HasGenesis     = AppModule{}
 
 	_ appmodule.AppModule       = AppModule{}
 	_ appmodule.HasBeginBlocker = AppModule{}
@@ -85,7 +84,7 @@ func (am AppModule) Name() string { return paxitypes.ModuleName }
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	//paxitypes.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServer(am.keeper))
+	paxitypes.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServer(am.keeper))
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {

@@ -150,10 +150,6 @@ func (k Keeper) GetLockedVesting(ctx sdk.Context) sdkmath.LegacyDec {
 	return lockedVesting
 }
 
-func (k Keeper) GetTotalSupply(ctx sdk.Context) {}
-
-func (k Keeper) GetCirculatingSupply(ctx sdk.Context) {}
-
 func (k Keeper) InitGenesis(ctx sdk.Context) {
 	// Interate all the accounts and store the vesting accounts
 	accounts := k.accountKeeper.GetAllAccounts(ctx)

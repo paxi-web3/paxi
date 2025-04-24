@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/paxi-web3/paxi/x/custommint/types"
+	"github.com/paxi-web3/paxi/x/paxi/types"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,51 @@ func CmdQueryLockedVesting() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.TotalMinted(context.Background(), &types.QueryTotalMintedRequest{})
+			res, err := queryClient.LockedVesting(context.Background(), &types.QueryLockedVestingRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	return cmd
+}
+
+func CmdQueryCirculatingSupply() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "circulating-supply",
+		Short: "Query circulating supply tokens",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.CirculatingSupply(context.Background(), &types.QueryCirculatingSupplyRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	return cmd
+}
+
+func CmdQueryTotalSupply() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "total-supply",
+		Short: "Query total supply tokens",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.TotalSupply(context.Background(), &types.QueryTotalSupplyRequest{})
 			if err != nil {
 				return err
 			}
