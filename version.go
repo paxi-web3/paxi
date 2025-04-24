@@ -1,7 +1,7 @@
 package version
 
 var (
-	Name    = "paxi"
+	AppName = "paxi"
 	Version = "v1.0.0"
 	Commit  = ""
 	Build   = ""

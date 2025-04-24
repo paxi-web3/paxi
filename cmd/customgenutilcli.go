@@ -8,10 +8,10 @@ import (
 	"os"
 	"path/filepath"
 
+	paxi "github.com/paxi-web3/paxi"
 	"github.com/paxi-web3/paxi/app"
 
 	cfg "github.com/cometbft/cometbft/config"
-	cmttypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/go-bip39"
 	"github.com/spf13/cobra"
 
@@ -24,7 +24,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
@@ -123,14 +122,14 @@ func InitCmd(a *app.PaxiApp, defaultNodeHome string) *cobra.Command {
 				}
 			}
 
-			appGenesis.AppName = version.AppName
-			appGenesis.AppVersion = version.Version
+			appGenesis.AppName = paxi.AppName
+			appGenesis.AppVersion = paxi.Version
 			appGenesis.ChainID = chainID
 			appGenesis.AppState = appState
 			appGenesis.InitialHeight = initHeight
 			appGenesis.Consensus = &types.ConsensusGenesis{
 				Validators: nil,
-				Params:     cmttypes.DefaultConsensusParams(),
+				Params:     CustomDefaultConsensusParams(),
 			}
 
 			consensusKey, err := cmd.Flags().GetString(genutilcli.FlagConsensusKeyAlgo)

@@ -12,6 +12,7 @@ import (
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 const (
@@ -123,7 +124,19 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 	}
 	authGenesis.Accounts = append(authGenesis.Accounts, anyGov)
 
+	// Modify staking genesis
+	stakingGenesis := stakingtypes.DefaultGenesisState()
+	stakingGenesis.Params = stakingtypes.Params{
+		UnbondingTime:     time.Hour * 24 * 7 * 1, // 1 week
+		MaxValidators:     100,
+		MaxEntries:        7,
+		HistoricalEntries: 10000,
+		BondDenom:         Denom,
+		MinCommissionRate: stakingGenesis.Params.MinCommissionRate, // 0.05
+	}
+
 	// Rewrite genesis data
 	(*pGenesisData)[banktypes.ModuleName] = cdc.MustMarshalJSON(bankGenesis)
 	(*pGenesisData)[authtypes.ModuleName] = cdc.MustMarshalJSON(authGenesis)
+	(*pGenesisData)[stakingtypes.ModuleName] = cdc.MustMarshalJSON(stakingGenesis)
 }

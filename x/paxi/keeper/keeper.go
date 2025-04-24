@@ -35,22 +35,6 @@ func (k Keeper) GetLockedVestingFromStore(ctx sdk.Context) (lockedVesting sdkmat
 	lockedVesting = sdkmath.LegacyNewDecFromInt(sdkmath.ZeroInt())
 	exists = false
 
-	// Check if the block height is the same as the one stored
-	bhBz, err := store.Get([]byte(paxitypes.BlockHeightKey))
-	if err != nil || bhBz == nil {
-		return lockedVesting, exists
-	}
-
-	bhInt := sdkmath.Int{}
-	if err := bhInt.Unmarshal(bhBz); err != nil {
-		panic(fmt.Errorf("failed to unmarshal block height: %w", err))
-	}
-
-	bh := ctx.BlockHeight()
-	if !bhInt.Equal(sdkmath.NewInt(bh)) {
-		return lockedVesting, exists
-	}
-
 	// Check if the locked vesting is stored
 	lvBz, err := store.Get([]byte(paxitypes.LockedVestingKey))
 	if err != nil || lvBz == nil {
@@ -64,21 +48,47 @@ func (k Keeper) GetLockedVestingFromStore(ctx sdk.Context) (lockedVesting sdkmat
 	return lockedVesting, true
 }
 
-func (k Keeper) SetLockedVestingToStore(ctx sdk.Context, lvDec sdkmath.LegacyDec) {
+func (k Keeper) SetLockedVestingToStore(ctx sdk.Context) {
 	store := k.storeService.OpenKVStore(ctx)
-
-	bh := ctx.BlockHeight()
-	bhBz, err := sdkmath.NewInt(bh).Marshal()
+	prefix := []byte(paxitypes.VestingAccountPrefix)
+	start, end := prefixRange(prefix)
+	iterator, err := store.Iterator(start, end)
 	if err != nil {
-		panic(fmt.Errorf("failed to marshal block height: %w", err))
+		panic(err)
 	}
 
-	lvBz, err := lvDec.Marshal()
+	// Iterate over all the vesting accounts and sum the locked vesting
+	lockedVesting := sdkmath.LegacyNewDecFromInt(sdkmath.ZeroInt())
+	for ; iterator.Valid(); iterator.Next() {
+		addrStr := string(iterator.Key()[len(paxitypes.VestingAccountPrefix):])
+		addr, err := sdk.AccAddressFromBech32(addrStr)
+		if err != nil {
+			continue
+		}
+
+		acc := k.accountKeeper.GetAccount(ctx, addr)
+		switch va := acc.(type) {
+		case *vestingtypes.ContinuousVestingAccount:
+			coins := va.LockedCoins(ctx.BlockTime())
+			lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
+		case *vestingtypes.DelayedVestingAccount:
+			coins := va.LockedCoins(ctx.BlockTime())
+			lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
+		case *vestingtypes.PeriodicVestingAccount:
+			coins := va.LockedCoins(ctx.BlockTime())
+			lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
+		}
+	}
+
+	if lockedVesting.IsNegative() {
+		lockedVesting = sdkmath.LegacyNewDec(0)
+	}
+
+	lvBz, err := lockedVesting.Marshal()
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal locked vesting: %w", err))
 	}
 
-	store.Set([]byte(paxitypes.BlockHeightKey), bhBz)
 	store.Set([]byte(paxitypes.LockedVestingKey), lvBz)
 
 }
@@ -108,46 +118,9 @@ func (k Keeper) GetLockedVesting(ctx sdk.Context) sdkmath.LegacyDec {
 	lockedVesting, exists := k.GetLockedVestingFromStore(ctx)
 	if exists {
 		return lockedVesting
-	}
-
-	store := k.storeService.OpenKVStore(ctx)
-	prefix := []byte(paxitypes.VestingAccountPrefix)
-	start, end := prefixRange(prefix)
-	iterator, err := store.Iterator(start, end)
-	if err != nil {
-		panic(err)
-	}
-
-	// Iterate over all the vesting accounts and sum the locked vesting
-	lockedVesting = sdkmath.LegacyNewDecFromInt(sdkmath.ZeroInt())
-	for ; iterator.Valid(); iterator.Next() {
-		addrStr := string(iterator.Key()[len(paxitypes.VestingAccountPrefix):])
-		addr, err := sdk.AccAddressFromBech32(addrStr)
-		if err != nil {
-			continue
-		}
-
-		acc := k.accountKeeper.GetAccount(ctx, addr)
-		switch va := acc.(type) {
-		case *vestingtypes.ContinuousVestingAccount:
-			coins := va.LockedCoins(ctx.BlockTime())
-			lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
-		case *vestingtypes.DelayedVestingAccount:
-			coins := va.LockedCoins(ctx.BlockTime())
-			lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
-		case *vestingtypes.PeriodicVestingAccount:
-			coins := va.LockedCoins(ctx.BlockTime())
-			lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
-		}
-	}
-
-	if lockedVesting.IsPositive() {
-		k.SetLockedVestingToStore(ctx, lockedVesting)
 	} else {
-		lockedVesting = sdkmath.LegacyNewDecFromInt(sdkmath.ZeroInt())
+		return sdkmath.LegacyNewDec(0)
 	}
-
-	return lockedVesting
 }
 
 func (k Keeper) InitGenesis(ctx sdk.Context) {

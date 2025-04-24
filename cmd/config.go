@@ -4,6 +4,7 @@ import (
 	time "time"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
+	cmttypes "github.com/cometbft/cometbft/types"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 )
 
@@ -49,8 +50,8 @@ func initCometBFTConfig() *cmtcfg.Config {
 
 	// Mempool configuration
 	cfg.Mempool.Size = 10000                         // Max txs in mempool
-	cfg.Mempool.MaxTxsBytes = 2 * 1024 * 1024 * 1024 // 2 GB mempool capacity
-	cfg.Mempool.MaxTxBytes = 1 * 1024 * 1024         // 1 MB per tx
+	cfg.Mempool.MaxTxsBytes = 1 * 1024 * 1024 * 1024 // 1 GB mempool capacity
+	cfg.Mempool.MaxTxBytes = 3 * 1024 * 1024         // 5 MB per tx
 	cfg.Mempool.CacheSize = 20000                    // Tx cache size
 	cfg.Mempool.Recheck = true                       // Recheck mempool on reorg
 	cfg.Mempool.Broadcast = true                     // Enable gossip broadcast
@@ -118,4 +119,14 @@ func initAppConfig() (string, interface{}) {
 chain-title = "{{ .Custom.ChainTitle }}"`
 
 	return customAppTemplate, customAppConfig
+}
+
+// Custom default consensus
+func CustomDefaultConsensusParams() *cmttypes.ConsensusParams {
+	cp := cmttypes.DefaultConsensusParams()
+	cp.Block = cmttypes.BlockParams{
+		MaxBytes: 10 * 1024 * 1024,
+		MaxGas:   200_000_000,
+	}
+	return cp
 }
