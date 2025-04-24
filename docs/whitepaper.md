@@ -1,6 +1,7 @@
 # Paxi Whitepaper
 
 ## Introduction
+
 Paxi is a next-generation blockchain protocol designed with simplicity, speed, and radical decentralization at its core. Built on the Cosmos SDK and CometBFT consensus engine — with deep optimizations tailored for enhanced performance and security — and implemented in the Go programming language, Paxi aims to provide a highly efficient, low-fee, and user-friendly blockchain infrastructure that is open to all.
 
 Paxi also supports CosmWasm, a smart contract platform based on Wasm, enabling developers to build secure and efficient contracts in Rust — perfect for DeFi, DAOs, and cross-chain dApps.
@@ -10,7 +11,10 @@ Paxi believes in the philosophy of "less is more" — every feature exists to se
 ---
 
 ## Vision
-To create a fast, secure, and truly decentralized blockchain ecosystem that empowers everyone — not just token whales — to participate in consensus, development, and innovation.
+
+Paxi envisions building a **fast, secure, and truly decentralized** blockchain ecosystem—one that doesn't just belong to the whales or large institutions, but to **everyone**: users, developers, and participants alike. Here, anyone can take part in consensus through staking, contribute to innovation through development, and engage in decision-making through DAO governance proposals.
+
+We believe that only through the collective power of the community can we achieve a truly free and sustainable future. Paxi is committed to promoting a transparent, fair, and open governance system where every participant has a voice, a role, and the ability to help shape the future.
 
 ---
 
@@ -84,14 +88,13 @@ For example, in Year 1:
 
 ## Token Distribution
 
-| Category                         | Allocation | Release Schedule                          |
-|----------------------------------|------------|-------------------------------------------|
-| Founding Team & Advisors         | 15%        | 3% at TGE, then 4 unlocks every 4 months  |
-| Paxi Foundation                  | 10%        | 4% at TGE, then 4 unlocks every 4 months  |
-| Paxi Dao                         | 5%         | Fully unlocked or phased by strategy      |
-| Private Sale & Strategic Partners| 15%        | 3% at TGE, then 4 unlocks every 4 months  |
-| Public Sale                      | 45%        | Fully unlocked or phased by strategy      |
-| User Incentives & Promotion      | 10%        | Used for downloads, referrals, bounties   |
+Category | Allocation | Unlock Schedule | Purpose & Description
+Founding Team & Advisors | 15% | 3% released at launch, remaining unlocked over 4 phases (every 4 months) | Incentivizes long-term commitment and contribution from the core team and advisors. Vesting ensures alignment with long-term ecosystem growth and prevents short-term profit-taking.
+Paxi Foundation | 10% | 4% released at launch, remaining unlocked over 4 phases (every 4 months) | Funds core infrastructure, legal compliance, branding, and strategic initiatives including global developer events and marketing to ensure long-term sustainability.
+Paxi DAO | 5% | Fully unlocked at launch | Entirely governed by the community via DAO proposals. Used for ecosystem support, proposal implementation incentives, tooling grants, and promoting transparent decentralized governance.
+Private & Strategic Investors | 15% | 3% released at launch, remaining unlocked over 4 phases (every 4 months) | Engages long-term strategic partners for technical, infrastructure, and market expansion collaborations. Also supports alliances with funds, incubators, and exchanges.
+Public Sale | 45% | Fully or strategically unlocked in phases | Drives broad user participation and decentralization. Funds are used for exchange listings, liquidity bootstrapping, market making, community operations, and early dApp builder support.
+User Incentives & Promotions | 10% | Dynamically distributed via task campaigns, referrals, community activities | Designed to accelerate user adoption and brand awareness through missions, referral programs, guild incentives, and content rewards that foster organic growth.
 
 ---
 
@@ -106,13 +109,27 @@ Paxi is designed to support a wide range of real-world applications:
 
 ---
 
-## Community & Governance
+## Paxi DAO (Decentralized Autonomous Organization)
 
-Paxi will be governed through an open, on-chain proposal and voting system. Key principles include:
+A DAO (Decentralized Autonomous Organization) is an organizational structure managed in a decentralized manner through smart contracts and blockchain technology. Unlike traditional organizations, DAOs have no single leader or central authority. Members use governance tokens to vote collectively on the organization's operations, fund allocations, rule-making, and future directions.
 
-- Transparent governance process
-- Community-driven funding and development
-- Decentralized upgrades and protocol changes
+### How Paxi DAO Works
+- **Smart Contracts**: All rules and processes of the DAO are encoded into smart contracts on the blockchain, ensuring transparency and immutability.
+- **Governance Tokens**: Members holding governance tokens obtain voting rights, typically proportional to the number of tokens held.
+- **Proposals and Voting**: Members can propose initiatives (such as fund allocation, parameter changes, or project support), and upon community approval through voting, the smart contracts automatically execute the agreed-upon actions.
+
+### Key Functions of Paxi DAO
+- **Governance Decisions**: Community voting determines key blockchain parameters such as inflation rates, transaction fees, and staking rules.
+- **Fund Management**: Management of the community treasury to allocate resources effectively, such as funding project development and community promotion activities.
+- **Collaboration Platform**: Provides a transparent, fair, and traceable collaboration environment to foster trust and cooperation among members.
+
+### Use Cases
+- **On-chain Parameter Changes**: Voting to adjust inflation rates or governance thresholds.
+- **Software Upgrade Proposals**: DAO-driven decisions on blockchain node software upgrades to ensure stability and feature enhancements.
+- **Community Fund Utilization**: Voting to allocate funds to support new decentralized applications (dApps) or ecosystem-building projects.
+- **Permission Management**: Granting or revoking governance permissions to specific smart contracts, ensuring decentralized and transparent authority management.
+
+Through the DAO model, Paxi achieves true decentralized autonomy, allowing the community to collectively shape the future direction of the ecosystem, thereby enhancing sustainability and community engagement.
 
 ---
 
