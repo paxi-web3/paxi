@@ -92,6 +92,9 @@ import (
 	"github.com/paxi-web3/paxi/x/custommint"
 	custommintkeeper "github.com/paxi-web3/paxi/x/custommint/keeper"
 	customminttypes "github.com/paxi-web3/paxi/x/custommint/types"
+	"github.com/paxi-web3/paxi/x/paxi"
+	paxikeeper "github.com/paxi-web3/paxi/x/paxi/keeper"
+	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
 )
 
 const appName = "PaxiApp"
@@ -162,6 +165,7 @@ type PaxiApp struct {
 	EvidenceKeeper        evidencekeeper.Keeper
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
 	CircuitKeeper         circuitkeeper.Keeper
+	PaxiKeeper            paxikeeper.Keeper
 
 	// supplementary keepers
 	NFTKeeper  nftkeeper.Keeper
@@ -232,6 +236,7 @@ func NewPaxiApp(
 		circuittypes.StoreKey,
 		nftkeeper.StoreKey,
 		wasmtypes.StoreKey,
+		paxitypes.StoreKey,
 	)
 
 	// register streaming services
@@ -308,6 +313,13 @@ func NewPaxiApp(
 		cosmosruntime.NewKVStoreService(keys[customminttypes.StoreKey]),
 		authtypes.NewModuleAddress(customminttypes.ModuleName).String(),
 		customminttypes.DefaultDenom,
+	)
+
+	app.PaxiKeeper = paxikeeper.NewKeeper(
+		appCodec,
+		app.BankKeeper,
+		app.AccountKeeper,
+		cosmosruntime.NewKVStoreService(keys[customminttypes.StoreKey]),
 	)
 
 	app.DistrKeeper = distrkeeper.NewKeeper(
@@ -462,6 +474,7 @@ func NewPaxiApp(
 		nftmodule.NewAppModule(appCodec, app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
 		circuit.NewAppModule(appCodec, app.CircuitKeeper),
+		paxi.NewAppModule(appCodec, app.PaxiKeeper),
 	)
 
 	if enableWasm {
@@ -501,6 +514,7 @@ func NewPaxiApp(
 		stakingtypes.ModuleName,
 		genutiltypes.ModuleName,
 		wasmtypes.ModuleName,
+		paxitypes.ModuleName,
 	)
 	app.ModuleManager.SetOrderEndBlockers(
 		govtypes.ModuleName,
@@ -508,6 +522,7 @@ func NewPaxiApp(
 		genutiltypes.ModuleName,
 		circuittypes.ModuleName,
 		wasmtypes.ModuleName,
+		paxitypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -529,6 +544,7 @@ func NewPaxiApp(
 		consensusparamtypes.ModuleName,
 		circuittypes.ModuleName,
 		wasmtypes.ModuleName,
+		paxitypes.ModuleName,
 	}
 
 	exportModuleOrder := []string{
@@ -547,6 +563,7 @@ func NewPaxiApp(
 		vestingtypes.ModuleName,
 		circuittypes.ModuleName,
 		wasmtypes.ModuleName,
+		paxitypes.ModuleName,
 	}
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)

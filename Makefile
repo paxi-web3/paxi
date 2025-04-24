@@ -31,11 +31,6 @@ run:
 version:
 	@echo "📄 Version: $(VERSION)"
 
-proto:
-	@echo "📚 Generating protobuf files..."
-	buf generate
-	echo "✅ Protobufs generated."
-
 test:
 	@echo "🧪 Running unit tests..."
 	go test ./... -v
@@ -57,4 +52,12 @@ proto:
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
 	--gogofaster_out=plugins=grpc,paths=source_relative:./ \
 	./proto/x/custommint/types/genesis.proto \
-	./proto/x/custommint/types/query.proto
+	./proto/x/custommint/types/query.proto \
+
+	protoc \
+	-I=proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
+	--gogofaster_out=plugins=grpc,paths=source_relative:./ \
+	./proto/x/paxi/types/query.proto

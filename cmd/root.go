@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
 	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -82,6 +83,13 @@ func NewRootCmd() *cobra.Command {
 
 				initClientCtx = initClientCtx.WithTxConfig(txConfig)
 			}
+
+			// Set keyring
+			kr, err := keyring.New("paxi", keyring.BackendOS, app.DefaultNodeHome, os.Stdin, tempApp.AppCodec())
+			if err != nil {
+				panic(err)
+			}
+			initClientCtx = initClientCtx.WithKeyring(kr)
 
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
 				return err
