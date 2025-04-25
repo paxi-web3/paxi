@@ -70,13 +70,13 @@ func (k Keeper) SetLockedVestingToStore(ctx sdk.Context) {
 		switch va := acc.(type) {
 		case *vestingtypes.ContinuousVestingAccount:
 			coins := va.LockedCoins(ctx.BlockTime())
-			lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
+			lockedVesting = lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
 		case *vestingtypes.DelayedVestingAccount:
 			coins := va.LockedCoins(ctx.BlockTime())
-			lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
+			lockedVesting = lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
 		case *vestingtypes.PeriodicVestingAccount:
 			coins := va.LockedCoins(ctx.BlockTime())
-			lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
+			lockedVesting = lockedVesting.Add(sdkmath.LegacyNewDecFromInt(coins.AmountOf(paxitypes.DefaultDenom)))
 		}
 	}
 
@@ -133,7 +133,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context) {
 			*vestingtypes.DelayedVestingAccount,
 			*vestingtypes.PeriodicVestingAccount:
 			// Store the vesting account
-			addrKey := []byte(paxitypes.VestingAccountPrefix + va.String())
+			addrKey := []byte(paxitypes.VestingAccountPrefix + va.GetAddress().String())
 			store.Set(addrKey, []byte{1})
 		}
 	}
