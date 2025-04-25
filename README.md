@@ -89,6 +89,31 @@ cd paxi
 make install
 ```
 
+### 3. Start the node
+
+```bash
+# Initialize the node configuration (set your node name and chain ID, if you want to connect to mainnet then change --chain-id to paxi-mainnet)
+paxid init your_node_name --chain-id my-testnet
+
+# Create a new account (make sure to save your mnemonic safely)
+paxid keys add your_account_name
+
+# Allocate 1,000,000 PAXI tokens to your account in the genesis file
+paxid genesis add-genesis-account your_account_name 1000000000000upaxi
+
+# Generate a genesis transaction by staking 900,000 PAXI
+paxid genesis gentx your_account_name 900000000000upaxi
+
+# Aggregate all genesis transactions into the genesis file
+paxid genesis collect-gentxs
+
+# Validate the final genesis.json for correctness
+paxid genesis validate
+
+# Start the blockchain node
+paxid start
+```
+
 ## 📄 Whitepaper
 
 - [📘 English Whitepaper ](docs/whitepaper.md)

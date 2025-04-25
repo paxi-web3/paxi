@@ -6,6 +6,7 @@ import (
 	cmtcfg "github.com/cometbft/cometbft/config"
 	cmttypes "github.com/cometbft/cometbft/types"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
+	apptypes "github.com/paxi-web3/paxi/app/types"
 )
 
 // initCometBFTConfig helps to override default CometBFT Config values.
@@ -51,7 +52,7 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// Mempool configuration
 	cfg.Mempool.Size = 10000                         // Max txs in mempool
 	cfg.Mempool.MaxTxsBytes = 1 * 1024 * 1024 * 1024 // 1 GB mempool capacity
-	cfg.Mempool.MaxTxBytes = 3 * 1024 * 1024         // 5 MB per tx
+	cfg.Mempool.MaxTxBytes = 3 * 1024 * 1024         // 3 MB per tx
 	cfg.Mempool.CacheSize = 20000                    // Tx cache size
 	cfg.Mempool.Recheck = true                       // Recheck mempool on reorg
 	cfg.Mempool.Broadcast = true                     // Enable gossip broadcast
@@ -81,7 +82,7 @@ func initAppConfig() (string, interface{}) {
 
 	// Set a minimum gas price (required for node startup)
 	// This avoids the validator node halting due to missing gas price
-	srvCfg.MinGasPrices = "0.1stake"
+	srvCfg.MinGasPrices = "0.1" + apptypes.DefaultDenom
 	srvCfg.QueryGasLimit = 100000 // Set a reasonable gas limit for queries
 
 	// Use a custom database backend

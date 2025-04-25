@@ -8,7 +8,6 @@ import (
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		MintDenom:     DefaultDenom,
-		MintThreshold: MintThreshold,
 		TotalSupply:   TotalSupply,
 		BlocksPerYear: BlocksPerYear,
 	}
@@ -18,9 +17,6 @@ func DefaultGenesisState() *GenesisState {
 func (gs *GenesisState) Validate() error {
 	if gs.MintDenom == "" {
 		return fmt.Errorf("mint denom cannot be empty")
-	}
-	if gs.MintThreshold < 0 {
-		return fmt.Errorf("mint threshold cannot be negative")
 	}
 	if gs.TotalSupply <= 0 {
 		return fmt.Errorf("total supply must be positive")

@@ -5,5 +5,5 @@ const (
 	StoreKey             = ModuleName
 	LockedVestingKey     = "locked_vesting"
 	VestingAccountPrefix = "vesting_account/"
-	DefaultDenom         = "stake"
+	DefaultDenom         = "upaxi"
 )

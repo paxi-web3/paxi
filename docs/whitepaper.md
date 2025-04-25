@@ -52,7 +52,7 @@ Paxi democratizes consensus by reducing the technical and economic requirements 
 Paxi's native token has an initial supply of **100 million tokens** and adopts a gradually decreasing annual inflation model to incentivize staking participants, enhance network security, and maintain long-term supply stability.
 
 ### Annual Inflation Schedule
-- **Year 1**: Maximum inflation rate of **10%** of the total supply
+- **Year 1**: Maximum inflation rate of **8%** of the total supply
 - **Year 2**: Fixed inflation rate of **5%**
 - **Year 3 and beyond**: Inflation rate capped at **2.5%**
 
@@ -62,9 +62,9 @@ Paxi's native token has an initial supply of **100 million tokens** and adopts a
 
 ### Important Note: Concentrated Rewards Under Low Staking Ratio
 For example, in Year 1:
-- Annual inflation of 10% → **10 million tokens** minted
-- If only **10% of the total supply** (10 million tokens) is staked,
-- Then these **10 million reward tokens** will be **fully distributed among that 10%**
+- Annual inflation of 8% → **8 million tokens** minted
+- If only **8% of the total supply** (10 million tokens) is staked,
+- Then these **8 million reward tokens** will be **fully distributed among that 8%**
 
 ### This design ensures a powerful economic incentive:
 - Encourages more users to stake  

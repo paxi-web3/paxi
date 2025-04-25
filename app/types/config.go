@@ -11,13 +11,16 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	gogoany "github.com/cosmos/gogoproto/types/any"
 )
 
 const (
-	Denom    = "stake"
-	Exponent = 6
+	DefaultDenom = "upaxi"
+	Exponent     = 6
 )
 
 func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage) {
@@ -29,7 +32,7 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 		Description: "The native token of the Paxi network.",
 		DenomUnits: []*banktypes.DenomUnit{
 			{
-				Denom:    Denom, // base denom
+				Denom:    DefaultDenom, // base denom
 				Exponent: 0,
 				Aliases:  []string{},
 			},
@@ -39,13 +42,14 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 				Aliases:  []string{"PAXI"},
 			},
 		},
-		Base:    Denom,
+		Base:    DefaultDenom,
 		Display: "paxi",
 		Name:    "Paxi",
 		Symbol:  "PAXI",
 	})
 
 	// Auth + Vesting module
+	totalSupply := int64(0)
 	authGenesis := authtypes.DefaultGenesisState()
 	vestingAddrList := []string{
 		"paxi1hv7txq4kmc9spkk3nrq0xnhj0jkhk4ye53f50h", // devteam
@@ -53,7 +57,7 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 		"paxi1yp4yc662nhvm9kx7nwexw4t97rlsm9q0kppvr5", // vc
 	}
 	vestingAmountList := [][]int64{
-		{3_000_000, 3_000_000, 3_000_000, 3_000_000, 3_000_000}, // devteam
+		{2_000_000, 3_000_000, 3_000_000, 3_000_000, 3_000_000}, // devteam
 		{4_000_000, 1_500_000, 1_500_000, 1_500_000, 1_500_000}, // foundation
 		{3_000_000, 3_000_000, 3_000_000, 3_000_000, 3_000_000}, // vc
 	}
@@ -65,18 +69,22 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 	for i, addr := range vestingAddrList {
 		// set vesting period
 		vestingPeriods := []vestingtypes.Period{}
-		var totalAmount int64 = 0
+		var subTotalStake int64 = 0
+		var endtime int64 = 0
+
 		for j, amount := range vestingAmountList[i] {
 			stakeAmount := amount * scaling
 			period := periodLength
 			if j == 0 {
 				period = 0
 			}
+
 			vestingPeriods = append(vestingPeriods, vestingtypes.Period{
 				Length: period,
-				Amount: sdk.Coins{sdk.NewInt64Coin(Denom, stakeAmount)},
+				Amount: sdk.Coins{sdk.NewInt64Coin(DefaultDenom, stakeAmount)},
 			})
-			totalAmount += stakeAmount
+			endtime += period
+			subTotalStake += stakeAmount
 		}
 
 		// add periodic vesting account to auth genesis
@@ -87,7 +95,8 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 					AccountNumber: 0,
 					Sequence:      0,
 				},
-				OriginalVesting: sdk.Coins{sdk.NewInt64Coin(Denom, totalAmount)},
+				OriginalVesting: sdk.Coins{sdk.NewInt64Coin(DefaultDenom, subTotalStake)},
+				EndTime:         endtime + now,
 			},
 			StartTime:      now,
 			VestingPeriods: vestingPeriods,
@@ -98,31 +107,93 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 			panic(err)
 		}
 		authGenesis.Accounts = append(authGenesis.Accounts, anyAcc)
+
+		// add the account to bank balances
+		bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{
+			Address: addr,
+			Coins:   sdk.Coins{sdk.NewInt64Coin(DefaultDenom, subTotalStake)},
+		})
+
+		// add total supply
+		totalSupply += subTotalStake
 	}
 
-	// Grant 5% to DAO
-	govGrantedStake := 5_000_000 * scaling
-	govAddr := authtypes.NewModuleAddress(govtypes.ModuleName)
-	bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{
-		Address: govAddr.String(),
-		Coins: sdk.Coins{
-			sdk.NewInt64Coin(Denom, govGrantedStake),
-		},
-	})
+	// Grant 5% to DAO (community pool) / 45% to ICO / 10 % to Incentives
+	distrAddr := authtypes.NewModuleAddress(distrtypes.ModuleName)
+	icoAddrString := "paxi1rnwv6u92cc0v55ed8vk7zy3cjd32j5qq4487wg"
+	incentivesAddrString := "paxi1ag0jvu2uswq2355m573a9exx2ew29gfnuxh5px"
 
-	govAcc := &authtypes.ModuleAccount{
-		BaseAccount: &authtypes.BaseAccount{
-			Address: govAddr.String(),
-		},
-		Name:        govtypes.ModuleName,
-		Permissions: []string{authtypes.Burner},
+	grantAddrList := []string{
+		distrAddr.String(),   // DAO
+		icoAddrString,        // ICO
+		incentivesAddrString, // Incentives
+	}
+	grantStakeList := []int64{
+		5_000_000 * scaling,  // DAO
+		45_000_000 * scaling, // ICO
+		10_000_000 * scaling, // Incentives
+	}
+	grantAccountList := []*gogoany.Any{
+		// DAO
+		(func() *gogoany.Any {
+			distrAcc := &authtypes.ModuleAccount{
+				BaseAccount: authtypes.NewBaseAccount(distrAddr, nil, 0, 0),
+				Name:        distrtypes.ModuleName,
+				Permissions: []string{},
+			}
+			anyDistr, err := codectypes.NewAnyWithValue(distrAcc)
+			if err != nil {
+				panic(err)
+			}
+			return anyDistr
+		})(),
+		// ICO
+		(func() *gogoany.Any {
+			addr, err := sdk.AccAddressFromBech32(icoAddrString)
+			if err != nil {
+				panic(err)
+			}
+			acc := authtypes.NewBaseAccountWithAddress(addr)
+			anyAcc, err := codectypes.NewAnyWithValue(acc)
+			if err != nil {
+				panic(err)
+			}
+			return anyAcc
+		})(),
+		// Incentives
+		(func() *gogoany.Any {
+			addr, err := sdk.AccAddressFromBech32(incentivesAddrString)
+			if err != nil {
+				panic(err)
+			}
+			acc := authtypes.NewBaseAccountWithAddress(addr)
+			anyAcc, err := codectypes.NewAnyWithValue(acc)
+			if err != nil {
+				panic(err)
+			}
+			return anyAcc
+		})(),
 	}
 
-	anyGov, err := codectypes.NewAnyWithValue(govAcc)
-	if err != nil {
-		panic(err)
+	for i, addr := range grantAddrList {
+		// Add balance
+		bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{
+			Address: addr,
+			Coins: sdk.Coins{
+				sdk.NewInt64Coin(DefaultDenom, grantStakeList[i]),
+			},
+		})
+
+		// Add account
+		authGenesis.Accounts = append(authGenesis.Accounts, grantAccountList[i])
+
+		// Add to total supply
+		totalSupply += grantStakeList[i]
 	}
-	authGenesis.Accounts = append(authGenesis.Accounts, anyGov)
+
+	// Grant 5% from distribution account to community pool
+	distrGenesis := distrtypes.DefaultGenesisState()
+	distrGenesis.FeePool.CommunityPool = []sdk.DecCoin{sdk.NewDecCoin(DefaultDenom, sdkmath.NewInt(grantStakeList[0]))}
 
 	// Modify staking genesis
 	stakingGenesis := stakingtypes.DefaultGenesisState()
@@ -131,12 +202,22 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 		MaxValidators:     100,
 		MaxEntries:        7,
 		HistoricalEntries: 10000,
-		BondDenom:         Denom,
+		BondDenom:         DefaultDenom,
 		MinCommissionRate: stakingGenesis.Params.MinCommissionRate, // 0.05
 	}
 
+	// Add total supply
+	bankGenesis.Supply = bankGenesis.Supply.Add(sdk.NewInt64Coin(DefaultDenom, totalSupply))
+
+	// Set denom from stake to upaxi
+	govGenesis := govv1.DefaultGenesisState()
+	govGenesis.Params.ExpeditedMinDeposit[0].Denom = DefaultDenom
+	govGenesis.Params.MinDeposit[0].Denom = DefaultDenom
+
 	// Rewrite genesis data
+	(*pGenesisData)[govtypes.ModuleName] = cdc.MustMarshalJSON(govGenesis)
 	(*pGenesisData)[banktypes.ModuleName] = cdc.MustMarshalJSON(bankGenesis)
 	(*pGenesisData)[authtypes.ModuleName] = cdc.MustMarshalJSON(authGenesis)
 	(*pGenesisData)[stakingtypes.ModuleName] = cdc.MustMarshalJSON(stakingGenesis)
+	(*pGenesisData)[distrtypes.ModuleName] = cdc.MustMarshalJSON(distrGenesis)
 }
