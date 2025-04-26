@@ -809,10 +809,15 @@ func (app *PaxiApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICo
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
+	// Register custom REST routes for all modules
+	custommint.AppModuleBasic{}.RegisterRESTRoutes(clientCtx, apiSvr.Router)
+	paxi.AppModuleBasic{}.RegisterRESTRoutes(clientCtx, apiSvr.Router)
+
 	// register swagger API from root so that other applications can override easily
 	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
 		panic(err)
 	}
+
 }
 
 // RegisterTxService implements the Application.RegisterTxService method.
