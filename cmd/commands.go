@@ -23,6 +23,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	paxicli "github.com/paxi-web3/paxi/x/paxi/client"
 )
 
 func initRootCmd(
@@ -105,6 +106,7 @@ func txCommand() *cobra.Command {
 		authcmd.GetEncodeCommand(),
 		authcmd.GetDecodeCommand(),
 		authcmd.GetSimulateCmd(),
+		paxicli.GetTxCmd(),
 	)
 
 	return cmd

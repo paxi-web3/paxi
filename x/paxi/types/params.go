@@ -6,4 +6,5 @@ const (
 	LockedVestingKey     = "locked_vesting"
 	VestingAccountPrefix = "vesting_account/"
 	DefaultDenom         = "upaxi"
+	BurnTokenAccountName = "burn_token_account"
 )

@@ -16,6 +16,7 @@ import (
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	gogoany "github.com/cosmos/gogoproto/types/any"
+	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
 )
 
 const (
@@ -213,6 +214,18 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 	govGenesis := govv1.DefaultGenesisState()
 	govGenesis.Params.ExpeditedMinDeposit[0].Denom = DefaultDenom
 	govGenesis.Params.MinDeposit[0].Denom = DefaultDenom
+
+	// Add burn token module account
+	burnTokenAcc := &authtypes.ModuleAccount{
+		BaseAccount: authtypes.NewBaseAccount(authtypes.NewModuleAddress(paxitypes.BurnTokenAccountName), nil, 0, 0),
+		Name:        paxitypes.BurnTokenAccountName,
+		Permissions: []string{authtypes.Burner},
+	}
+	anyBurnToken, err := codectypes.NewAnyWithValue(burnTokenAcc)
+	if err != nil {
+		panic(err)
+	}
+	authGenesis.Accounts = append(authGenesis.Accounts, anyBurnToken)
 
 	// Rewrite genesis data
 	(*pGenesisData)[govtypes.ModuleName] = cdc.MustMarshalJSON(govGenesis)

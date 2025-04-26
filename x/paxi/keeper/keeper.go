@@ -138,3 +138,17 @@ func (k Keeper) InitGenesis(ctx sdk.Context) {
 		}
 	}
 }
+
+func (k Keeper) BurnFromUser(ctx sdk.Context, sender sdk.AccAddress, amount sdk.Coins) error {
+	err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, sender, paxitypes.BurnTokenAccountName, amount)
+	if err != nil {
+		return err
+	}
+
+	err = k.bankKeeper.BurnCoins(ctx, paxitypes.BurnTokenAccountName, amount)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

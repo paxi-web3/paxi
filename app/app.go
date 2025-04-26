@@ -116,7 +116,9 @@ var (
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
-		nft.ModuleName:                 nil}
+		nft.ModuleName:                 nil,
+		paxitypes.BurnTokenAccountName: {authtypes.Burner},
+	}
 )
 
 func init() {

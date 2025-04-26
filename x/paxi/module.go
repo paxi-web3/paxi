@@ -45,9 +45,21 @@ func (am AppModule) IsOnePerModuleType() {}
 // IsAppModule implements the appmodule.AppModule interface.
 func (am AppModule) IsAppModule() {}
 
-func (AppModuleBasic) Name() string                                             { return paxitypes.ModuleName }
-func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino)          {}
-func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {}
+func (AppModuleBasic) Name() string                                    { return paxitypes.ModuleName }
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {}
+
+// RegisterInterfaces registers the module's message types and interfaces into the global interface registry.
+//
+// This allows the Cosmos SDK to correctly encode/decode the module's Msgs (e.g., MsgBurnToken)
+// and recognize them during transaction processing.
+//
+// The registry is used to map concrete Go types (like MsgBurnToken) to protobuf type URLs,
+// so that the Cosmos SDK's signing and transaction systems can work correctly.
+//
+// Called automatically during app initialization.
+func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+	paxitypes.RegisterMsg(registry) // Register the module-specific message types
+}
 
 func (am AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *gwruntime.ServeMux) {
 	// Register custom gRPC gateway routes here
@@ -85,6 +97,7 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	paxitypes.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServer(am.keeper))
+	paxitypes.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {

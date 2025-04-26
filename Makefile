@@ -47,6 +47,7 @@ proto:
 	@echo "Generating gogofaster protos..."
 	protoc \
 	-I=proto \
+	--proto_path=./third_party/proto \
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
@@ -56,8 +57,10 @@ proto:
 
 	protoc \
 	-I=proto \
+	--proto_path=./third_party/proto \
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
 	--gogofaster_out=plugins=grpc,paths=source_relative:./ \
-	./proto/x/paxi/types/query.proto
+	./proto/x/paxi/types/query.proto \
+	./proto/x/paxi/types/tx.proto
