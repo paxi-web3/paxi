@@ -99,7 +99,7 @@ func (am AppModule) BeginBlock(ctx context.Context) error {
 	// Update vesting records every 100 blocks
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	bh := sdkCtx.BlockHeight()
-	if bh%2 == 0 {
+	if bh%100 == 0 {
 		am.keeper.SetLockedVestingToStore(sdkCtx)
 	}
 	return nil

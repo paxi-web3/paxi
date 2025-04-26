@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 	"math/big"
+	"strconv"
 
 	storetypes "cosmossdk.io/core/store"
 	sdkmath "cosmossdk.io/math"
@@ -32,6 +33,9 @@ func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, storeService
 }
 
 func (k Keeper) BlockProvision(ctx sdk.Context) error {
+	// Get genesis state
+	genesisState := k.ExportGenesis(ctx)
+
 	// Get the current block height
 	blockHeight := ctx.BlockHeight()
 	const mintThreshold int64 = 1 // 1 blocks per mint
@@ -42,10 +46,10 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 
 	// Calculate provision for this block: (total_supply * inflation_rate) / (blocks_per_year / mint_threshold)
 	currentSupply := k.bankKeeper.GetSupply(ctx, k.mintDenom).Amount
-	inflationRate := k.GetInflationRateByHeight(blockHeight)
+	inflationRate := k.GetInflationRateByHeight(genesisState, blockHeight)
 	provision := sdkmath.LegacyNewDecFromInt(currentSupply).
 		Mul(inflationRate).
-		Quo(sdkmath.LegacyNewDec(customminttypes.BlocksPerYear).Quo(sdkmath.LegacyNewDec(mintThreshold)))
+		Quo(sdkmath.LegacyNewDec(genesisState.BlocksPerYear).Quo(sdkmath.LegacyNewDec(mintThreshold)))
 
 	// Mint
 	mintAmount := provision.TruncateInt()
@@ -66,33 +70,16 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 	return nil
 }
 
-func (k Keeper) GetInflationRateByHeight(height int64) sdkmath.LegacyDec {
-	switch {
-	case height < customminttypes.BlocksPerYear:
-		return sdkmath.LegacyMustNewDecFromStr("0.08") // Year 1
-	case height < 2*customminttypes.BlocksPerYear:
-		return sdkmath.LegacyMustNewDecFromStr("0.05") // Year 2
-	default:
-		return sdkmath.LegacyMustNewDecFromStr("0.025") // Year 3+
-	}
-}
-
-func (k Keeper) ExpectedSupplyByHeight(height int64) sdkmath.Int {
-	baseSupply := sdkmath.NewInt(customminttypes.TotalSupply)
-	var growth sdkmath.LegacyDec
+func (k Keeper) GetInflationRateByHeight(genesisState *customminttypes.GenesisState, height int64) sdkmath.LegacyDec {
 
 	switch {
-	case height < customminttypes.BlocksPerYear:
-		growth = sdkmath.LegacyMustNewDecFromStr("1.08")
-	case height < 2*customminttypes.BlocksPerYear:
-		growth = sdkmath.LegacyMustNewDecFromStr("1.134") // 8% first year, 5% second year
+	case height < genesisState.BlocksPerYear:
+		return sdkmath.LegacyMustNewDecFromStr(strconv.FormatFloat(float64(genesisState.FirstYearInflation), 'f', -1, 32)) // Year 1
+	case height < 2*genesisState.BlocksPerYear:
+		return sdkmath.LegacyMustNewDecFromStr(strconv.FormatFloat(float64(genesisState.SecondYearInflation), 'f', -1, 32)) // Year 2
 	default:
-		years := sdkmath.LegacyNewDec(height).QuoInt64(customminttypes.BlocksPerYear)
-		// Compound 2.5% inflation per year starting from year 3
-		growth = sdkmath.LegacyMustNewDecFromStr("1.134").Mul(sdkmath.LegacyMustNewDecFromStr("1.025").Power(uint64(years.TruncateInt64() - 2)))
+		return sdkmath.LegacyMustNewDecFromStr(strconv.FormatFloat(float64(genesisState.OtherYearInflation), 'f', -1, 32)) // Year 3+
 	}
-
-	return growth.MulInt(baseSupply).TruncateInt()
 }
 
 func (k Keeper) InitGenesis(ctx sdk.Context, data customminttypes.GenesisState) {

@@ -11,7 +11,8 @@ option (gogoproto.equal_all) = true;
 
 message GenesisState {
   string mint_denom = 1 [(gogoproto.moretags) = "yaml:\"mint_denom\""];
-  int64 mint_threshold = 2 [(gogoproto.moretags) = "yaml:\"mint_threshold\""];
-  int64 total_supply = 3 [(gogoproto.moretags) = "yaml:\"total_supply\""];
-  int64 blocks_per_year = 4 [(gogoproto.moretags) = "yaml:\"blocks_per_year\""];
+  int64 blocks_per_year = 2 [(gogoproto.moretags) = "yaml:\"blocks_per_year\""];
+  float first_year_inflation = 3 [(gogoproto.moretags) = "yaml:\"first_year_inflation\""];
+  float second_year_inflation = 4 [(gogoproto.moretags) = "yaml:\"second_year_inflation\""];
+  float other_year_inflation = 5 [(gogoproto.moretags) = "yaml:\"other_year_inflation\""];
 }
