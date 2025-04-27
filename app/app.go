@@ -182,6 +182,10 @@ type PaxiApp struct {
 
 	// module configurator
 	configurator module.Configurator
+
+	// block status
+	LastBlockGasUsed    uint64
+	CurrentBlockGasUsed uint64
 }
 
 // NewPaxiApp returns a reference to an initialized PaxiApp.
@@ -476,7 +480,7 @@ func NewPaxiApp(
 		nftmodule.NewAppModule(appCodec, app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
 		circuit.NewAppModule(appCodec, app.CircuitKeeper),
-		paxi.NewAppModule(appCodec, app.PaxiKeeper),
+		paxi.NewAppModule(appCodec, app.PaxiKeeper, app),
 	)
 
 	if enableWasm {
@@ -649,6 +653,7 @@ func (app *PaxiApp) setAnteHandler(txConfig client.TxConfig) {
 			},
 			&app.CircuitKeeper,
 		},
+		app,
 	)
 	if err != nil {
 		panic(err)

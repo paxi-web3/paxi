@@ -20,6 +20,12 @@ type Keeper struct {
 	storeService  storetypes.KVStoreService
 }
 
+type BlockStatsKeeper interface {
+	GetLastBlockGasUsed() uint64
+	SetLastBlockGasUsed()
+	GetEstimatedGasPrice() float64
+}
+
 func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, accountKeeper authkeeper.AccountKeeper, storeService storetypes.KVStoreService) Keeper {
 	return Keeper{
 		cdc:           cdc,

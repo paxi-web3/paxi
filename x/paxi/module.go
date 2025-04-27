@@ -7,6 +7,7 @@ import (
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 
 	"cosmossdk.io/core/appmodule"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -23,7 +24,8 @@ const (
 )
 
 var (
-	_ module.AppModuleBasic = AppModule{}
+	_ module.AppModuleBasic  = AppModule{}
+	_ module.HasABCIEndBlock = AppModule{}
 
 	_ appmodule.AppModule       = AppModule{}
 	_ appmodule.HasBeginBlocker = AppModule{}
@@ -87,16 +89,19 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
+	keeper            keeper.Keeper
+	blockStatusKeeper keeper.BlockStatsKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
 	keeper keeper.Keeper,
+	blockStatusKeeper keeper.BlockStatsKeeper,
 ) AppModule {
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{cdc: cdc},
-		keeper:         keeper,
+		AppModuleBasic:    AppModuleBasic{cdc: cdc},
+		keeper:            keeper,
+		blockStatusKeeper: blockStatusKeeper,
 	}
 }
 
@@ -125,4 +130,9 @@ func (am AppModule) BeginBlock(ctx context.Context) error {
 		am.keeper.SetLockedVestingToStore(sdkCtx)
 	}
 	return nil
+}
+
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	am.blockStatusKeeper.SetLastBlockGasUsed()
+	return []abci.ValidatorUpdate{}, nil
 }
