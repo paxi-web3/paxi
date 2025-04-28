@@ -36,11 +36,11 @@ func (app *PaxiApp) SetLastBlockGasUsed() {
 	app.CurrentBlockGasUsed = 0
 }
 
-func (app *PaxiApp) GetEstimatedGasPrice() float64 {
+func (app *PaxiApp) GetEstimatedGasPrice() float32 {
 	// This is an estimation for reasonable gas price by gas used in last block
-	expectedMaxGasUsed := 50_000_000
+	expectedMaxGasUsed := 15_000_000
 	lastGasUsed := app.LastBlockGasUsed
 	minGasPrice := 0.1 // upaxi
 	estimatedGasPrice := minGasPrice + math.Log(1+float64(lastGasUsed)/float64(expectedMaxGasUsed))*minGasPrice
-	return estimatedGasPrice
+	return float32(estimatedGasPrice)
 }

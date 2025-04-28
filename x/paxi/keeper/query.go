@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -39,5 +40,13 @@ func (q *queryServer) TotalSupply(ctx context.Context, req *types.QueryTotalSupp
 
 	return &types.QueryTotalSupplyResponse{
 		Amount: sdk.NewCoin(types.DefaultDenom, sdkmath.NewInt(cirSupply)),
+	}, nil
+}
+
+func (q *queryServer) EstimatedGasPrice(ctx context.Context, req *types.QueryEstimatedGasPriceRequest) (*types.QueryEstimatedGasPriceResponse, error) {
+	gasPrice := q.k.blockStatusKeeper.GetEstimatedGasPrice()
+	gasPriceStr := fmt.Sprintf("%f", gasPrice)
+	return &types.QueryEstimatedGasPriceResponse{
+		GasPrice: gasPriceStr,
 	}, nil
 }

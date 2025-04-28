@@ -326,6 +326,7 @@ func NewPaxiApp(
 		app.BankKeeper,
 		app.AccountKeeper,
 		cosmosruntime.NewKVStoreService(keys[customminttypes.StoreKey]),
+		app,
 	)
 
 	app.DistrKeeper = distrkeeper.NewKeeper(

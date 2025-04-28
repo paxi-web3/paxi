@@ -74,6 +74,7 @@ func (am AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.R
 	rtr.HandleFunc("/paxi/paxi/locked_vesting", rest.LockedVestingHandler(clientCtx)).Methods("GET")
 	rtr.HandleFunc("/paxi/paxi/circulating_supply", rest.CirculatingSupplyHandler(clientCtx)).Methods("GET")
 	rtr.HandleFunc("/paxi/paxi/total_supply", rest.TotalSupplyHandler(clientCtx)).Methods("GET")
+	rtr.HandleFunc("/paxi/paxi/estimated_gas_price", rest.EstimatedGasPriceHandler(clientCtx)).Methods("GET")
 }
 
 func (am AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {

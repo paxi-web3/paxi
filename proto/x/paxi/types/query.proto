@@ -10,6 +10,7 @@ service Query {
     rpc LockedVesting(QueryLockedVestingRequest) returns (QueryLockedVestingResponse);
     rpc CirculatingSupply(QueryCirculatingSupplyRequest) returns (QueryCirculatingSupplyResponse);
     rpc TotalSupply(QueryTotalSupplyRequest) returns (QueryTotalSupplyResponse);
+    rpc EstimatedGasPrice(QueryEstimatedGasPriceRequest) returns (QueryEstimatedGasPriceResponse);
 }
 
 message QueryLockedVestingRequest {}
@@ -28,4 +29,10 @@ message QueryTotalSupplyRequest {}
 
 message QueryTotalSupplyResponse {
     cosmos.base.v1beta1.Coin amount = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryEstimatedGasPriceRequest {}
+
+message QueryEstimatedGasPriceResponse {
+    string gas_price = 1;
 }

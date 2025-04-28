@@ -14,24 +14,26 @@ import (
 )
 
 type Keeper struct {
-	cdc           codec.BinaryCodec
-	bankKeeper    bankkeeper.Keeper
-	accountKeeper authkeeper.AccountKeeper
-	storeService  storetypes.KVStoreService
+	cdc               codec.BinaryCodec
+	bankKeeper        bankkeeper.Keeper
+	accountKeeper     authkeeper.AccountKeeper
+	blockStatusKeeper BlockStatsKeeper
+	storeService      storetypes.KVStoreService
 }
 
 type BlockStatsKeeper interface {
 	GetLastBlockGasUsed() uint64
 	SetLastBlockGasUsed()
-	GetEstimatedGasPrice() float64
+	GetEstimatedGasPrice() float32
 }
 
-func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, accountKeeper authkeeper.AccountKeeper, storeService storetypes.KVStoreService) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, accountKeeper authkeeper.AccountKeeper, storeService storetypes.KVStoreService, blockStatusKeeper BlockStatsKeeper) Keeper {
 	return Keeper{
-		cdc:           cdc,
-		bankKeeper:    bankKeeper,
-		accountKeeper: accountKeeper,
-		storeService:  storeService,
+		cdc:               cdc,
+		bankKeeper:        bankKeeper,
+		accountKeeper:     accountKeeper,
+		storeService:      storeService,
+		blockStatusKeeper: blockStatusKeeper,
 	}
 }
 
