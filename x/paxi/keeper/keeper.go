@@ -10,6 +10,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	"github.com/paxi-web3/paxi/utils"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
 )
 
@@ -59,7 +60,7 @@ func (k Keeper) GetLockedVestingFromStore(ctx sdk.Context) (lockedVesting sdkmat
 func (k Keeper) SetLockedVestingToStore(ctx sdk.Context) {
 	store := k.storeService.OpenKVStore(ctx)
 	prefix := []byte(paxitypes.VestingAccountPrefix)
-	start, end := prefixRange(prefix)
+	start, end := utils.PrefixRange(prefix)
 	iterator, err := store.Iterator(start, end)
 	if err != nil {
 		panic(err)
@@ -99,27 +100,6 @@ func (k Keeper) SetLockedVestingToStore(ctx sdk.Context) {
 
 	store.Set([]byte(paxitypes.LockedVestingKey), lvBz)
 
-}
-
-func prefixRange(prefix []byte) (start []byte, end []byte) {
-	if len(prefix) == 0 {
-		return nil, nil
-	}
-
-	start = prefix
-
-	end = make([]byte, len(prefix))
-	copy(end, prefix)
-
-	for i := len(end) - 1; i >= 0; i-- {
-		if end[i] < 0xFF {
-			end[i]++
-			end = end[:i+1]
-			return start, end
-		}
-	}
-
-	return start, nil
 }
 
 func (k Keeper) GetLockedVesting(ctx sdk.Context) sdkmath.LegacyDec {

@@ -86,12 +86,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/paxi-web3/paxi/x/custommint"
 	custommintkeeper "github.com/paxi-web3/paxi/x/custommint/keeper"
 	customminttypes "github.com/paxi-web3/paxi/x/custommint/types"
+	customstaking "github.com/paxi-web3/paxi/x/customstaking"
 	"github.com/paxi-web3/paxi/x/paxi"
 	paxikeeper "github.com/paxi-web3/paxi/x/paxi/keeper"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
@@ -158,7 +158,7 @@ type PaxiApp struct {
 	// essential keepers
 	AccountKeeper         authkeeper.AccountKeeper
 	BankKeeper            bankkeeper.BaseKeeper
-	StakingKeeper         *stakingkeeper.Keeper
+	StakingKeeper         *customstaking.CustomStakingKeeper
 	SlashingKeeper        slashingkeeper.Keeper
 	MintKeeper            custommintkeeper.Keeper
 	DistrKeeper           distrkeeper.Keeper
@@ -303,15 +303,16 @@ func NewPaxiApp(
 	}
 	app.txConfig = txConfig
 
-	app.StakingKeeper = stakingkeeper.NewKeeper(
+	stakingStoreService := cosmosruntime.NewKVStoreService(keys[stakingtypes.StoreKey])
+	app.StakingKeeper = customstaking.NewCustomKeeper(stakingkeeper.NewKeeper(
 		appCodec,
-		cosmosruntime.NewKVStoreService(keys[stakingtypes.StoreKey]),
+		stakingStoreService,
 		app.AccountKeeper,
 		app.BankKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		authcodec.NewBech32Codec(apptypes.Bech32PrefixValAddr),
 		authcodec.NewBech32Codec(apptypes.Bech32PrefixConsAddr),
-	)
+	), app.AccountKeeper, app.BankKeeper, stakingStoreService, appCodec, authcodec.NewBech32Codec(apptypes.Bech32PrefixValAddr))
 
 	app.MintKeeper = custommintkeeper.NewKeeper(
 		appCodec,
@@ -465,7 +466,7 @@ func NewPaxiApp(
 	// must be passed by reference here.
 	app.ModuleManager = module.NewManager(
 		genutil.NewAppModule(
-			app.AccountKeeper, app.StakingKeeper, app,
+			app.AccountKeeper, app.StakingKeeper.Keeper, app,
 			txConfig,
 		),
 		auth.NewAppModule(appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, nil),
@@ -475,7 +476,7 @@ func NewPaxiApp(
 		custommint.NewAppModule(appCodec, app.MintKeeper),
 		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, nil, app.interfaceRegistry),
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, nil),
-		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, nil),
+		customstaking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, nil),
 		upgrade.NewAppModule(app.UpgradeKeeper, app.AccountKeeper.AddressCodec()),
 		evidence.NewAppModule(app.EvidenceKeeper),
 		nftmodule.NewAppModule(appCodec, app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
@@ -485,7 +486,7 @@ func NewPaxiApp(
 	)
 
 	if enableWasm {
-		app.ModuleManager.Modules[wasmtypes.ModuleName] = wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil)
+		app.ModuleManager.Modules[wasmtypes.ModuleName] = wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper.Keeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil)
 	}
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
@@ -756,6 +757,7 @@ func (app *PaxiApp) AutoCliOpts() autocli.AppOptions {
 	for _, m := range app.ModuleManager.Modules {
 		if moduleWithName, ok := m.(module.HasName); ok {
 			moduleName := moduleWithName.Name()
+			fmt.Println(moduleName)
 			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
 				modules[moduleName] = appModule
 			}
