@@ -10,7 +10,6 @@ import (
 
 	addresscodec "cosmossdk.io/core/address"
 	storetypes "cosmossdk.io/core/store"
-	"cosmossdk.io/math"
 	sdkmath "cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -176,8 +175,8 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 	}
 	maxValidators := params.MaxValidators
 	powerReduction := k.PowerReduction(ctx)
-	amtFromBondedToNotBonded, amtFromNotBondedToBonded := math.ZeroInt(), math.ZeroInt()
-	totalPower := math.ZeroInt()
+	amtFromBondedToNotBonded, amtFromNotBondedToBonded := sdkmath.ZeroInt(), sdkmath.ZeroInt()
+	totalPower := sdkmath.ZeroInt()
 	var updates []abci.ValidatorUpdate
 
 	// Get all the validators
@@ -203,7 +202,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			newValidators = append(newValidators, allValidators[:totalCandidates]...)
 		} else {
 			// Top 50% will certainly be selected
-			maxValidators = math.Min(maxValidators, totalCandidates)
+			maxValidators = sdkmath.Min(maxValidators, totalCandidates)
 			splitter := maxValidators / 2
 			newValidators = append(newValidators, allValidators[0:splitter]...)
 
@@ -343,7 +342,7 @@ func (k CustomStakingKeeper) GetValidatorsAboveThreshold(ctx sdk.Context, minTok
 		valAddr := sdk.ValAddress(iterator.Value())
 		validator, err := k.GetValidator(ctx, valAddr)
 		if err != nil {
-			fmt.Errorf("validator record not found for address: %X", valAddr)
+			return nil, fmt.Errorf("validator record not found for address: %X", valAddr)
 		}
 
 		if validator.Jailed {
@@ -474,7 +473,7 @@ func sortNoLongerBonded(last validatorsByAddr, ac addresscodec.Codec) ([][]byte,
 }
 
 // bondedTokensToNotBonded transfers coins from the bonded to the not bonded pool within staking
-func (k CustomStakingKeeper) bondedTokensToNotBonded(ctx context.Context, tokens math.Int) error {
+func (k CustomStakingKeeper) bondedTokensToNotBonded(ctx context.Context, tokens sdkmath.Int) error {
 	bondDenom, err := k.BondDenom(ctx)
 	if err != nil {
 		return err
@@ -485,7 +484,7 @@ func (k CustomStakingKeeper) bondedTokensToNotBonded(ctx context.Context, tokens
 }
 
 // notBondedTokensToBonded transfers coins from the not bonded to the bonded pool within staking
-func (k CustomStakingKeeper) notBondedTokensToBonded(ctx context.Context, tokens math.Int) error {
+func (k CustomStakingKeeper) notBondedTokensToBonded(ctx context.Context, tokens sdkmath.Int) error {
 	bondDenom, err := k.BondDenom(ctx)
 	if err != nil {
 		return err
