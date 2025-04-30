@@ -101,20 +101,20 @@ For example, in Year 1:
 A DAO (Decentralized Autonomous Organization) is an organizational structure managed in a decentralized manner through smart contracts and blockchain technology. Unlike traditional organizations, DAOs have no single leader or central authority. Members use governance tokens to vote collectively on the organization's operations, fund allocations, rule-making, and future directions.
 
 ### How Paxi DAO Works
-- **Smart Contracts**: All rules and processes of the DAO are encoded into smart contracts on the blockchain, ensuring transparency and immutability.
-- **Governance Tokens**: Members holding governance tokens obtain voting rights, typically proportional to the number of tokens held.
-- **Proposals and Voting**: Members can propose initiatives (such as fund allocation, parameter changes, or project support), and upon community approval through voting, the smart contracts automatically execute the agreed-upon actions.
+- **Smart Contracts**: All rules and processes of the DAO are encoded into smart contracts on the blockchain, ensuring transparency and immutability
+- **Governance Tokens**: Members holding governance tokens obtain voting rights, typically proportional to the number of tokens held
+- **Proposals and Voting**: Members can propose initiatives (such as fund allocation, parameter changes, or project support), and upon community approval through voting, the smart contracts automatically execute the agreed-upon actions
 
 ### Key Functions of Paxi DAO
-- **Governance Decisions**: Community voting determines key blockchain parameters such as inflation rates, transaction fees, and staking rules.
-- **Fund Management**: Management of the community treasury to allocate resources effectively, such as funding project development and community promotion activities.
-- **Collaboration Platform**: Provides a transparent, fair, and traceable collaboration environment to foster trust and cooperation among members.
+- **Governance Decisions**: Community voting determines key blockchain parameters such as inflation rates, transaction fees, and staking rules
+- **Fund Management**: Management of the community treasury to allocate resources effectively, such as funding project development and community promotion activities
+- **Collaboration Platform**: Provides a transparent, fair, and traceable collaboration environment to foster trust and cooperation among members
 
 ### Use Cases
-- **On-chain Parameter Changes**: Voting to adjust inflation rates or governance thresholds.
-- **Software Upgrade Proposals**: DAO-driven decisions on blockchain node software upgrades to ensure stability and feature enhancements.
-- **Community Fund Utilization**: Voting to allocate funds to support new decentralized applications (dApps) or ecosystem-building projects.
-- **Permission Management**: Granting or revoking governance permissions to specific smart contracts, ensuring decentralized and transparent authority management.
+- **On-chain Parameter Changes**: Voting to adjust inflation rates or governance thresholds
+- **Software Upgrade Proposals**: DAO-driven decisions on blockchain node software upgrades to ensure stability and feature enhancements
+- **Community Fund Utilization**: Voting to allocate funds to support new decentralized applications (dApps) or ecosystem-building projects
+- **Permission Management**: Granting or revoking governance permissions to specific smart contracts, ensuring decentralized and transparent authority management
 
 Through the DAO model, Paxi achieves true decentralized autonomy, allowing the community to collectively shape the future direction of the ecosystem, thereby enhancing sustainability and community engagement.
 
