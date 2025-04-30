@@ -39,11 +39,20 @@ We believe that only through the collective power of the community can we achiev
 
 ## Validator Participation
 
-Paxi democratizes consensus by reducing the technical and economic requirements needed to run a validator node. This ensures that the network remains open and inclusive, minimizing the concentration of power and enhancing decentralization.
+Paxi lowers both technical and economic barriers, enabling anyone to become a validator and promoting a more open and democratic consensus mechanism.
 
-- No large stake requirement to join as a validator
-- Encourages geographically and demographically distributed participation
-- Built-in incentives for stability and uptime
+- No large stake is required — **only 1,000 PAXI is needed to become a validator**  
+- Geographic and demographic diversity is encouraged  
+- Built-in incentives for rewards and stability  
+- Users may also choose to **delegate** their tokens to other validator nodes and earn staking rewards as delegators  
+
+To further enhance **decentralization, fairness, and network security**, Paxi implements a custom validator selection mechanism:
+
+- The validator set is refreshed every fixed number of blocks  
+- **50% of validators are selected based on the highest voting power (top N)**  
+- **The remaining 50% are chosen via weighted random sampling from the rest of the candidates, proportional to their staked amount**
+
+This hybrid model ensures high validator quality while providing smaller nodes with fair participation opportunities, thereby increasing the network’s censorship resistance and resilience.
 
 ---
 
@@ -53,12 +62,13 @@ Paxi's native token has an initial supply of **100 million tokens** and adopts a
 
 ### Annual Inflation Schedule
 - **Year 1**: Maximum inflation rate of **8%** of the total supply
-- **Year 2**: Fixed inflation rate of **5%**
-- **Year 3 and beyond**: Inflation rate capped at **2.5%**
+- **Year 2**: Fixed inflation rate of **4%**
+- **Year 3 and beyond**: Inflation rate capped at **2%**
 
 ### Block Reward Distribution
-- **100% of newly minted tokens** (block rewards) are distributed to staking participants: Including **validators** and **delegators**
-- The system will **automatically burn excess tokens** if the actual supply exceeds the expected supply, helping to stabilize inflation.
+- **95% of newly minted tokens** (block rewards) are distributed to staking participants: Including **validators** and **delegators**
+- **5% of newly minted tokens** (block rewards) 5% are allocated to the **DAO community**
+- The system will **automatically burn excess tokens** if the actual supply exceeds the expected supply, helping to stabilize inflation
 
 ### Important Note: Concentrated Rewards Under Low Staking Ratio
 For example, in Year 1:

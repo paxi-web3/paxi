@@ -196,6 +196,8 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 	// Grant 5% from distribution account to community pool
 	distrGenesis := distrtypes.DefaultGenesisState()
 	distrGenesis.FeePool.CommunityPool = []sdk.DecCoin{sdk.NewDecCoin(DefaultDenom, sdkmath.NewInt(grantStakeList[0]))}
+	// Community charges 5% for tax from new minted tokens
+	distrGenesis.Params.CommunityTax = sdkmath.LegacyMustNewDecFromStr("0.05")
 
 	// Modify staking genesis
 	stakingGenesis := stakingtypes.DefaultGenesisState()

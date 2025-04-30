@@ -71,7 +71,6 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 }
 
 func (k Keeper) GetInflationRateByHeight(genesisState *customminttypes.GenesisState, height int64) sdkmath.LegacyDec {
-
 	switch {
 	case height < genesisState.BlocksPerYear:
 		return sdkmath.LegacyMustNewDecFromStr(strconv.FormatFloat(float64(genesisState.FirstYearInflation), 'f', -1, 32)) // Year 1
