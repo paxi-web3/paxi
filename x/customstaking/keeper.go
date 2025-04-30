@@ -265,11 +265,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 
 			// Add total power
 			totalPower = totalPower.AddRaw(newPower)
-
-			// Print validators
-			fmt.Printf("New Validator: %s %s %d\n", val.GetMoniker(), val.OperatorAddress, newPower)
 		}
-		fmt.Printf("\n")
 	} else {
 		// Kick who is jailed or unbonded
 		addresses := make([]string, 0, len(last))
@@ -304,11 +300,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 
 				// Add total power
 				totalPower = totalPower.AddRaw(newPower)
-
-				// Print validators
-				fmt.Printf("New Validator: %s %s %d\n", val.GetMoniker(), val.OperatorAddress, newPower)
 			}
-			fmt.Printf("\n")
 		}
 	}
 
@@ -337,11 +329,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 		}
 
 		updates = append(updates, validator.ABCIValidatorUpdateZero())
-
-		// Print kicked out validators
-		fmt.Printf("Kicked Out Validator: %s %s\n", validator.GetMoniker(), validator.OperatorAddress)
 	}
-	fmt.Printf("\n")
 
 	// Update the pools based on the recent updates in the validator set:
 	// - The tokens from the non-bonded candidates that enter the new validator set need to be transferred
