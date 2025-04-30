@@ -25,32 +25,32 @@ Powered by **Go**, Paxi delivers high performance, fast development cycles, and 
 
 ---
 
-### 🔑 Core Values
+### Core Values
 
-- **⚙️ Minimal but complete** system architecture — no bloat, just the essentials
-- **⚡ Fast** – Optimized consensus and state execution, supporting >1,000 TPS
-- **🔐 Secure** – Proven Tendermint-based BFT consensus with enhanced validator safety
-- **🧩 Simple is beautiful** – Intuitive module system, CLI & GUI interfaces, developer-friendly SDK
-- **🛠️ Developer-first** — with future IDE and low-code support
+- **Minimal but complete** system architecture — no bloat, just the essentials
+- **Fast** – Optimized consensus and state execution, supporting >1,000 TPS
+- **Secure** – Proven Tendermint-based BFT consensus with enhanced validator safety
+- **Simple is beautiful** – Intuitive module system, CLI & GUI interfaces, developer-friendly SDK
+- **Developer-first** — with future IDE and low-code support
 
-### 🪙 Key Features
+### Key Features
 
-- 🧠 **Smart Contract Support** – Deploy custom logic using Wasm (or native modules)
-- 🌍 **Open Participation** – Anyone can run a node, low entry barrier for validators
-- 🏛️ **On-chain Governance & DAO Ready** – Built-in support for decentralized proposals, voting, and community coordination
-- 🔄 **Truly Decentralized** – Designed to maximize validator distribution and community sovereignty
-- 💸 **Ideal for DeFi & GameFi** – High performance and developer freedom make Paxi a perfect foundation for next-gen apps
+- **Smart Contract Support** – Deploy custom logic using Wasm (or native modules)
+- **Open Participation** – Anyone can run a node, low entry barrier for validators
+- **On-chain Governance & DAO Ready** – Built-in support for decentralized proposals, voting, and community coordination
+- **Truly Decentralized** – Designed to maximize validator distribution and community sovereignty
+- **Ideal for DeFi & GameFi** – High performance and developer freedom make Paxi a perfect foundation for next-gen apps
 
 Paxi is not just a Cosmos-based chain — it's an **evolution** of the Cosmos model, bringing deeper performance optimizations and a smoother path to sovereignty for any project.
 
-## 📚 Documentation
+## Documentation
 
 - [Cosmos SDK Documentation](https://docs.cosmos.network/v0.53/learn/intro/overview)
 - [CometBFT Documentation](https://docs.cometbft.com/v0.38/)
 - [CosmWasm Documentation](https://cosmwasm.cosmos.network/)
 
 
-## 🔧 Structure
+## Structure
 ```mermaid
 graph TD
   A[Paxi Blockchain] --> B[Cosmos SDK]
@@ -60,7 +60,7 @@ graph TD
   ```
 
 
-## 🧪 Getting Started
+## Getting Started
 
 ### 1. Clone & Build rocksdb
 
@@ -114,13 +114,13 @@ paxid genesis validate
 paxid start
 ```
 
-## 📄 Whitepaper
+## Whitepaper
 
-- [📘 English Whitepaper ](docs/whitepaper.md)
-- [📗 中文白皮書 ](docs/whitepaper_zh.md)
+- [English Whitepaper ](docs/whitepaper.md)
+- [中文白皮書 ](docs/whitepaper_zh.md)
 
 
-## 🌐 Official Website
+## Official Website
 
 👉 [https://x.com/paxiweb3](https://x.com/paxiweb3)
 
