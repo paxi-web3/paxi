@@ -14,6 +14,7 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	gogoany "github.com/cosmos/gogoproto/types/any"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
@@ -227,10 +228,21 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 	}
 	authGenesis.Accounts = append(authGenesis.Accounts, anyBurnToken)
 
+	// custom slasing
+	slasingGenesis := slashingtypes.DefaultGenesisState()
+	slasingParams := slashingtypes.DefaultParams()
+	slasingParams.DowntimeJailDuration = 10 * time.Minute
+	slasingParams.MinSignedPerWindow = sdkmath.LegacyMustNewDecFromStr("0.1")
+	slasingParams.SignedBlocksWindow = int64(100)
+	slasingParams.SlashFractionDoubleSign = sdkmath.LegacyMustNewDecFromStr("0.1")
+	slasingParams.SlashFractionDowntime = sdkmath.LegacyMustNewDecFromStr("0.01")
+	slasingGenesis.Params = slasingParams
+
 	// Rewrite genesis data
 	(*pGenesisData)[govtypes.ModuleName] = cdc.MustMarshalJSON(govGenesis)
 	(*pGenesisData)[banktypes.ModuleName] = cdc.MustMarshalJSON(bankGenesis)
 	(*pGenesisData)[authtypes.ModuleName] = cdc.MustMarshalJSON(authGenesis)
 	(*pGenesisData)[stakingtypes.ModuleName] = cdc.MustMarshalJSON(stakingGenesis)
 	(*pGenesisData)[distrtypes.ModuleName] = cdc.MustMarshalJSON(distrGenesis)
+	(*pGenesisData)[slashingtypes.ModuleName] = cdc.MustMarshalJSON(slasingGenesis)
 }

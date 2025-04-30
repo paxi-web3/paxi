@@ -3,6 +3,7 @@ package customstaking
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -196,7 +197,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 	// Update validator set every specific blocks
 	totalCandidates := uint32(len(allValidators))
 	currentBlock := ctx.BlockHeight()
-	if currentBlock%BlocksPerUpdate == 0 {
+	if currentBlock%BlocksPerUpdate == 0 || currentBlock <= 1 {
 		newValidators := []types.Validator{}
 		if totalCandidates == 1 {
 			newValidators = append(newValidators, allValidators[:totalCandidates]...)
@@ -208,7 +209,12 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 
 			// The another 50% validators will be selected randomly from the remaining candidates
 			remainingCandidates := allValidators[splitter:]
-			r := rand.New(rand.NewSource(ctx.BlockHeader().Time.UnixNano()))
+			appHash := ctx.BlockHeader().AppHash
+			if len(appHash) < 8 {
+				panic("AppHash too short for seed")
+			}
+			seed := binary.BigEndian.Uint64(appHash) ^ uint64(ctx.BlockHeader().Time.UnixNano())
+			r := rand.New(rand.NewSource(int64(seed)))
 			newValidators = append(newValidators, pickRandomSubset(r, remainingCandidates, int(maxValidators)-len(newValidators))...)
 		}
 
@@ -234,8 +240,11 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 				return nil, errors.New("unexpected validator status")
 			}
 
-			valAddr := sdk.ValAddress([]byte(val.OperatorAddress))
-			valAddrStr := val.OperatorAddress
+			valAddr, err := sdk.ValAddressFromBech32(val.OperatorAddress)
+			if err != nil {
+				return nil, err
+			}
+			valAddrStr := string(valAddr)
 
 			// fetch the old power bytes
 			oldPower, found := last[valAddrStr]
@@ -256,7 +265,11 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 
 			// Add total power
 			totalPower = totalPower.AddRaw(newPower)
+
+			// Print validators
+			fmt.Printf("New Validator: %s %s %d\n", val.GetMoniker(), val.OperatorAddress, newPower)
 		}
+		fmt.Printf("\n")
 	} else {
 		// Kick who is jailed or unbonded
 		addresses := make([]string, 0, len(last))
@@ -270,6 +283,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			if err != nil {
 				return nil, fmt.Errorf("validator record not found for address: %X", valAddr)
 			}
+
 			// Add to updates
 			if val.IsBonded() && !val.Jailed {
 				oldPower, found := last[addr]
@@ -290,7 +304,11 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 
 				// Add total power
 				totalPower = totalPower.AddRaw(newPower)
+
+				// Print validators
+				fmt.Printf("New Validator: %s %s %d\n", val.GetMoniker(), val.OperatorAddress, newPower)
 			}
+			fmt.Printf("\n")
 		}
 	}
 
@@ -319,7 +337,11 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 		}
 
 		updates = append(updates, validator.ABCIValidatorUpdateZero())
+
+		// Print kicked out validators
+		fmt.Printf("Kicked Out Validator: %s %s\n", validator.GetMoniker(), validator.OperatorAddress)
 	}
+	fmt.Printf("\n")
 
 	// Update the pools based on the recent updates in the validator set:
 	// - The tokens from the non-bonded candidates that enter the new validator set need to be transferred
@@ -340,7 +362,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 	default: // equal amounts of tokens; no update required
 	}
 
-	if len(updates) > 0 {
+	if len(updates) > 0 || len(last) != 0 {
 		if err := k.SetLastTotalPower(ctx, totalPower); err != nil {
 			return nil, err
 		}
@@ -396,11 +418,9 @@ func (k CustomStakingKeeper) getValidatorsAboveThreshold(ctx sdk.Context, minTok
 
 func pickRandomSubset[T any](r *rand.Rand, candidates []T, count int) []T {
 	n := len(candidates)
-	/*
-		if count >= n {
-			return append([]T(nil), candidates...)
-		}
-	*/
+	if count >= n {
+		return append([]T(nil), candidates...)
+	}
 
 	indices := make(map[int]struct{}, count)
 	result := make([]T, 0, count)

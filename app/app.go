@@ -757,7 +757,6 @@ func (app *PaxiApp) AutoCliOpts() autocli.AppOptions {
 	for _, m := range app.ModuleManager.Modules {
 		if moduleWithName, ok := m.(module.HasName); ok {
 			moduleName := moduleWithName.Name()
-			fmt.Println(moduleName)
 			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
 				modules[moduleName] = appModule
 			}
