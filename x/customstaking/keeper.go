@@ -180,7 +180,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 	var updates []abci.ValidatorUpdate
 
 	// Get all the validators
-	allValidators, err := k.GetValidatorsAboveThreshold(ctx, sdkmath.NewInt(MinBonedTokens), MaxCandidates)
+	allValidators, err := k.getValidatorsAboveThreshold(ctx, sdkmath.NewInt(MinBondedTokens), MaxCandidates)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get last validator set: %w", err)
 	}
@@ -209,10 +209,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			// The another 50% validators will be selected randomly from the remaining candidates
 			remainingCandidates := allValidators[splitter:]
 			r := rand.New(rand.NewSource(ctx.BlockHeader().Time.UnixNano()))
-			r.Shuffle(len(remainingCandidates), func(i, j int) {
-				remainingCandidates[i], remainingCandidates[j] = remainingCandidates[j], remainingCandidates[i]
-			})
-			newValidators = append(newValidators, remainingCandidates[0:int(maxValidators)-len(newValidators)]...)
+			newValidators = append(newValidators, pickRandomSubset(r, remainingCandidates, int(maxValidators)-len(newValidators))...)
 		}
 
 		// Add to updates
@@ -237,8 +234,8 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 				return nil, errors.New("unexpected validator status")
 			}
 
-			valAddr := sdk.ValAddress(val.OperatorAddress)
-			valAddrStr := string(valAddr)
+			valAddr := sdk.ValAddress([]byte(val.OperatorAddress))
+			valAddrStr := val.OperatorAddress
 
 			// fetch the old power bytes
 			oldPower, found := last[valAddrStr]
@@ -248,7 +245,6 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			if !found || oldPower != newPower {
 				update := val.ABCIValidatorUpdate(powerReduction)
 				updates = append(updates, update)
-				totalPower = totalPower.AddRaw(update.Power)
 
 				if err = k.SetLastValidatorPower(ctx, valAddr, newPower); err != nil {
 					return nil, err
@@ -263,6 +259,39 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 		}
 	} else {
 		// Kick who is jailed or unbonded
+		addresses := make([]string, 0, len(last))
+		for k := range last {
+			addresses = append(addresses, k)
+		}
+		for idx := range addresses {
+			addr := addresses[idx]
+			valAddr := sdk.ValAddress([]byte(addr))
+			val, err := k.GetValidator(ctx, valAddr)
+			if err != nil {
+				return nil, fmt.Errorf("validator record not found for address: %X", valAddr)
+			}
+			// Add to updates
+			if val.IsBonded() && !val.Jailed {
+				oldPower, found := last[addr]
+				newPower := val.ConsensusPower(powerReduction)
+
+				// update the validator set if power has changed
+				if !found || oldPower != newPower {
+					update := val.ABCIValidatorUpdate(powerReduction)
+					updates = append(updates, update)
+
+					if err = k.SetLastValidatorPower(ctx, valAddr, newPower); err != nil {
+						return nil, err
+					}
+				}
+
+				// Delete from the old list
+				delete(last, addr)
+
+				// Add total power
+				totalPower = totalPower.AddRaw(newPower)
+			}
+		}
 	}
 
 	// Process last validators which will be unboned
@@ -324,7 +353,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 	return updates, nil
 }
 
-func (k CustomStakingKeeper) GetValidatorsAboveThreshold(ctx sdk.Context, minTokens sdkmath.Int, maxCount int) ([]types.Validator, error) {
+func (k CustomStakingKeeper) getValidatorsAboveThreshold(ctx sdk.Context, minTokens sdkmath.Int, maxCount int) ([]types.Validator, error) {
 	var validators []types.Validator
 
 	// read validator from the store
@@ -363,6 +392,28 @@ func (k CustomStakingKeeper) GetValidatorsAboveThreshold(ctx sdk.Context, minTok
 	}
 
 	return validators, nil
+}
+
+func pickRandomSubset[T any](r *rand.Rand, candidates []T, count int) []T {
+	n := len(candidates)
+	/*
+		if count >= n {
+			return append([]T(nil), candidates...)
+		}
+	*/
+
+	indices := make(map[int]struct{}, count)
+	result := make([]T, 0, count)
+
+	for len(result) < count && len(result) < len(candidates) {
+		idx := r.Intn(n)
+		if _, exists := indices[idx]; !exists {
+			indices[idx] = struct{}{}
+			result = append(result, candidates[idx])
+		}
+	}
+
+	return result
 }
 
 // get the last validator set
@@ -453,7 +504,7 @@ func (k CustomStakingKeeper) bondValidator(ctx context.Context, validator types.
 
 // given a map of remaining validators to previous bonded power
 // returns the list of validators to be unbonded, sorted by operator address
-func sortNoLongerBonded(last validatorsByAddr, ac addresscodec.Codec) ([][]byte, error) {
+func sortNoLongerBonded(last validatorsByAddr, _ addresscodec.Codec) ([][]byte, error) {
 	// sort the map keys for determinism
 	noLongerBonded := make([][]byte, len(last))
 	index := 0
