@@ -12,6 +12,7 @@ import (
 	confixcmd "cosmossdk.io/tools/confix/cmd"
 	"github.com/paxi-web3/paxi/app"
 
+	wasmcli "github.com/CosmWasm/wasmd/x/wasm/client/cli"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -82,6 +83,7 @@ func queryCommand() *cobra.Command {
 		server.QueryBlocksCmd(),
 		authcmd.QueryTxCmd(),
 		server.QueryBlockResultsCmd(),
+		wasmcli.GetQueryCmd(),
 	)
 
 	return cmd
@@ -107,6 +109,7 @@ func txCommand() *cobra.Command {
 		authcmd.GetDecodeCommand(),
 		authcmd.GetSimulateCmd(),
 		paxicli.GetTxCmd(),
+		wasmcli.GetTxCmd(),
 	)
 
 	return cmd

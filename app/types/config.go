@@ -217,6 +217,8 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 	govGenesis := govv1.DefaultGenesisState()
 	govGenesis.Params.ExpeditedMinDeposit[0].Denom = DefaultDenom
 	govGenesis.Params.MinDeposit[0].Denom = DefaultDenom
+	expeditedVotingPeriod := 12 * time.Hour
+	govGenesis.Params.ExpeditedVotingPeriod = &expeditedVotingPeriod
 
 	// Add burn token module account
 	burnTokenAcc := &authtypes.ModuleAccount{

@@ -110,9 +110,6 @@ func (k Keeper) GetTotalMinted(ctx sdk.Context) sdkmath.Int {
 func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
 	// Get params
 	params := k.GetParams(ctx)
-
-	fmt.Println("Params:", params)
-
 	threshold := params.BurnThreshold // upaxi
 	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
 	fees := k.bankKeeper.GetBalance(ctx, feeCollectorAddr, k.mintDenom)
@@ -125,13 +122,10 @@ func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
 	blockHash := ctx.BlockHeader().AppHash
 	seed := binary.BigEndian.Uint64(blockHash[:8]) ^ uint64(ctx.BlockHeight())
 	if seed%2 == 0 {
-		fmt.Println("Total coin: ", fees.Amount)
 		fees.Amount = fees.Amount.ToLegacyDec().Mul(params.BurnRatio).RoundInt()
 		err := k.bankKeeper.BurnCoins(ctx, authtypes.FeeCollectorName, sdk.NewCoins())
 		if err != nil {
 			panic(err)
 		}
-
-		fmt.Println("Burn coin: ", fees.Amount)
 	}
 }

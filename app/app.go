@@ -483,6 +483,7 @@ func NewPaxiApp(
 		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
 		circuit.NewAppModule(appCodec, app.CircuitKeeper),
 		paxi.NewAppModule(appCodec, app.PaxiKeeper, app),
+		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper.Keeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
 
 	if enableWasm {
@@ -500,7 +501,6 @@ func NewPaxiApp(
 			govtypes.ModuleName: gov.NewAppModuleBasic(
 				[]govclient.ProposalHandler{},
 			),
-			wasmtypes.ModuleName: wasm.AppModuleBasic{},
 		})
 	app.BasicModuleManager.RegisterLegacyAminoCodec(legacyAmino)
 	app.BasicModuleManager.RegisterInterfaces(interfaceRegistry)

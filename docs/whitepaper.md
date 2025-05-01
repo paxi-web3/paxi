@@ -68,7 +68,7 @@ Paxi's native token has an initial supply of **100 million tokens** and adopts a
 ### Block Reward Distribution
 - **95% of newly minted tokens** (block rewards) are distributed to staking participants: Including **validators** and **delegators**
 - **5% of newly minted tokens** (block rewards) 5% are allocated to the **DAO community**
-- The system will **automatically burn excess tokens** if the actual supply exceeds the expected supply, helping to stabilize inflation
+- The system will automatically monitor supply and demand. When transaction fees exceed a certain threshold, **there will be a probability-based mechanism to burn a portion of the tokens**. This helps prevent excessive inflation and reduces the risk of token concentration in the hands of a few
 
 ### Important Note: Concentrated Rewards Under Low Staking Ratio
 For example, in Year 1:

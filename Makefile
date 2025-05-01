@@ -3,7 +3,7 @@
 APP_NAME = paxid
 VERSION ?= v1.0.0
 DOCKER_IMAGE = paxi-chain/node
-BUILD_TAGS = "rocksdb"
+BUILD_TAGS = "rocksdb cosmwasm"
 CGO_ENABLED=1
 CGO_CFLAGS="-I/usr/local/include" 
 CGO_LDFLAGS="-L/usr/local/lib -lrocksdb"
