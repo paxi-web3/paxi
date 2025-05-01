@@ -457,6 +457,7 @@ func NewPaxiApp(
 			wasmtypes.VMConfig{},
 			wasmkeeper.BuiltInCapabilities(),
 			authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			wasmkeeper.WithGasRegister(wasmtypes.NewWasmGasRegister(apptypes.SmartContractGasRegisterConfig())),
 		)
 	}
 
