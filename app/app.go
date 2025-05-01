@@ -110,7 +110,7 @@ var (
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		authtypes.FeeCollectorName:     nil,
+		authtypes.FeeCollectorName:     {authtypes.Burner},
 		distrtypes.ModuleName:          nil,
 		customminttypes.ModuleName:     {authtypes.Minter},
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
@@ -318,7 +318,7 @@ func NewPaxiApp(
 		appCodec,
 		app.BankKeeper,
 		cosmosruntime.NewKVStoreService(keys[customminttypes.StoreKey]),
-		authtypes.NewModuleAddress(customminttypes.ModuleName).String(),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		customminttypes.DefaultDenom,
 	)
 

@@ -1,0 +1,29 @@
+syntax = "proto3";
+package x.custommint.types;
+
+import "cosmos/msg/v1/msg.proto";
+
+option go_package = "github.com/paxi-web3/paxi/x/custommint/types";
+
+message ParamsInput {
+  string burn_threshold = 1;
+  string burn_ratio = 2;
+  int64 blocks_per_year = 3;
+  string first_year_inflation = 4;
+  string second_year_inflation = 5;
+  string other_year_inflation = 6;
+}
+
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1;
+  ParamsInput params = 2;
+}
+
+message MsgUpdateParamsResponse {}
+
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+}

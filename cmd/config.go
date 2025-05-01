@@ -17,10 +17,9 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// P2P networking settings
 	cfg.P2P.MaxNumInboundPeers = 80                      // Max inbound peers allowed to connect
 	cfg.P2P.MaxNumOutboundPeers = 30                     // Max outbound peers this node will dial
-	cfg.P2P.AllowDuplicateIP = false                     // Avoid duplicate IP connections
 	cfg.P2P.FlushThrottleTimeout = 50 * time.Millisecond // Delay between sending messages
-	cfg.P2P.SendRate = 10 * 1024 * 1024                  // Max bytes per second to send (10MB/s)
-	cfg.P2P.RecvRate = 10 * 1024 * 1024                  // Max bytes per second to receive (10MB/s)
+	cfg.P2P.SendRate = 100 * 1024 * 1024                 // Max bytes per second to send (10MB/s)
+	cfg.P2P.RecvRate = 100 * 1024 * 1024                 // Max bytes per second to receive (10MB/s)
 	cfg.P2P.PexReactor = true                            // Enable peer exchange
 	cfg.P2P.AllowDuplicateIP = false                     // Avoid duplicate IP connections
 
@@ -32,22 +31,17 @@ func initCometBFTConfig() *cmtcfg.Config {
 	cfg.RPC.MaxHeaderBytes = 1_048_576                                        // Max request header size in bytes
 
 	// Consensus configuration
-	cfg.Consensus.TimeoutCommit = 1 * time.Second              // Time to wait for commit before proposing next block
-	cfg.Consensus.CreateEmptyBlocks = true                     // Create blocks even with no transactions
-	cfg.Consensus.CreateEmptyBlocksInterval = 10 * time.Second // Time between empty blocks
-
-	// Consensus configuration
 	cfg.Consensus.TimeoutPropose = 3 * time.Second // Timeout before proposing a block
-	cfg.Consensus.TimeoutProposeDelta = 500 * time.Millisecond
-	cfg.Consensus.TimeoutPrevote = 1 * time.Second
-	cfg.Consensus.TimeoutPrevoteDelta = 500 * time.Millisecond
-	cfg.Consensus.TimeoutPrecommit = 1 * time.Second
-	cfg.Consensus.TimeoutPrecommitDelta = 500 * time.Millisecond
-	cfg.Consensus.TimeoutCommit = 1 * time.Second              // Time allowed to finalize block
+	cfg.Consensus.TimeoutProposeDelta = 400 * time.Millisecond
+	cfg.Consensus.TimeoutPrevote = 1500 * time.Millisecond
+	cfg.Consensus.TimeoutPrevoteDelta = 400 * time.Millisecond
+	cfg.Consensus.TimeoutPrecommit = 1500 * time.Millisecond
+	cfg.Consensus.TimeoutPrecommitDelta = 400 * time.Millisecond
+	cfg.Consensus.TimeoutCommit = 1500 * time.Millisecond      // Time allowed to finalize block
 	cfg.Consensus.CreateEmptyBlocks = true                     // Create blocks even with no transactions
 	cfg.Consensus.CreateEmptyBlocksInterval = 10 * time.Second // Time between empty blocks
 	cfg.Consensus.PeerGossipSleepDuration = 100 * time.Millisecond
-	cfg.Consensus.PeerQueryMaj23SleepDuration = 2 * time.Second
+	cfg.Consensus.PeerQueryMaj23SleepDuration = 1 * time.Second
 
 	// Mempool configuration
 	cfg.Mempool.Size = 10000                         // Max txs in mempool
@@ -82,7 +76,7 @@ func initAppConfig() (string, interface{}) {
 
 	// Set a minimum gas price (required for node startup)
 	// This avoids the validator node halting due to missing gas price
-	srvCfg.MinGasPrices = "0.1" + apptypes.DefaultDenom
+	srvCfg.MinGasPrices = "0.025" + apptypes.DefaultDenom
 	srvCfg.QueryGasLimit = 100000 // Set a reasonable gas limit for queries
 
 	// Use a custom database backend

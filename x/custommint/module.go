@@ -49,9 +49,11 @@ func (am AppModule) IsOnePerModuleType() {}
 // IsAppModule implements the appmodule.AppModule interface.
 func (am AppModule) IsAppModule() {}
 
-func (AppModuleBasic) Name() string                                             { return customminttypes.ModuleName }
-func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino)          {}
-func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {}
+func (AppModuleBasic) Name() string                                    { return customminttypes.ModuleName }
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {}
+func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+	customminttypes.RegisterMsg(registry)
+}
 
 func (am AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *gwruntime.ServeMux) {
 	// Register custom gRPC gateway routes here
@@ -64,12 +66,16 @@ func (am AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.R
 
 func (am AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	genesis := customminttypes.DefaultGenesisState()
-	return cdc.MustMarshalJSON(genesis)
+	bz, err := json.Marshal(genesis)
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingConfig, bz json.RawMessage) error {
 	var data customminttypes.GenesisState
-	if err := cdc.UnmarshalJSON(bz, &data); err != nil {
+	if err := json.Unmarshal(bz, &data); err != nil {
 		return fmt.Errorf("failed to unmarshal %s genesis state: %w", customminttypes.ModuleName, err)
 	}
 
@@ -100,19 +106,25 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	customminttypes.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServer(am.keeper))
+	customminttypes.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
 	var genesisState customminttypes.GenesisState
-	cdc.MustUnmarshalJSON(data, &genesisState)
+	json.Unmarshal(data, &genesisState)
 	am.keeper.InitGenesis(ctx, genesisState)
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	gs := am.keeper.ExportGenesis(ctx)
-	return cdc.MustMarshalJSON(gs)
+	bz, err := json.Marshal(gs)
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 func (am AppModule) BeginBlock(ctx context.Context) error {
+	am.keeper.BurnExcessTokens(sdk.UnwrapSDKContext(ctx))
 	return am.keeper.BlockProvision(sdk.UnwrapSDKContext(ctx))
 }

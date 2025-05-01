@@ -1,9 +1,9 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
-	"strconv"
 
 	storetypes "cosmossdk.io/core/store"
 	sdkmath "cosmossdk.io/math"
@@ -33,8 +33,8 @@ func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, storeService
 }
 
 func (k Keeper) BlockProvision(ctx sdk.Context) error {
-	// Get genesis state
-	genesisState := k.ExportGenesis(ctx)
+	// Get params
+	params := k.GetParams(ctx)
 
 	// Get the current block height
 	blockHeight := ctx.BlockHeight()
@@ -46,10 +46,10 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 
 	// Calculate provision for this block: (total_supply * inflation_rate) / (blocks_per_year / mint_threshold)
 	currentSupply := k.bankKeeper.GetSupply(ctx, k.mintDenom).Amount
-	inflationRate := k.GetInflationRateByHeight(genesisState, blockHeight)
+	inflationRate := k.GetInflationRateByHeight(params, blockHeight)
 	provision := sdkmath.LegacyNewDecFromInt(currentSupply).
 		Mul(inflationRate).
-		Quo(sdkmath.LegacyNewDec(genesisState.BlocksPerYear).Quo(sdkmath.LegacyNewDec(mintThreshold)))
+		Quo(sdkmath.LegacyNewDec(params.BlocksPerYear).Quo(sdkmath.LegacyNewDec(mintThreshold)))
 
 	// Mint
 	mintAmount := provision.TruncateInt()
@@ -70,30 +70,26 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 	return nil
 }
 
-func (k Keeper) GetInflationRateByHeight(genesisState *customminttypes.GenesisState, height int64) sdkmath.LegacyDec {
+func (k Keeper) GetInflationRateByHeight(params customminttypes.Params, height int64) sdkmath.LegacyDec {
 	switch {
-	case height < genesisState.BlocksPerYear:
-		return sdkmath.LegacyMustNewDecFromStr(strconv.FormatFloat(float64(genesisState.FirstYearInflation), 'f', -1, 32)) // Year 1
-	case height < 2*genesisState.BlocksPerYear:
-		return sdkmath.LegacyMustNewDecFromStr(strconv.FormatFloat(float64(genesisState.SecondYearInflation), 'f', -1, 32)) // Year 2
+	case height < params.BlocksPerYear:
+		return params.FirstYearInflation // Year 1
+	case height < 2*params.BlocksPerYear:
+		return params.SecondYearInflation // Year 2
 	default:
-		return sdkmath.LegacyMustNewDecFromStr(strconv.FormatFloat(float64(genesisState.OtherYearInflation), 'f', -1, 32)) // Year 3+
+		return params.OtherYearInflation // Year 3+
 	}
 }
 
 func (k Keeper) InitGenesis(ctx sdk.Context, data customminttypes.GenesisState) {
-	err := k.SetParams(ctx, &data)
-	if err != nil {
-		panic(err)
-	}
+	k.SetParams(ctx, data.Params)
 }
 
 func (k Keeper) ExportGenesis(ctx sdk.Context) *customminttypes.GenesisState {
-	params, err := k.GetParams(ctx)
-	if err != nil {
-		panic(err)
+	params := k.GetParams(ctx)
+	return &customminttypes.GenesisState{
+		Params: params,
 	}
-	return &params
 }
 
 func (k Keeper) SetTotalMinted(ctx sdk.Context, amount sdkmath.Int) {
@@ -109,4 +105,33 @@ func (k Keeper) GetTotalMinted(ctx sdk.Context) sdkmath.Int {
 		return sdkmath.ZeroInt()
 	}
 	return sdkmath.NewIntFromBigInt(new(big.Int).SetBytes(bz))
+}
+
+func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
+	// Get params
+	params := k.GetParams(ctx)
+
+	fmt.Println("Params:", params)
+
+	threshold := params.BurnThreshold // upaxi
+	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
+	fees := k.bankKeeper.GetBalance(ctx, feeCollectorAddr, k.mintDenom)
+
+	if fees.Amount.LTE(threshold) {
+		return
+	}
+
+	// There is 50% chance to burn all balance from the fee pool
+	blockHash := ctx.BlockHeader().AppHash
+	seed := binary.BigEndian.Uint64(blockHash[:8]) ^ uint64(ctx.BlockHeight())
+	if seed%2 == 0 {
+		fmt.Println("Total coin: ", fees.Amount)
+		fees.Amount = fees.Amount.ToLegacyDec().Mul(params.BurnRatio).RoundInt()
+		err := k.bankKeeper.BurnCoins(ctx, authtypes.FeeCollectorName, sdk.NewCoins())
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Burn coin: ", fees.Amount)
+	}
 }

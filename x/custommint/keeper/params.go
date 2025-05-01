@@ -1,38 +1,35 @@
 package keeper
 
 import (
-	"context"
+	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/paxi-web3/paxi/x/custommint/types"
 )
 
-var ParamsKey = []byte("custommint_params")
-
-// GetParams retrieves the parameters from the store.
-func (k Keeper) GetParams(ctx context.Context) (params types.GenesisState, err error) {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	store := k.storeService.OpenKVStore(sdkCtx)
-
-	bz, err := store.Get(ParamsKey)
-
+func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := json.Marshal(params)
 	if err != nil {
-		return params, err
+		panic(err)
 	}
-	if bz == nil {
-		return params, nil
-	}
-
-	err = k.cdc.Unmarshal(bz, &params)
-	return params, err
+	store.Set(types.KeyParams, bz)
 }
 
-// SetParams sets the parameters in the store.
-func (k Keeper) SetParams(ctx context.Context, params *types.GenesisState) error {
+// GetParams retrieves the current params from store
+func (k Keeper) GetParams(ctx sdk.Context) types.Params {
+	params := types.Params{}
+
 	store := k.storeService.OpenKVStore(ctx)
-	bz, err := k.cdc.Marshal(params)
+	bz, err := store.Get(types.KeyParams)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return store.Set(ParamsKey, bz)
+
+	err = json.Unmarshal(bz, &params)
+	if err != nil {
+		panic(err)
+	}
+
+	return params
 }
