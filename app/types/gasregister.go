@@ -8,13 +8,14 @@ import (
 func SmartContractGasRegisterConfig() wasmtypes.WasmGasRegisterConfig {
 	return wasmtypes.WasmGasRegisterConfig{
 		// Each time a wasm instance is created (cold load from disk)
-		InstanceCost: 240_000,
+		InstanceCost: 300_000,
 
 		// Discounted cost when instance is reused from memory cache (e.g. pinned)
-		InstanceCostDiscount: 30_000,
+		InstanceCostDiscount: 60_000,
 
 		// Cost per byte to compile wasm bytecode on store
-		CompileCost: 300, // Increased from default (3)
+		// NOTE: this code will only take effect in the WasmDecorator
+		CompileCost: 300, // Increased from default (3).
 
 		// Gas multiplier: how many CosmWasm gas = 1 Cosmos SDK gas
 		GasMultiplier: 300_000, // Higher = more expensive per VM operation

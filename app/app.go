@@ -487,10 +487,6 @@ func NewPaxiApp(
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper.Keeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
 
-	if enableWasm {
-		app.ModuleManager.Modules[wasmtypes.ModuleName] = wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper.Keeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil)
-	}
-
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration and genesis verification.
 	// By default it is composed of all the module from the module manager.

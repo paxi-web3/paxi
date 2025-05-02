@@ -42,7 +42,7 @@ func DefaultParams() Params {
 	return Params{
 		BurnThreshold:       sdkmath.NewInt(100_000),
 		BurnRatio:           sdkmath.LegacyNewDecWithPrec(50, 2), // 0.50 (50%)
-		BlocksPerYear:       6307200,                             // 365 * 24 * 60 * 60 / 5s block time
+		BlocksPerYear:       7884000,                             // 365 * 24 * 60 * 60 / 4s block time
 		FirstYearInflation:  sdkmath.LegacyMustNewDecFromStr("0.08"),
 		SecondYearInflation: sdkmath.LegacyMustNewDecFromStr("0.04"),
 		OtherYearInflation:  sdkmath.LegacyMustNewDecFromStr("0.02"),
