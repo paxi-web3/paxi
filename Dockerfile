@@ -1,5 +1,5 @@
 # Stage 1: Use Debian for building
-FROM debian:bullseye as builder
+FROM debian:bullseye AS builder
 
 # Install required build tools and dependencies
 RUN apt-get update && apt-get install -y \
@@ -54,16 +54,42 @@ COPY . .
 # Build the binary with required build tags (cosmwasm and rocksdb)
 RUN go build -mod=readonly -tags "rocksdb cosmwasm" -o paxid ./cmd/paxid
 
+# Copy wasmvm from the cache
+RUN mkdir -p /root/.wasmvm/lib && \
+    cp /root/go/pkg/mod/github.com/!cosm!wasm/wasmvm/*/internal/api/libwasmvm.x86_64.so /root/.wasmvm/lib/
+
+
+RUN find / -name 'libwasmvm*' 2>/dev/null
+
 # Stage 2: runtime image
 FROM debian:bullseye-slim
 
-RUN apt-get update && apt-get install -y libstdc++6 && apt-get clean
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libstdc++6 \
+        libsnappy-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libgflags-dev \
+        liblz4-dev \
+        libzstd-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create working directory
 WORKDIR /root/
 
 # Copy the binary from the build stage
 COPY --from=builder /app/paxid .
+
+# Copy the rocksdb dynamic lib from the build stage
+COPY --from=builder /usr/local/lib/librocksdb.so* /usr/local/lib/
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/rocksdb.conf && \
+    ldconfig
+
+# Copy the wasm dynamic lib from the build stage
+COPY --from=builder /root/.wasmvm/lib/libwasmvm* /usr/local/lib/
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/wasmvm.conf && ldconfig
 
 # Expose typical Cosmos SDK ports:
 # - 26656: p2p
