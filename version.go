@@ -2,7 +2,7 @@ package version
 
 var (
 	AppName = "paxi"
-	Version = "v1.0.0"
+	Version = "v1.0.1"
 	Commit  = ""
 	Build   = ""
 )

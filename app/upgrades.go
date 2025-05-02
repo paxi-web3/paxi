@@ -7,13 +7,11 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
-	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
-	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
 )
 
 // UpgradeName is the name of the upgrade.
 // It is used to identify the upgrade in the upgrade handler and
-const UpgradeName = "upgrade-v1.0.1"
+const UpgradeName = "v1.0.1"
 
 func (app *PaxiApp) RegisterUpgradeHandlers() {
 	app.UpgradeKeeper.SetUpgradeHandler(
@@ -30,10 +28,8 @@ func (app *PaxiApp) RegisterUpgradeHandlers() {
 
 	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := storetypes.StoreUpgrades{
-			Added: []string{
-				epochstypes.ModuleName,
-				protocolpooltypes.ModuleName,
-			},
+			// Added:   []string{"newmodule"},
+			// Deleted: []string{"oldmodule"},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades

@@ -215,8 +215,8 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 
 	// Set denom from stake to upaxi
 	govGenesis := govv1.DefaultGenesisState()
-	govGenesis.Params.ExpeditedMinDeposit[0].Denom = DefaultDenom
-	govGenesis.Params.MinDeposit[0].Denom = DefaultDenom
+	govGenesis.Params.MinDeposit = []sdk.Coin{sdk.NewCoin(DefaultDenom, sdkmath.NewInt(30_000_000))}
+	govGenesis.Params.ExpeditedMinDeposit = []sdk.Coin{sdk.NewCoin(DefaultDenom, sdkmath.NewInt(150_000_000))}
 	expeditedVotingPeriod := 12 * time.Hour
 	govGenesis.Params.ExpeditedVotingPeriod = &expeditedVotingPeriod
 
