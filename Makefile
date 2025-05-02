@@ -17,8 +17,8 @@ build:
 	go build -mod=readonly -tags $(BUILD_TAGS) -o build/$(APP_NAME) ./cmd/$(APP_NAME)
 
 install:
-	@echo "📦 Installing $(APP_NAME) to GOPATH/bin..."
-	go install -mod=readonly -tags $(BUILD_TAGS) ./cmd/$(APP_NAME)
+	@echo "📦 Installing $(APP_NAME) to $$HOME/paxid..."
+	go build -mod=readonly -tags $(BUILD_TAGS) -o $$HOME/paxid/$(APP_NAME) ./cmd/$(APP_NAME)
 
 clean:
 	@echo "🧹 Cleaning build files..."
