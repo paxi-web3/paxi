@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -17,7 +15,6 @@ func (w WasmDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, nex
 		codeLen := len(msg.WASMByteCode)
 		extraGas := uint64(codeLen) * w.gasRegister.CompileCost
 		ctx.GasMeter().ConsumeGas(extraGas, "custom wasm store code penalty")
-		fmt.Println("[DEBUG] Code length: ", codeLen/1024)
 	}
 
 	return next(ctx, tx, simulate)
