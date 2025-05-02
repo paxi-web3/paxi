@@ -58,9 +58,6 @@ RUN go build -mod=readonly -tags "rocksdb cosmwasm" -o paxid ./cmd/paxid
 RUN mkdir -p /root/.wasmvm/lib && \
     cp /root/go/pkg/mod/github.com/!cosm!wasm/wasmvm/*/internal/api/libwasmvm.x86_64.so /root/.wasmvm/lib/
 
-
-RUN find / -name 'libwasmvm*' 2>/dev/null
-
 # Stage 2: runtime image
 FROM debian:bullseye-slim
 
