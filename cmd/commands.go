@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"io"
 
 	dbm "github.com/cosmos/cosmos-db"
@@ -24,6 +25,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	version "github.com/paxi-web3/paxi"
 	paxicli "github.com/paxi-web3/paxi/x/paxi/client"
 )
 
@@ -48,6 +50,7 @@ func initRootCmd(
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
+		versionCmd(),
 		server.StatusCommand(),
 		genesisCommand(txConfig, basicManager),
 		queryCommand(),
@@ -179,4 +182,14 @@ func appExport(
 	}
 
 	return paxiApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+}
+
+func versionCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "Print the version of Paxi",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Version: %s\n", version.AppVersion)
+		},
+	}
 }

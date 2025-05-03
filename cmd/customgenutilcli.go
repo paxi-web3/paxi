@@ -123,7 +123,7 @@ func InitCmd(a *app.PaxiApp, defaultNodeHome string) *cobra.Command {
 			}
 
 			appGenesis.AppName = paxi.AppName
-			appGenesis.AppVersion = paxi.Version
+			appGenesis.AppVersion = paxi.AppVersion
 			appGenesis.ChainID = chainID
 			appGenesis.AppState = appState
 			appGenesis.InitialHeight = initHeight

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/paxi-web3/paxi/app"
@@ -52,6 +53,19 @@ func NewRootCmd() *cobra.Command {
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
+
+			// Check if node has been initialized (e.g. config/genesis.json exists)
+			genesisPath := server.NewDefaultContext().Config.GenesisFile()
+			_, err := os.Stat(genesisPath)
+
+			allowedWithoutInit := map[string]bool{
+				"init":    true,
+				"version": true,
+				"help":    true,
+			}
+			if os.IsNotExist(err) && !allowedWithoutInit[cmd.Name()] {
+				return fmt.Errorf("node is not initialized yet. Run 'paxid init [moniker] --chain-id [chain-id]' first")
+			}
 
 			initClientCtx = initClientCtx.WithCmdContext(cmd.Context())
 			initClientCtx, err := client.ReadPersistentCommandFlags(initClientCtx, cmd.Flags())
