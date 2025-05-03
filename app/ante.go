@@ -5,6 +5,7 @@ import (
 
 	circuitante "cosmossdk.io/x/circuit/ante"
 
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	apptypes "github.com/paxi-web3/paxi/app/types"
@@ -19,7 +20,7 @@ type HandlerOptions struct {
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
 // numbers, checks signatures & account numbers, and deducts fees from the first
 // signer.
-func NewAnteHandler(options HandlerOptions, app *PaxiApp) (sdk.AnteHandler, error) {
+func NewAnteHandler(options HandlerOptions, app *PaxiApp, wasmKeeper wasmkeeper.Keeper) (sdk.AnteHandler, error) {
 	if options.AccountKeeper == nil {
 		return nil, errors.New("account keeper is required for ante builder")
 	}
@@ -37,7 +38,7 @@ func NewAnteHandler(options HandlerOptions, app *PaxiApp) (sdk.AnteHandler, erro
 		PaxiDecorator{App: app},         // Status of Paxi blockchain
 		circuitante.NewCircuitBreakerDecorator(options.CircuitKeeper),
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
-		WasmDecorator{gasRegister: apptypes.SmartContractGasRegisterConfig()}, // Raise the cost of stroing code of smart contract
+		WasmDecorator{gasRegister: apptypes.SmartContractGasRegisterConfig(), wasmKeeper: wasmKeeper}, // Raise the cost of stroing code of smart contract
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),

@@ -640,6 +640,7 @@ func (app *PaxiApp) setAnteHandler(txConfig client.TxConfig) {
 			&app.CircuitKeeper,
 		},
 		app,
+		app.WasmKeeper,
 	)
 	if err != nil {
 		panic(err)
