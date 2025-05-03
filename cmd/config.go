@@ -18,8 +18,8 @@ func initCometBFTConfig() *cmtcfg.Config {
 	cfg.P2P.MaxNumInboundPeers = 80                      // Max inbound peers allowed to connect
 	cfg.P2P.MaxNumOutboundPeers = 30                     // Max outbound peers this node will dial
 	cfg.P2P.FlushThrottleTimeout = 50 * time.Millisecond // Delay between sending messages
-	cfg.P2P.SendRate = 100 * 1024 * 1024                 // Max bytes per second to send (10MB/s)
-	cfg.P2P.RecvRate = 100 * 1024 * 1024                 // Max bytes per second to receive (10MB/s)
+	cfg.P2P.SendRate = 100 * 1024 * 1024                 // Max bytes per second to send (100MB/s)
+	cfg.P2P.RecvRate = 100 * 1024 * 1024                 // Max bytes per second to receive (100MB/s)
 	cfg.P2P.PexReactor = true                            // Enable peer exchange
 	cfg.P2P.AllowDuplicateIP = false                     // Avoid duplicate IP connections
 
@@ -37,7 +37,7 @@ func initCometBFTConfig() *cmtcfg.Config {
 	cfg.Consensus.TimeoutPrevoteDelta = 400 * time.Millisecond
 	cfg.Consensus.TimeoutPrecommit = 1500 * time.Millisecond
 	cfg.Consensus.TimeoutPrecommitDelta = 400 * time.Millisecond
-	cfg.Consensus.TimeoutCommit = 1500 * time.Millisecond      // Time allowed to finalize block
+	cfg.Consensus.TimeoutCommit = 3000 * time.Millisecond      // Time allowed to finalize block
 	cfg.Consensus.CreateEmptyBlocks = true                     // Create blocks even with no transactions
 	cfg.Consensus.CreateEmptyBlocksInterval = 10 * time.Second // Time between empty blocks
 	cfg.Consensus.PeerGossipSleepDuration = 100 * time.Millisecond
@@ -77,7 +77,12 @@ func initAppConfig() (string, interface{}) {
 	// Set a minimum gas price (required for node startup)
 	// This avoids the validator node halting due to missing gas price
 	srvCfg.MinGasPrices = "0.025" + apptypes.DefaultDenom
-	srvCfg.QueryGasLimit = 100000 // Set a reasonable gas limit for queries
+	srvCfg.QueryGasLimit = 300000 // Set a reasonable gas limit for queries
+
+	// Pruning
+	srvCfg.Pruning = "custom"
+	srvCfg.PruningKeepRecent = "100000"
+	srvCfg.PruningInterval = "1000"
 
 	// Use a custom database backend
 	srvCfg.AppDBBackend = "rocksdb" // Use RocksDB as the database backend
@@ -89,7 +94,7 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.GRPCWeb.Enable = true
 
 	// Optional: disable telemetry unless needed
-	srvCfg.Telemetry.Enabled = true
+	srvCfg.Telemetry.Enabled = false
 	srvCfg.Telemetry.PrometheusRetentionTime = 120
 
 	// Enable snapshots to support state sync and archiving
@@ -120,8 +125,8 @@ chain-title = "{{ .Custom.ChainTitle }}"`
 func CustomDefaultConsensusParams() *cmttypes.ConsensusParams {
 	cp := cmttypes.DefaultConsensusParams()
 	cp.Block = cmttypes.BlockParams{
-		MaxBytes: 10 * 1024 * 1024,
-		MaxGas:   200_000_000,
+		MaxBytes: 5 * 1024 * 1024,
+		MaxGas:   2_000_000_000,
 	}
 	return cp
 }
