@@ -60,11 +60,24 @@ graph TD
   ```
 
 
-## Getting Started
+## Getting Started (for developer)
 
-### 1. Clone & Build rocksdb
+### 1. Install dependencies
 
 ```bash
+# Install dependencies
+apt-get update && apt-get install -y \
+    build-essential git cmake \
+    libsnappy-dev zlib1g-dev libbz2-dev \
+    liblz4-dev libzstd-dev wget curl pkg-config \
+    ca-certificates ibgflags-dev
+
+# Install Go
+export GOLANG_VERSION=1.24.2
+curl -LO https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
+  tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz && \
+  ln -s /usr/local/go/bin/go /usr/bin/go
+    
 # In order to speed up Paxi node, we use rocksdb instead of goleveldb
 # First of all you need to build rocksdb before going to the next step
 git clone https://github.com/facebook/rocksdb.git
@@ -89,7 +102,7 @@ cd paxi
 make install
 ```
 
-### 3. Start the node
+### 3. Start the test node
 
 ```bash
 # Initialize the node configuration (set your node name and chain ID, if you want to connect to mainnet then change --chain-id to paxi-mainnet)
@@ -106,9 +119,6 @@ paxid genesis gentx your_account_name 900000000000upaxi
 
 # Aggregate all genesis transactions into the genesis file
 paxid genesis collect-gentxs
-
-# Validate the final genesis.json for correctness
-paxid genesis validate
 
 # Start the blockchain node
 paxid start

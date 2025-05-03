@@ -11,6 +11,7 @@ service Query {
     rpc CirculatingSupply(QueryCirculatingSupplyRequest) returns (QueryCirculatingSupplyResponse);
     rpc TotalSupply(QueryTotalSupplyRequest) returns (QueryTotalSupplyResponse);
     rpc EstimatedGasPrice(QueryEstimatedGasPriceRequest) returns (QueryEstimatedGasPriceResponse);
+    rpc LastBlockGasUsed(QueryLastBlockGasUsedRequest) returns (QueryLastBlockGasUsedResponse);
 }
 
 message QueryLockedVestingRequest {}
@@ -35,4 +36,10 @@ message QueryEstimatedGasPriceRequest {}
 
 message QueryEstimatedGasPriceResponse {
     string gas_price = 1;
+}
+
+message QueryLastBlockGasUsedRequest {}
+
+message QueryLastBlockGasUsedResponse {
+    uint64 gas_used = 1;
 }

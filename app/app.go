@@ -29,8 +29,6 @@ import (
 	evidencekeeper "cosmossdk.io/x/evidence/keeper"
 	evidencetypes "cosmossdk.io/x/evidence/types"
 	"cosmossdk.io/x/nft"
-	nftkeeper "cosmossdk.io/x/nft/keeper"
-	nftmodule "cosmossdk.io/x/nft/module"
 	"cosmossdk.io/x/tx/signing"
 	"cosmossdk.io/x/upgrade"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
@@ -170,7 +168,6 @@ type PaxiApp struct {
 	PaxiKeeper            paxikeeper.Keeper
 
 	// supplementary keepers
-	NFTKeeper  nftkeeper.Keeper
 	WasmKeeper wasmkeeper.Keeper
 
 	// the module manager
@@ -240,7 +237,6 @@ func NewPaxiApp(
 		upgradetypes.StoreKey,
 		evidencetypes.StoreKey,
 		circuittypes.StoreKey,
-		nftkeeper.StoreKey,
 		wasmtypes.StoreKey,
 		paxitypes.StoreKey,
 	)
@@ -414,13 +410,6 @@ func NewPaxiApp(
 		),
 	)
 
-	app.NFTKeeper = nftkeeper.NewKeeper(
-		cosmosruntime.NewKVStoreService(keys[nftkeeper.StoreKey]),
-		appCodec,
-		app.AccountKeeper,
-		app.BankKeeper,
-	)
-
 	// create evidence keeper with router
 	evidenceKeeper := evidencekeeper.NewKeeper(
 		appCodec,
@@ -479,9 +468,7 @@ func NewPaxiApp(
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, nil),
 		customstaking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, nil),
 		upgrade.NewAppModule(app.UpgradeKeeper, app.AccountKeeper.AddressCodec()),
-		evidence.NewAppModule(app.EvidenceKeeper),
-		nftmodule.NewAppModule(appCodec, app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
-		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
+		evidence.NewAppModule(app.EvidenceKeeper), consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
 		circuit.NewAppModule(appCodec, app.CircuitKeeper),
 		paxi.NewAppModule(appCodec, app.PaxiKeeper, app),
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper.Keeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),

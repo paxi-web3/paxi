@@ -50,3 +50,10 @@ func (q *queryServer) EstimatedGasPrice(ctx context.Context, req *types.QueryEst
 		GasPrice: gasPriceStr,
 	}, nil
 }
+
+func (q *queryServer) LastBlockGasUsed(ctx context.Context, req *types.QueryLastBlockGasUsedRequest) (*types.QueryLastBlockGasUsedResponse, error) {
+	gasUsed := q.k.blockStatusKeeper.GetLastBlockGasUsed()
+	return &types.QueryLastBlockGasUsedResponse{
+		GasUsed: gasUsed,
+	}, nil
+}

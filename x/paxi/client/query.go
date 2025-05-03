@@ -96,6 +96,28 @@ func CmdQueryEstimatedGasPrice() *cobra.Command {
 	return cmd
 }
 
+func CmdQueryLastBlockGasUsed() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "last-block-gas-used",
+		Short: "Query gas used of the last block",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.LastBlockGasUsed(context.Background(), &types.QueryLastBlockGasUsedRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	return cmd
+}
+
 func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "paxi",
