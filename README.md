@@ -70,7 +70,7 @@ apt-get update && apt-get install -y \
     build-essential git cmake \
     libsnappy-dev zlib1g-dev libbz2-dev \
     liblz4-dev libzstd-dev wget curl pkg-config \
-    ca-certificates ibgflags-dev
+    ca-certificates 
 
 # Install Go
 export GOLANG_VERSION=1.24.2
@@ -80,8 +80,7 @@ curl -LO https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
     
 # In order to speed up Paxi node, we use rocksdb instead of goleveldb
 # First of all you need to build rocksdb before going to the next step
-git clone https://github.com/facebook/rocksdb.git
-cd rocksdb
+git clone https://github.com/facebook/rocksdb.git && cd rocksdb
 git checkout v9.2.1 # or the version you want
 
 # Compile and install to /usr/local
@@ -90,15 +89,14 @@ sudo make install-shared INSTALL_PATH=/usr/local
 
 # Add /usr/local/lib to the dynamic linker search paths
 echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/rocksdb.conf
-sudo ldconfig
+sudo ldconfig && cd ..
 ```
 
 ### 2. Clone & Build Paxi
 
 ```bash
 # Build Paxid
-git clone https://github.com/paxi-web3/paxi
-cd paxi
+git clone https://github.com/paxi-web3/paxi && cd paxi
 make install
 ```
 
