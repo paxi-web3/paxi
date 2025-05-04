@@ -5,13 +5,13 @@ echo "============================================================"
 echo "🚨  PAXI 驗證人節點安裝警告"
 echo "============================================================"
 echo ""
-echo "⚠️  請注意："
+echo "⚠️  請注意:"
 echo "一旦你質押並成為驗證人，系統會自動監控你的上線狀態。"
 echo ""
 echo "❗ 如果你無故離線（斷線或關機），系統將視為懲罰性行為，"
 echo "   並自動扣除你的一部分質押金（Slashing 機制）。"
 echo ""
-echo "✅ 正確離線方法："
+echo "✅ 正確離線方法:"
 echo "   請先使用解除質押命令（Undelegate）退出驗證人角色後，再關閉節點。"
 echo ""
 echo "🚫 直接關機或停止節點會造成懲罰風險。請務必確認！"
@@ -32,7 +32,7 @@ if [[ -z "$NODE_MONIKER" ]]; then
   exit 1
 fi
 
-echo "✅ 節點名稱設定為：$NODE_MONIKER"
+echo "✅ 節點名稱設定為: $NODE_MONIKER"
 
 echo "📝 請輸入你要為你的錢包設定的名稱（key name）:"
 read -p "請輸入你的錢包名稱（key name）: " KEY_NAME
@@ -40,7 +40,7 @@ if [[ -z "$KEY_NAME" ]]; then
   echo "❌ 錢包名稱不能為空，請重新執行腳本。"
   exit 1
 fi
-echo "✅ 錢包名稱設定為：$KEY_NAME"
+echo "✅ 錢包名稱設定為: $KEY_NAME"
 echo "當節點安裝完畢後，此程序將自動幫你創建本地錢包，屆時請記下所有助記詞"
 
 GOLANG_VERSION=1.24.2
@@ -115,8 +115,8 @@ fi
 ### === 顯示地址 ===
 ADDR=$($BINARY_NAME keys show $KEY_NAME -a --keyring-backend os)
 echo ""
-echo "你的地址為：$ADDR"
-echo "請向此地址轉入代幣後執行以下指令進行質押："
+echo "你的地址為: $ADDR"
+echo "請向此地址轉入代幣後執行以下指令進行質押:"
 
 ### === 顯示 create-validator 指令 ===
 echo ""
