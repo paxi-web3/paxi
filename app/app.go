@@ -217,10 +217,6 @@ func NewPaxiApp(
 	std.RegisterLegacyAminoCodec(legacyAmino)
 	std.RegisterInterfaces(interfaceRegistry)
 
-	// Set the cost of KV store operations
-	customKVGasConfig := storetypes.KVGasConfig()
-	customKVGasConfig.WriteCostPerByte = 100
-
 	baseAppOptions = append(baseAppOptions, baseapp.SetOptimisticExecution())
 
 	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
