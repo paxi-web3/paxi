@@ -31,13 +31,13 @@ func initCometBFTConfig() *cmtcfg.Config {
 	cfg.RPC.MaxHeaderBytes = 1_048_576                                        // Max request header size in bytes
 
 	// Consensus configuration
-	cfg.Consensus.TimeoutPropose = 3 * time.Second // Timeout before proposing a block
+	cfg.Consensus.TimeoutPropose = 3 * time.Second // Timeout for proposing a block
 	cfg.Consensus.TimeoutProposeDelta = 400 * time.Millisecond
 	cfg.Consensus.TimeoutPrevote = 1500 * time.Millisecond
 	cfg.Consensus.TimeoutPrevoteDelta = 400 * time.Millisecond
 	cfg.Consensus.TimeoutPrecommit = 1500 * time.Millisecond
 	cfg.Consensus.TimeoutPrecommitDelta = 400 * time.Millisecond
-	cfg.Consensus.TimeoutCommit = 3000 * time.Millisecond      // Time allowed to finalize block
+	cfg.Consensus.TimeoutCommit = 4000 * time.Millisecond      // Timeout before getting into next block
 	cfg.Consensus.CreateEmptyBlocks = true                     // Create blocks even with no transactions
 	cfg.Consensus.CreateEmptyBlocksInterval = 10 * time.Second // Time between empty blocks
 	cfg.Consensus.PeerGossipSleepDuration = 100 * time.Millisecond

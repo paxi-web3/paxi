@@ -28,8 +28,9 @@ func (w WasmDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, nex
 				return ctx, errorsmod.Wrapf(err, "failed to load bytecode for code id %d", m.CodeID)
 			}
 			codeSize := len(byteCode)
-			baseGas := uint64(40_000_000)
-			extraGas := baseGas + uint64(codeSize)*w.gasRegister.CompileCost
+			baseGas := uint64(30_000_000)
+			gasMultiplier := uint64(100)
+			extraGas := baseGas + uint64(codeSize)*gasMultiplier
 			ctx.GasMeter().ConsumeGas(extraGas, "custom wasm instantial penalty")
 		}
 	}
