@@ -49,21 +49,22 @@ echo "✅ Wallet name set to: $KEY_NAME"
 GOLANG_VERSION=1.24.2
 ROCKSDB_VERSION=v9.2.1 
 PAXI_REPO="https://github.com/paxi-web3/paxi"
-PAXI_TAG="v1.0.2"
+PAXI_TAG="v1.0.3"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
 GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
 SEEDS="mainner-seed-1.paxi.io:26656"
 PERSISTENT_PEERS="key@mainnet-node-1.paxi.io:26656"
-CONFIG="./config/config.toml"
-APP_CONFIG="./config/app.toml"
+CONFIG="./paxi/config/config.toml"
+APP_CONFIG="./paxi/config/app.toml"
 PAXI_PATH="$HOME/paxid"
+PAXI_DATA_PATH="$HOME/paxid/paxi"
 DENOM="upaxi"
 
 ### === Install dependencies ===
 echo ""
-apt update
-apt-get update && apt-get install -y \
+sudo apt update
+sudo apt-get update && sudo apt-get install -y \
     build-essential git cmake \
     libsnappy-dev zlib1g-dev libbz2-dev \
     liblz4-dev libzstd-dev wget curl pkg-config \
@@ -84,8 +85,8 @@ if ! [ -f /usr/local/lib/librocksdb.so ]; then
     git checkout $ROCKSDB_VERSION
     make -j$(nproc) shared_lib
     make install-shared INSTALL_PATH=/usr/local
-    echo "/usr/local/lib" | tee /etc/ld.so.conf.d/rocksdb.conf
-    ldconfig && cd ..
+    sudo echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/rocksdb.conf
+    sudo ldconfig && cd ..
 fi
 
 ### === Compile Paxi ===
@@ -93,20 +94,18 @@ if ! [ -d ./paxi ]; then
 echo "Installing Paxi..."
 git clone $PAXI_REPO
 cd paxi
-git checkout $PAXI_TAG
 make install
 cd $PAXI_PATH
 else
 cd paxi
-git checkout $PAXI_TAG
 make install
 cd $PAXI_PATH
 fi
 
 ### === Initialize node ===
-if ! [ -f ./config/genesis.json ]; then
+if ! [ -f ./paxi/config/genesis.json ]; then
 $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
-curl -L $GENESIS_URL > ./config/genesis.json
+curl -L $GENESIS_URL > ./paxi/config/genesis.json
 fi 
 
 ### === Configure seeds and peers ===
@@ -136,7 +135,7 @@ echo "Please send tokens to this address and then run the following command to b
 
 ### === Display create-validator command ===
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
-echo "You can modify validator.json at: $PAXI_PATH/validator.json"
+echo "You can modify validator.json at: $PAXI_DATA_PATH/validator.json"
 echo "Generating validator.json..."
 cat <<EOF > validator.json
 {
@@ -155,7 +154,7 @@ cat <<EOF > validator.json
 EOF
 echo ""
 echo "Command to become a validator (copy and paste to run):"
-echo "cd $PAXI_PATH && $BINARY_NAME tx staking create-validator validator.json \\"
+echo "cd $PAXI_PATH && $BINARY_NAME tx staking create-validator ./paxi/validator.json \\"
 echo "  --from $KEY_NAME --keyring-backend os \\"
 echo "  --fees 10000$DENOM"
 

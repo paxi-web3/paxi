@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  paxi-node:
+    container_name: paxi-node-1
+    image: paxi-node:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ~/paxid/paxi:/root/paxi      
+    ports:
+      - "26656:26656"   # p2p
+      - "26657:26657"   # RPC
+      - "9090:9090"   # gRPC
+      - "1317:1317"   # REST
+    restart: unless-stopped
+    command: ["./paxid", "start"]

@@ -42,8 +42,6 @@ if [[ -z "$KEY_NAME" ]]; then
 fi
 echo "✅ 錢包名稱設定為: $KEY_NAME"
 
-GOLANG_VERSION=1.24.2
-ROCKSDB_VERSION=v9.2.1 
 PAXI_REPO="https://github.com/paxi-web3/paxi"
 PAXI_TAG="v1.0.3"
 CHAIN_ID="paxi-mainnet"
@@ -56,53 +54,61 @@ APP_CONFIG="./paxi/config/app.toml"
 PAXI_PATH="$HOME/paxid"
 PAXI_DATA_PATH="$HOME/paxid/paxi"
 DENOM="upaxi"
+DOCKER_IMAGE="paxi-node"
+DOCKER_PAXI_DATA_PATH="/root/paxi"
 
 ### === 安裝依賴 ===
 echo ""
-sudo apt update
-sudo apt-get update && sudo apt-get install -y \
-    build-essential git cmake \
-    libsnappy-dev zlib1g-dev libbz2-dev \
-    liblz4-dev libzstd-dev wget curl pkg-config \
-    ca-certificates 
+sudo apt-get update
+sudo apt-get install -y \
+    ca-certificates curl gnupg lsb-release git make
 
-### === 安裝 Go ===
-if ! command -v go &> /dev/null; then
-    echo "正在安裝 Go..."
-    curl -LO https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz && \
-    ln -s /usr/local/go/bin/go /usr/bin/go
-fi
+### === 安裝 Docker ===
+if ! command -v docker &> /dev/null; then
+  echo "安裝 Docker 中..."
+  sudo mkdir -p /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+    sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-### === 安裝 Rocksdb ===
-if ! [ -f /usr/local/lib/librocksdb.so ]; then
-    echo "正在安裝 Rocksdb..."
-    git clone https://github.com/facebook/rocksdb.git && cd rocksdb
-    git checkout $ROCKSDB_VERSION
-    make -j$(nproc) shared_lib
-    make install-shared INSTALL_PATH=/usr/local
-    sudo echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/rocksdb.conf
-    sudo ldconfig && cd ..
-fi
+  echo \
+    "deb [arch=$(dpkg --print-architecture) \
+    signed-by=/etc/apt/keyrings/docker.gpg] \
+    https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-### === 編譯 Paxi ===
-if ! [ -d ./paxi ]; then
-echo "正在安裝 Paxi..."
-git clone $PAXI_REPO
-cd paxi
-git checkout $PAXI_TAG
-make install
-cd $PAXI_PATH
+  sudo apt-get update
+  sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 else
-cd paxi
-git checkout $PAXI_TAG
-make install
-cd $PAXI_PATH
+  echo "✅ Docker 已安裝"
 fi
+
+# 啟動 Docker 並允許非 root 用戶執行
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo usermod -aG docker $USER
+
+echo "⚠️ 你可能需要重新登入，讓 docker 權限生效（或執行 newgrp docker）"
+
+# === 安裝 Paxi ===
+if [ ! -d "paxi" ]; then
+  git clone $PAXI_REPO
+  git checkout $PAXI_TAG
+fi
+cd paxi
+make docker
+
+if ![ -d "$HOME/paxid" ]; then
+mkdir "$HOME/paxid" 
+fi
+cd $HOME/paxid 
 
 ### === 初始化節點 ===
 if ! [ -f ./paxi/config/genesis.json ]; then
-$BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
+docker run --rm \
+  -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
+  $DOCKER_IMAGE \
+  $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
 curl -L $GENESIS_URL > ./paxi/config/genesis.json
 fi 
 
@@ -118,10 +124,21 @@ sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[grpc-web\]" $APP_CONFIG -A 
 sed -i 's|^address *=.*|address = "127.0.0.1:9090"|' $(grep -l "\[grpc\]" $APP_CONFIG -A 3 | tail -n 1)
 
 ### === 建立錢包（如不存在）===
-if ! $BINARY_NAME keys show $KEY_NAME --keyring-backend os &>/dev/null; then
+# 檢查 key 是否已存在（使用 docker run 執行 paxid keys show）
+if ! docker run --rm \
+  -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
+  $DOCKER_IMAGE \
+  -it \ 
+  ./paxid keys show $KEY_NAME --keyring-backend os &>/dev/null; then
+
   echo ""
   echo "錢包創建完成後，請用手寫的方式記下以下的所有助記詞，以便遺失時恢復你的錢包"
-  $BINARY_NAME keys add $KEY_NAME --keyring-backend os
+
+  docker run --rm \
+    -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
+    -it \
+    $DOCKER_IMAGE \
+    ./paxid keys add $KEY_NAME --keyring-backend os
 fi
 
 ### === 顯示地址 ===
@@ -132,7 +149,7 @@ echo "請向此地址轉入代幣後執行以下指令進行質押:"
 
 ### === 顯示 create-validator 指令 ===
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
-echo "你可以從 $PAXI_DATA_PATH/validator.json 修改參數"
+echo "你可以從 $PAXI_PATH/validator.json 修改參數"
 echo "正在產生 validator.json..."
 cat <<EOF > validator.json
 {
@@ -151,23 +168,32 @@ cat <<EOF > validator.json
 EOF
 echo ""
 echo "成為驗證人指令（複製貼上執行）:"
-echo "cd $PAXI_PATH && $BINARY_NAME tx staking create-validator ./paxi/validator.json \\"
+echo ""
+echo "docker run --rm -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH -it $DOCKER_IMAGE \\"
+echo "$BINARY_NAME tx staking create-validator ./paxi/validator.json \\"
 echo "  --from $KEY_NAME --keyring-backend os \\"
 echo "  --fees 10000$DENOM"
 
 ### === 常用指令 ===
 echo ""
-echo "啓動節點:"
+echo "啓動節點(這節點會在後台運行，在電腦啓動後它也會自動啓動，除非你手動關停):"
+echo "docker run -d --name paxi-node-1 --restart unless-stopped -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \\"
+echo "-p 26656:26656 -p 26657:26657 -p 1317:1317 -p 9090:9090 \\"
+echo "paxi-node \\"
 echo "$BINARY_NAME start"
 echo ""
 echo "查看錢包餘額指令:"
+echo "docker run --rm -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH -it $DOCKER_IMAGE \\"
 echo "$BINARY_NAME query bank balances <你的地址/錢包名稱>"
 echo ""
 echo "查看你的質押收益:"
+echo "docker run --rm -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH -it $DOCKER_IMAGE \\"
 echo "$BINARY_NAME query distribution rewards <你的地址/錢包名稱>"
 echo ""
 echo "查看你的驗證人地址指令:"
+echo "docker run --rm -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH -it $DOCKER_IMAGE \\"
 echo "$BINARY_NAME tendermint show-validator"
 echo ""
 echo "查看你的驗證人收益:"
+echo "docker run --rm -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH -it $DOCKER_IMAGE \\"
 echo "$BINARY_NAME query distribution validator-outstanding-rewards <你的驗證人地址>"
