@@ -136,7 +136,7 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
-		dir = filepath.Join(dir, " paxi")
+		dir = filepath.Join(dir, "paxi")
 		return dir
 	})()
 }

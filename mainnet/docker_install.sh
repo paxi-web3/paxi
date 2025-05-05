@@ -43,7 +43,7 @@ fi
 echo "✅ 錢包名稱設定為: $KEY_NAME"
 
 PAXI_REPO="https://github.com/paxi-web3/paxi"
-PAXI_TAG="v1.0.3"
+PAXI_TAG="v1.0.1"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
 GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
@@ -90,7 +90,7 @@ sudo usermod -aG docker $USER
 
 echo "⚠️ 你可能需要重新登入，讓 docker 權限生效（或執行 newgrp docker）"
 
-# === 安裝 Paxi ===
+### === 安裝 Paxi ===
 if [ ! -d "paxi" ]; then
   git clone $PAXI_REPO
   git checkout $PAXI_TAG

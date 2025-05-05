@@ -54,8 +54,10 @@ func NewRootCmd() *cobra.Command {
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
 
-			// Check if node has been initialized (e.g. config/genesis.json exists)
-			genesisPath := server.NewDefaultContext().Config.GenesisFile()
+			// Check if node has been initialized (e.g. paxi/config/genesis.json exists)
+			serCfg := server.NewDefaultContext().Config
+			serCfg.SetRoot(app.DefaultNodeHome)
+			genesisPath := serCfg.GenesisFile()
 			_, err := os.Stat(genesisPath)
 
 			allowedWithoutInit := map[string]bool{
