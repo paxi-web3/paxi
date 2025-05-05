@@ -74,17 +74,22 @@ sudo apt-get update && sudo apt-get install -y \
 if ! command -v go &> /dev/null; then
     echo "Installing Go..."
     curl -LO https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz && \
-    ln -s /usr/local/go/bin/go /usr/bin/go
+    sudo tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz && \
+    sudo ln -s /usr/local/go/bin/go /usr/bin/go
 fi
 
 ### === Install RocksDB ===
 if ! [ -f /usr/local/lib/librocksdb.so ]; then
     echo "Installing RocksDB..."
-    git clone https://github.com/facebook/rocksdb.git && cd rocksdb
+
+    if ! [ -d ./rocksdb ]; then
+      git clone https://github.com/facebook/rocksdb.git
+    fi
+    
+    cd rocksdb
     git checkout $ROCKSDB_VERSION
     make -j$(nproc) shared_lib
-    make install-shared INSTALL_PATH=/usr/local
+    sudo make install-shared INSTALL_PATH=/usr/local
     sudo echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/rocksdb.conf
     sudo ldconfig && cd ..
 fi
@@ -137,7 +142,7 @@ echo "Please send tokens to this address and then run the following command to b
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
 echo "You can modify validator.json at: $PAXI_DATA_PATH/validator.json"
 echo "Generating validator.json..."
-cat <<EOF > validator.json
+cat <<EOF > $PAXI_DATA_PATH/validator.json
 {
   "pubkey": $VAL_PUBKEY,
   "amount": "1000000000$DENOM",

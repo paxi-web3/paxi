@@ -70,17 +70,22 @@ sudo apt-get update && sudo apt-get install -y \
 if ! command -v go &> /dev/null; then
     echo "正在安裝 Go..."
     curl -LO https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz && \
-    ln -s /usr/local/go/bin/go /usr/bin/go
+    sudo tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz && \
+    sudo ln -s /usr/local/go/bin/go /usr/bin/go
 fi
 
 ### === 安裝 Rocksdb ===
 if ! [ -f /usr/local/lib/librocksdb.so ]; then
     echo "正在安裝 Rocksdb..."
-    git clone https://github.com/facebook/rocksdb.git && cd rocksdb
+    
+    if ! [ -d ./rocksdb ]; then
+      git clone https://github.com/facebook/rocksdb.git
+    fi
+
+    cd rocksdb
     git checkout $ROCKSDB_VERSION
     make -j$(nproc) shared_lib
-    make install-shared INSTALL_PATH=/usr/local
+    sudo make install-shared INSTALL_PATH=/usr/local
     sudo echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/rocksdb.conf
     sudo ldconfig && cd ..
 fi
@@ -90,12 +95,10 @@ if ! [ -d ./paxi ]; then
 echo "正在安裝 Paxi..."
 git clone $PAXI_REPO
 cd paxi
-git checkout $PAXI_TAG
 make install
 cd $PAXI_PATH
 else
 cd paxi
-git checkout $PAXI_TAG
 make install
 cd $PAXI_PATH
 fi
@@ -134,7 +137,7 @@ echo "請向此地址轉入代幣後執行以下指令進行質押:"
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
 echo "你可以從 $PAXI_DATA_PATH/validator.json 修改參數"
 echo "正在產生 validator.json..."
-cat <<EOF > validator.json
+cat <<EOF > $PAXI_DATA_PATH/validator.json
 {
   "pubkey": $VAL_PUBKEY,
   "amount": "1000000000$DENOM",
