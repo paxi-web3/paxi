@@ -2,49 +2,45 @@
 set -e
 
 echo "============================================================"
-echo "🚨  PAXI Validator Node Installation Warning"
+echo "🚨  PAXI 驗證人節點安裝警告"
 echo "============================================================"
 echo ""
-echo "⚠️ Please note:"
-echo "   Once you stake and become a validator, the system will"
-echo "   automatically monitor your online status."
+echo "⚠️ 請注意:"
+echo "   一旦你質押並成為驗證人，系統會自動監控你的上線狀態。"
 echo ""
-echo "❗ If you go offline without reason (disconnect or shut down),"
-echo "   the system will consider it as malicious behavior and"
-echo "   automatically slash a portion of your staked tokens."
+echo "❗ 如果你無故離線（斷線或關機），系統將視為懲罰性行為，"
+echo "   並自動扣除你的一部分質押金（Slashing 機制）。"
 echo ""
-echo "✅ Proper way to go offline:"
-echo "   Please use the Undelegate command to exit the validator role"
-echo "   before shutting down your node."
+echo "✅ 正確離線方法:"
+echo "   請先使用解除質押命令（Undelegate）退出驗證人角色後，再關閉節點。"
 echo ""
-echo "🚫 Shutting down the node directly without undelegating risks slashing penalties."
-echo "   Please make sure you understand!"
+echo "🚫 直接關機或停止節點會造成懲罰風險。請務必確認！"
 echo ""
 echo "============================================================"
-read -p "Do you understand the risks above and want to continue? (y/N): " confirm
+read -p "你已了解以上風險，是否繼續安裝？ (y/N): " confirm
 
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-  echo "❌ Installation cancelled. Please read the instructions again before proceeding."
+  echo "❌ 已取消安裝。請再次閱讀說明後再啟動此腳本。"
   exit 1
 fi
 
-echo "📝 Please enter the name for your node (moniker):"
-read -p "Node name: " NODE_MONIKER
+echo "📝 請輸入你要為節點設定的名稱（moniker）:"
+read -p "節點名稱: " NODE_MONIKER
 
 if [[ -z "$NODE_MONIKER" ]]; then
-  echo "❌ Node name cannot be empty. Please rerun the script."
+  echo "❌ 節點名稱不能為空，請重新執行腳本。"
   exit 1
 fi
 
-echo "✅ Node name set to: $NODE_MONIKER"
+echo "✅ 節點名稱設定為: $NODE_MONIKER"
 
-echo "📝 Please enter the name for your wallet (key name):"
-read -p "Wallet name (key name): " KEY_NAME
+echo "📝 請輸入你要為你的錢包設定的名稱（key name）:"
+read -p "請輸入你的錢包名稱（key name）: " KEY_NAME
 if [[ -z "$KEY_NAME" ]]; then
-  echo "❌ Wallet name cannot be empty. Please rerun the script."
+  echo "❌ 錢包名稱不能為空，請重新執行腳本。"
   exit 1
 fi
-echo "✅ Wallet name set to: $KEY_NAME"
+echo "✅ 錢包名稱設定為: $KEY_NAME"
 
 GOLANG_VERSION=1.24.2
 ROCKSDB_VERSION=v9.2.1 
@@ -60,7 +56,7 @@ APP_CONFIG="./config/app.toml"
 PAXI_PATH="$HOME/paxid"
 DENOM="upaxi"
 
-### === Install dependencies ===
+### === 安裝依賴 ===
 echo ""
 apt update
 apt-get update && apt-get install -y \
@@ -69,17 +65,17 @@ apt-get update && apt-get install -y \
     liblz4-dev libzstd-dev wget curl pkg-config \
     ca-certificates 
 
-### === Install Go ===
+### === 安裝 Go ===
 if ! command -v go &> /dev/null; then
-    echo "Installing Go..."
+    echo "正在安裝 Go..."
     curl -LO https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz && \
     ln -s /usr/local/go/bin/go /usr/bin/go
 fi
 
-### === Install RocksDB ===
+### === 安裝 Rocksdb ===
 if ! [ -f /usr/local/lib/librocksdb.so ]; then
-    echo "Installing RocksDB..."
+    echo "正在安裝 Rocksdb..."
     git clone https://github.com/facebook/rocksdb.git && cd rocksdb
     git checkout $ROCKSDB_VERSION
     make -j$(nproc) shared_lib
@@ -88,9 +84,9 @@ if ! [ -f /usr/local/lib/librocksdb.so ]; then
     ldconfig && cd ..
 fi
 
-### === Compile Paxi ===
+### === 編譯 Paxi ===
 if ! [ -d ./paxi ]; then
-echo "Installing Paxi..."
+echo "正在安裝 Paxi..."
 git clone $PAXI_REPO
 cd paxi
 git checkout $PAXI_TAG
@@ -103,41 +99,40 @@ make install
 cd $PAXI_PATH
 fi
 
-### === Initialize node ===
+### === 初始化節點 ===
 if ! [ -f ./config/genesis.json ]; then
 $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
 curl -L $GENESIS_URL > ./config/genesis.json
 fi 
 
-### === Configure seeds and peers ===
+### === 設定種子與peers ===
 sed -i "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
 sed -i "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFIG
 
-### === Disable unnecessary ports for security ===
+### === 關閉不必要端口，強化安全性 ===
 sed -i 's|^laddr *=.*|laddr = "tcp://127.0.0.1:26657"|' $CONFIG
 sed -i 's|^prometheus *=.*|prometheus = false|' $CONFIG
 sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[api\]" $APP_CONFIG -A 3 | tail -n 1)
 sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[grpc-web\]" $APP_CONFIG -A 3 | tail -n 1)
 sed -i 's|^address *=.*|address = "127.0.0.1:9090"|' $(grep -l "\[grpc\]" $APP_CONFIG -A 3 | tail -n 1)
 
-### === Create wallet (if not exists) ===
+### === 建立錢包（如不存在）===
 if ! $BINARY_NAME keys show $KEY_NAME --keyring-backend os &>/dev/null; then
   echo ""
-  echo "After creating the wallet, please write down the mnemonic phrase by hand"
-  echo "to recover your wallet in case of loss."
+  echo "錢包創建完成後，請用手寫的方式記下以下的所有助記詞，以便遺失時恢復你的錢包"
   $BINARY_NAME keys add $KEY_NAME --keyring-backend os
 fi
 
-### === Display address ===
+### === 顯示地址 ===
 ADDR=$($BINARY_NAME keys show $KEY_NAME -a --keyring-backend os)
 echo ""
-echo "Your wallet address is: $ADDR"
-echo "Please send tokens to this address and then run the following command to become a validator:"
+echo "你的地址為: $ADDR"
+echo "請向此地址轉入代幣後執行以下指令進行質押:"
 
-### === Display create-validator command ===
+### === 顯示 create-validator 指令 ===
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
-echo "You can modify validator.json at: $PAXI_PATH/validator.json"
-echo "Generating validator.json..."
+echo "你可以從 $PAXI_PATH/validator.json 修改參數"
+echo "正在產生 validator.json..."
 cat <<EOF > validator.json
 {
   "pubkey": $VAL_PUBKEY,
@@ -154,24 +149,24 @@ cat <<EOF > validator.json
 }
 EOF
 echo ""
-echo "Command to become a validator (copy and paste to run):"
+echo "成為驗證人指令（複製貼上執行）:"
 echo "cd $PAXI_PATH && $BINARY_NAME tx staking create-validator validator.json \\"
 echo "  --from $KEY_NAME --keyring-backend os \\"
 echo "  --fees 10000$DENOM"
 
-### === Common commands ===
+### === 常用指令 ===
 echo ""
-echo "Start the node:"
+echo "啓動節點:"
 echo "$BINARY_NAME start"
 echo ""
-echo "Check wallet balance:"
-echo "$BINARY_NAME query bank balances <your address or wallet name>"
+echo "查看錢包餘額指令:"
+echo "$BINARY_NAME query bank balances <你的地址/錢包名稱>"
 echo ""
-echo "Check your staking rewards:"
-echo "$BINARY_NAME query distribution rewards <your address or wallet name>"
+echo "查看你的質押收益:"
+echo "$BINARY_NAME query distribution rewards <你的地址/錢包名稱>"
 echo ""
-echo "Check your validator public key:"
+echo "查看你的驗證人地址指令:"
 echo "$BINARY_NAME tendermint show-validator"
 echo ""
-echo "Check your validator rewards:"
-echo "$BINARY_NAME query distribution validator-outstanding-rewards <your validator address>"
+echo "查看你的驗證人收益:"
+echo "$BINARY_NAME query distribution validator-outstanding-rewards <你的驗證人地址>"
