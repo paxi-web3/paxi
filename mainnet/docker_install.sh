@@ -79,16 +79,17 @@ if ! command -v docker &> /dev/null; then
 
   sudo apt-get update
   sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  # 啟動 Docker 並允許非 root 用戶執行
+  sudo systemctl enable docker
+  sudo systemctl start docker
+  sudo usermod -aG docker $USER
+
+  echo "⚠️ 你可能需要重新登入，讓 docker 權限生效（或執行 newgrp docker）"
 else
   echo "✅ Docker 已安裝"
 fi
 
-# 啟動 Docker 並允許非 root 用戶執行
-sudo systemctl enable docker
-sudo systemctl start docker
-sudo usermod -aG docker $USER
-
-echo "⚠️ 你可能需要重新登入，讓 docker 權限生效（或執行 newgrp docker）"
 
 ### === 安裝 Paxi ===
 if [ ! -d "paxi" ]; then
