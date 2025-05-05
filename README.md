@@ -60,7 +60,7 @@ graph TD
   ```
 
 
-## Getting Started (for developer)
+## Quick Start for Developers
 
 ### 1. Install dependencies
 
@@ -103,23 +103,30 @@ make install
 ### 3. Start the test node
 
 ```bash
-# Initialize the node configuration (set your node name and chain ID, if you want to connect to mainnet then change --chain-id to paxi-mainnet)
+# Initialize the node configuration (set your node name and chain ID)
 paxid init your_node_name --chain-id my-testnet
-
 # Create a new account (make sure to save your mnemonic safely)
 paxid keys add your_account_name
-
 # Allocate 1,000,000 PAXI tokens to your account in the genesis file
 paxid genesis add-genesis-account your_account_name 1000000000000upaxi
-
 # Generate a genesis transaction by staking 900,000 PAXI
 paxid genesis gentx your_account_name 900000000000upaxi
-
 # Aggregate all genesis transactions into the genesis file
 paxid genesis collect-gentxs
-
 # Start the blockchain node
 paxid start
+```
+
+## Quick Start Guide to Running a PAXI Mainnet Node
+
+### 🐧 Linux Native Install
+```bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/v1.0.1/install.sh | bash
+```
+
+### 🐳 Docker Install
+```bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/v1.0.1/docker_install.sh | bash
 ```
 
 ## Whitepaper
