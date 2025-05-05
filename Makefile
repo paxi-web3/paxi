@@ -3,7 +3,6 @@
 APP_NAME = paxid
 VERSION ?= v1.0.1
 DOCKER_IMAGE = paxi-node
-COMPOSE_FILE = docker-compose.yml
 BUILD_TAGS = "rocksdb cosmwasm"
 CGO_ENABLED=1
 CGO_CFLAGS="-I/usr/local/include" 
@@ -38,7 +37,7 @@ test:
 
 docker:
 	@echo docker run -d --name $(DOCKER_IMAGE)"🐳 Building Docker image $(DOCKER_IMAGE)..."
-	docker build -f $(COMPOSE_FILE) -t $(DOCKER_IMAGE):latest . --progress=plain
+	docker build -t $(DOCKER_IMAGE):latest . --progress=plain
 	echo "✅ Docker image built: $(DOCKER_IMAGE):latest"
 
 

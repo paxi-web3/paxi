@@ -62,7 +62,7 @@ graph TD
 
 ## Quick Start for Developers
 
-### 1. Install dependencies
+### 1. Install Dependencies
 
 ```bash
 # Install dependencies
@@ -100,7 +100,7 @@ git clone https://github.com/paxi-web3/paxi && cd paxi
 make install
 ```
 
-### 3. Start the test node
+### 3. Start the Test Node
 
 ```bash
 # Initialize the node configuration (set your node name and chain ID)
@@ -117,7 +117,7 @@ paxid genesis collect-gentxs
 paxid start
 ```
 
-## Quick Start Guide to Running a PAXI Mainnet Node
+## Launch Your Own PAXI Mainnet Node in Minutes
 
 ### 🐧 Linux Native Install
 ```bash
