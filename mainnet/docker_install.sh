@@ -94,10 +94,13 @@ fi
 ### === 安裝 Paxi ===
 if [ ! -d "paxi" ]; then
   git clone $PAXI_REPO
+  cd paxi
   git checkout $PAXI_TAG
+  make docker
+else
+  cd paxi
+  make docker
 fi
-cd paxi
-make docker
 
 if ![ -d "$HOME/paxid" ]; then
 mkdir "$HOME/paxid" 

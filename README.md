@@ -121,12 +121,12 @@ paxid start
 
 ### 🐧 Linux Native Install
 ```bash
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/v1.0.1/install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/install.sh | bash
 ```
 
 ### 🐳 Docker Install
 ```bash
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/v1.0.1/docker_install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/docker_install.sh | bash
 ```
 
 ## Whitepaper
