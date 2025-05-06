@@ -143,6 +143,7 @@ echo "Please send tokens to this address and then run the following command to b
 COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq .countryCode)
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
 echo "You can modify validator.json at: $PAXI_DATA_PATH/validator.json"
+echo "Please add your country code at the end of the 'details' parameter, e.g., [US]. This helps us collect node location data and display it on the official website."
 echo "Generating validator.json..."
 cat <<EOF > $PAXI_DATA_PATH/validator.json
 {

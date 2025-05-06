@@ -138,6 +138,7 @@ echo "請向此地址轉入代幣後執行以下指令進行質押:"
 COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq .countryCode)
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
 echo "你可以從 $PAXI_DATA_PATH/validator.json 修改參數"
+echo "請在 'details' 參數的最後加上你的國家代號，例如: [US]，此舉方便我們收集節點位置數據然後顯示在官網上"
 echo "正在產生 validator.json..."
 cat <<EOF > $PAXI_DATA_PATH/validator.json
 {

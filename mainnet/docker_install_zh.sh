@@ -160,6 +160,7 @@ VAL_PUBKEY=$(docker run --rm \
   $DOCKER_IMAGE \
   $BINARY_NAME tendermint show-validator)
 echo "你可以從 $PAXI_PATH/validator.json 修改參數"
+echo "請在 'details' 參數的最後加上你的國家代號，例如: [US]，此舉方便我們收集節點位置數據然後顯示在官網上"
 echo "正在產生 validator.json..."
 cat <<EOF > validator.json
 {
