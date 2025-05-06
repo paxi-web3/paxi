@@ -47,7 +47,7 @@ fi
 echo "✅ Wallet name set to: $KEY_NAME"
 
 PAXI_REPO="https://github.com/paxi-web3/paxi"
-PAXI_TAG="v1.0.1"
+PAXI_TAG="lastest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
 GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"

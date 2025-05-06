@@ -62,71 +62,21 @@ graph TD
 
 ## Quick Start for Developers
 
-### 1. Install Dependencies
-
+### 🐧 Linux Native Install for Development
 ```bash
-# Install dependencies
-sudo apt-get update && apt-get install -y \
-    build-essential git cmake \
-    libsnappy-dev zlib1g-dev libbz2-dev \
-    liblz4-dev libzstd-dev wget curl pkg-config \
-    ca-certificates 
-
-# Install Go
-export GOLANG_VERSION=1.24.2
-curl -LO https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
-  tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz && \
-  ln -s /usr/local/go/bin/go /usr/bin/go
-    
-# In order to speed up Paxi node, we use rocksdb instead of goleveldb
-# First of all you need to build rocksdb before going to the next step
-git clone https://github.com/facebook/rocksdb.git && cd rocksdb
-git checkout v9.2.1 # or the version you want
-
-# Compile and install to /usr/local
-make -j$(nproc) shared_lib
-sudo make install-shared INSTALL_PATH=/usr/local
-
-# Add /usr/local/lib to the dynamic linker search paths
-echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/rocksdb.conf
-sudo ldconfig && cd ..
-```
-
-### 2. Clone & Build Paxi
-
-```bash
-# Build Paxid
-git clone https://github.com/paxi-web3/paxi && cd paxi
-make install
-```
-
-### 3. Start the Test Node
-
-```bash
-# Initialize the node configuration (set your node name and chain ID)
-paxid init your_node_name --chain-id my-testnet
-# Create a new account (make sure to save your mnemonic safely)
-paxid keys add your_account_name
-# Allocate 1,000,000 PAXI tokens to your account in the genesis file
-paxid genesis add-genesis-account your_account_name 1000000000000upaxi
-# Generate a genesis transaction by staking 900,000 PAXI
-paxid genesis gentx your_account_name 900000000000upaxi
-# Aggregate all genesis transactions into the genesis file
-paxid genesis collect-gentxs
-# Start the blockchain node
-paxid start
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/lastest-main/developer_install.sh | bash
 ```
 
 ## Launch Your Own PAXI Mainnet Node in Minutes
 
-### 🐧 Linux Native Install
+### 🐧 Linux Native Install for Mainnet
 ```bash
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/lastest-main/install.sh | bash
 ```
 
-### 🐳 Docker Install
+### 🐳 Docker Install for Mainnet
 ```bash
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/docker_install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/lastest-main/docker_install.sh | bash
 ```
 
 ## Whitepaper

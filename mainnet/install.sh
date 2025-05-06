@@ -49,7 +49,7 @@ echo "✅ Wallet name set to: $KEY_NAME"
 GOLANG_VERSION=1.24.2
 ROCKSDB_VERSION=v9.2.1 
 PAXI_REPO="https://github.com/paxi-web3/paxi"
-PAXI_TAG="v1.0.1"
+PAXI_TAG="lastest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
 GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
@@ -99,6 +99,7 @@ if ! [ -d ./paxi ]; then
 echo "Installing Paxi..."
 git clone $PAXI_REPO
 cd paxi
+git checkout $PAXI_TAG
 make install
 cd $PAXI_PATH
 else
