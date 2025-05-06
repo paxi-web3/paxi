@@ -154,6 +154,7 @@ docker run --rm -it \
 echo "Please fund this address and run the following command to become a validator:"
 
 ### === Generate create-validator command ===
+COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq .countryCode)
 VAL_PUBKEY=$(docker run --rm \
   -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
   $DOCKER_IMAGE \
@@ -168,7 +169,7 @@ cat <<EOF > validator.json
   "identity": "",
   "website": "",
   "security": "",
-  "details": "PAXI validator initialized by install.sh",
+  "details": "PAXI validator node [$COUNTRY_CODE]",
   "commission-rate": "0.1",
   "commission-max-rate": "0.2",
   "commission-max-change-rate": "0.01",

@@ -1,0 +1,18 @@
+{
+  "prc20": {
+    "name": "PRC-20 v1.0",
+    "code_id": 1,
+    "hash": "",
+    "features": ["freeze"],
+    "deployer": "paxi1hv7txq4kmc9spkk3nrq0xnhj0jkhk4ye53f50h",
+    "source": "https://github.com/paxi-web3/cw-plus"
+  },
+  "prc721": {
+    "name": "PRC-721 v1.0",
+    "code_id": 2,
+    "hash": "",
+    "features": [],
+    "deployer": "paxi1hv7txq4kmc9spkk3nrq0xnhj0jkhk4ye53f50h",
+    "source": "https://github.com/paxi-web3/cw-nfts"
+  }
+}

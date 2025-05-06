@@ -135,6 +135,7 @@ echo "你的地址為: $ADDR"
 echo "請向此地址轉入代幣後執行以下指令進行質押:"
 
 ### === 顯示 create-validator 指令 ===
+COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq .countryCode)
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
 echo "你可以從 $PAXI_DATA_PATH/validator.json 修改參數"
 echo "正在產生 validator.json..."
@@ -146,7 +147,7 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "identity": "",
   "website": "",
   "security": "",
-  "details": "PAXI validator initialized by install.sh",
+  "details": "PAXI validator node [$COUNTRY_CODE]",
   "commission-rate": "0.1",
   "commission-max-rate": "0.2",
   "commission-max-change-rate": "0.01",

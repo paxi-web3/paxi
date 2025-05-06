@@ -140,6 +140,7 @@ echo "Your wallet address is: $ADDR"
 echo "Please send tokens to this address and then run the following command to become a validator:"
 
 ### === Display create-validator command ===
+COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq .countryCode)
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
 echo "You can modify validator.json at: $PAXI_DATA_PATH/validator.json"
 echo "Generating validator.json..."
@@ -151,7 +152,7 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "identity": "",
   "website": "",
   "security": "",
-  "details": "PAXI validator initialized by install.sh",
+  "details": "PAXI validator node [$COUNTRY_CODE]",
   "commission-rate": "0.1",
   "commission-max-rate": "0.2",
   "commission-max-change-rate": "0.01",
