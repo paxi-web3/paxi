@@ -60,23 +60,21 @@ graph TD
   ```
 
 
-## Quick Start for Developers
-
-### 🐧 Linux Native Install for Development
+## Linux Native Install for Developers
 ```bash
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/lastest-main/scripts/developer_install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/developer_install.sh | bash
 ```
 
 ## Launch Your Own PAXI Mainnet Node in Minutes
 
 ### 🐧 Linux Native Install for Mainnet
 ```bash
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/lastest-main/scripts/install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/install.sh | bash
 ```
 
 ### 🐳 Docker Install for Mainnet
 ```bash
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/lastest-main/scripts/docker_install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/docker_install.sh | bash
 ```
 
 ## Whitepaper
