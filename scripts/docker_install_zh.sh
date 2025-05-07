@@ -43,7 +43,7 @@ fi
 echo "✅ 錢包名稱設定為: $KEY_NAME"
 
 PAXI_REPO="https://github.com/paxi-web3/paxi"
-PAXI_TAG="lastest-main"
+PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
 GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
