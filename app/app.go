@@ -642,6 +642,7 @@ func (app *PaxiApp) setAnteHandler(txConfig client.TxConfig) {
 		},
 		app,
 		app.WasmKeeper,
+		app.AccountKeeper,
 	)
 	if err != nil {
 		panic(err)

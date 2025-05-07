@@ -8,6 +8,7 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	apptypes "github.com/paxi-web3/paxi/app/types"
 )
 
@@ -20,7 +21,7 @@ type HandlerOptions struct {
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
 // numbers, checks signatures & account numbers, and deducts fees from the first
 // signer.
-func NewAnteHandler(options HandlerOptions, app *PaxiApp, wasmKeeper wasmkeeper.Keeper) (sdk.AnteHandler, error) {
+func NewAnteHandler(options HandlerOptions, app *PaxiApp, wasmKeeper wasmkeeper.Keeper, ak authkeeper.AccountKeeper) (sdk.AnteHandler, error) {
 	if options.AccountKeeper == nil {
 		return nil, errors.New("account keeper is required for ante builder")
 	}
@@ -35,10 +36,11 @@ func NewAnteHandler(options HandlerOptions, app *PaxiApp, wasmKeeper wasmkeeper.
 
 	anteDecorators := []sdk.AnteDecorator{
 		ante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-		PaxiDecorator{App: app},         // Status of Paxi blockchain
+		BlockStatusDecorator{App: app},  // Status of Paxi blockchain
 		circuitante.NewCircuitBreakerDecorator(options.CircuitKeeper),
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
-		WasmDecorator{gasRegister: apptypes.SmartContractGasRegisterConfig(), wasmKeeper: wasmKeeper}, // Raise the cost of stroing code of smart contract
+		SpamPreventDecorator{ak: ak},                                                                  // Raise the cost for some types of transcation in order to prevent spam
+		WasmDecorator{gasRegister: apptypes.SmartContractGasRegisterConfig(), wasmKeeper: wasmKeeper}, // Raise the cost of stroing code / initial of smart contract
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),

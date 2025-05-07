@@ -6,11 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type PaxiDecorator struct {
+type BlockStatusDecorator struct {
 	App *PaxiApp
 }
 
-func (p PaxiDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+func (p BlockStatusDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	startGas := ctx.GasMeter().GasConsumed() // consumed at the begin
 
 	ctx, err := next(ctx, tx, simulate)
