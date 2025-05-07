@@ -28,7 +28,7 @@ Powered by **Go**, Paxi delivers high performance, fast development cycles, and 
 ### Core Values
 
 - **Minimal but complete** system architecture — no bloat, just the essentials
-- **Fast** – Optimized consensus and state execution, supporting >1,000 TPS
+- **Fast** – Optimized consensus and state execution, supporting >4,000 TPS
 - **Secure** – Proven Tendermint-based BFT consensus with enhanced validator safety
 - **Simple is beautiful** – Intuitive module system, CLI & GUI interfaces, developer-friendly SDK
 - **Developer-first** — with future IDE and low-code support

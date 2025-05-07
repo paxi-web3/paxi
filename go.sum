@@ -657,8 +657,6 @@ github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/CosmWasm/wasmd v0.55.0 h1:NJgTxvdqh4WunjQ/djL0hnnq3LUU58rW7CiUkeCBu/8=
-github.com/CosmWasm/wasmd v0.55.0/go.mod h1:67K2PzoSF9+NjImaALEYMaAHd3zwaSuWLsQ7iSznUik=
 github.com/CosmWasm/wasmvm/v2 v2.2.1 h1:cmOnM+TDfUl2VRugeo1eJBw4U/Lw0WLviuQHKSo9DVQ=
 github.com/CosmWasm/wasmvm/v2 v2.2.1/go.mod h1:bMhLQL4Yp9CzJi9A83aR7VO9wockOsSlZbT4ztOl6bg=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
@@ -1395,6 +1393,8 @@ github.com/paxi-web3/cometbft-db v0.14.1-paxi h1:Ri9Iozy60YVKNOafp9CXNS0CHgzMPiD
 github.com/paxi-web3/cometbft-db v0.14.1-paxi/go.mod h1:KHP1YghilyGV/xjD5DP3+2hyigWx0WTp9X+0Gnx0RxQ=
 github.com/paxi-web3/store v1.1.2-paxi h1:vsn7jLXpKkaa657B1aFZfISuaPizVTZb7AHGliPESOI=
 github.com/paxi-web3/store v1.1.2-paxi/go.mod h1:99XXNP27PrdOtVcE3WoVtytJB4NUfyYMZeMQmx6GWsA=
+github.com/paxi-web3/wasmd v0.55.0-paxi-1.1 h1:6tckxvoMAXAaxk5o/FZMPmR/7jimEzxCJvpOlV/Lz1U=
+github.com/paxi-web3/wasmd v0.55.0-paxi-1.1/go.mod h1:67K2PzoSF9+NjImaALEYMaAHd3zwaSuWLsQ7iSznUik=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-toml/v2 v2.0.8/go.mod h1:vuYfssBdrU2XDZ9bYydBu6t+6a6PYNcZljzZR9VXg+4=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
