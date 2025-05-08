@@ -12,7 +12,7 @@ type SpamPreventDecorator struct {
 }
 
 func (s SpamPreventDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	const extraGasPerNewAccount = 200_000
+	const extraGasPerNewAccount = 300_000
 
 	msgs := tx.GetMsgs()
 	for _, msg := range msgs {
