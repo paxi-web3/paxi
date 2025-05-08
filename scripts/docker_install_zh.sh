@@ -5,6 +5,11 @@ echo "============================================================"
 echo "🚨  PAXI 驗證人節點安裝警告"
 echo "============================================================"
 echo ""
+echo "🛑 最強烈警告："
+echo "❗ 若超過 1/3 驗證人節點掉線，整個區塊鏈將會停擺。"
+echo "❗ 請務必備份整個 paxi 資料夾，尤其是節點私鑰（node_key.json、priv_validator_key.json、keyring），"
+echo "   一旦電腦故障，才能及時修復並取回質押收益與驗證人身份。"
+echo ""
 echo "⚠️ 請注意:"
 echo "   一旦你質押並成為驗證人，系統會自動監控你的上線狀態。"
 echo ""
@@ -17,7 +22,7 @@ echo ""
 echo "🚫 直接關機或停止節點會造成懲罰風險。請務必確認！"
 echo ""
 echo "============================================================"
-read -p "你已了解以上風險，是否繼續安裝？ (y/N): " confirm
+read -p "你已了解以上風險，是否繼續安裝？ (y/N): " 確定
 
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
   echo "❌ 已取消安裝。請再次閱讀說明後再啟動此腳本。"
@@ -47,7 +52,7 @@ PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
 GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
-SEEDS="mainner-seed-1.paxi.io:26656"
+SEEDS="mainnet-seed-1.paxi.io:26656"
 PERSISTENT_PEERS="key@mainnet-node-1.paxi.io:26656"
 CONFIG="./paxi/config/config.toml"
 APP_CONFIG="./paxi/config/app.toml"
@@ -154,15 +159,15 @@ docker run --rm -it \
 echo "請向此地址轉入代幣後執行以下指令進行質押:"
 
 ### === 顯示 create-validator 指令 ===
-COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq .countryCode)
+COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq -r .countryCode)
 VAL_PUBKEY=$(docker run --rm \
   -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
   $DOCKER_IMAGE \
   $BINARY_NAME tendermint show-validator)
-echo "你可以從 $PAXI_PATH/validator.json 修改參數"
+echo "你可以從 $PAXI_DATA_PATH/validator.json 修改參數"
 echo "請在 'details' 參數的最後加上你的國家代號，例如: [US]，此舉方便我們收集節點位置數據然後顯示在官網上"
 echo "正在產生 validator.json..."
-cat <<EOF > validator.json
+cat <<EOF > $PAXI_DATA_PATH/validator.json
 {
   "pubkey": $VAL_PUBKEY,
   "amount": "1000000000$DENOM",
@@ -179,8 +184,8 @@ cat <<EOF > validator.json
 EOF
 echo ""
 echo "成為驗證人指令（複製貼上執行）:"
-echo "docker run --rm -it -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
-echo "$BINARY_NAME tx staking create-validator ./paxi/validator.json \\"
+echo "docker run --rm -it --network host -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
+echo "$BINARY_NAME tx staking create-validator $DOCKER_PAXI_DATA_PATH/validator.json \\"
 echo "  --from $KEY_NAME --keyring-backend file \\"
 echo "  --fees 10000$DENOM"
 
@@ -192,18 +197,20 @@ echo "-p 26656:26656 -p 26657:26657 -p 1317:1317 -p 9090:9090 \\"
 echo "paxi-node \\"
 echo "$BINARY_NAME start"
 echo ""
+echo "爲了方便，請在執行以下指令前進入容器:"
+echo "docker run --rm -it --network host -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE bash"
+echo ""
+echo "查看錢包地址:"
+echo "$BINARY_NAME keys show $KEY_NAME --keyring-backend file"
+echo ""
 echo "查看錢包餘額指令:"
-echo "docker run --rm -it -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
 echo "$BINARY_NAME query bank balances <你的地址/錢包名稱> --keyring-backend file"
 echo ""
 echo "查看你的質押收益:"
-echo "docker run --rm -it -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
 echo "$BINARY_NAME query distribution rewards <你的地址/錢包名稱> --keyring-backend file"
 echo ""
 echo "查看你的驗證人地址指令:"
-echo "docker run --rm -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
 echo "$BINARY_NAME tendermint show-validator"
 echo ""
 echo "查看你的驗證人收益:"
-echo "docker run --rm -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
 echo "$BINARY_NAME query distribution validator-outstanding-rewards <你的驗證人地址>"

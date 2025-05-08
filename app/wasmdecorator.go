@@ -29,7 +29,7 @@ func (w WasmDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, nex
 			}
 			codeSize := len(byteCode)
 			baseGas := uint64(30_000_000)
-			gasMultiplier := uint64(80)
+			gasMultiplier := uint64(100)
 			extraGas := baseGas + uint64(codeSize)*gasMultiplier
 			ctx.GasMeter().ConsumeGas(extraGas, "custom wasm instantial penalty")
 		}

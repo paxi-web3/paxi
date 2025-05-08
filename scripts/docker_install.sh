@@ -5,6 +5,11 @@ echo "============================================================"
 echo "🚨  PAXI Validator Node Installation Warning"
 echo "============================================================"
 echo ""
+echo "🛑 CRITICAL WARNING:"
+echo "❗ If more than 1/3 of validator nodes go offline, the entire blockchain will halt."
+echo "❗ You must back up the entire paxi folder, especially your node's private keys (node_key.json, priv_validator_key.json, keyring)."
+echo "   If your machine fails, this is the only way to restore your validator and reclaim your staking rewards."
+echo ""
 echo "⚠️ Please note:"
 echo "   Once you stake and become a validator, the system will"
 echo "   automatically monitor your online status."
@@ -51,7 +56,7 @@ PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
 GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
-SEEDS="mainner-seed-1.paxi.io:26656"
+SEEDS="mainnet-seed-1.paxi.io:26656"
 PERSISTENT_PEERS="key@mainnet-node-1.paxi.io:26656"
 CONFIG="./paxi/config/config.toml"
 APP_CONFIG="./paxi/config/app.toml"
@@ -154,15 +159,15 @@ docker run --rm -it \
 echo "Please fund this address and run the following command to become a validator:"
 
 ### === Generate create-validator command ===
-COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq .countryCode)
+COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq -r .countryCode)
 VAL_PUBKEY=$(docker run --rm \
   -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
   $DOCKER_IMAGE \
   $BINARY_NAME tendermint show-validator)
-echo "You may edit validator.json at: $PAXI_PATH/validator.json"
+echo "You may edit validator.json at: $PAXI_DATA_PATH/validator.json"
 echo "Please add your country code at the end of the 'details' parameter, e.g., [US]. This helps us collect node location data and display it on the official website."
 echo "Generating validator.json..."
-cat <<EOF > validator.json
+cat <<EOF > $PAXI_DATA_PATH/validator.json
 {
   "pubkey": $VAL_PUBKEY,
   "amount": "1000000000$DENOM",
@@ -180,7 +185,7 @@ EOF
 echo ""
 echo "Validator creation command (copy & paste to execute):"
 echo "docker run --rm -it -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
-echo "$BINARY_NAME tx staking create-validator ./paxi/validator.json \\"
+echo "$BINARY_NAME tx staking create-validator $DOCKER_PAXI_DATA_PATH/validator.json \\"
 echo "  --from $KEY_NAME --keyring-backend file \\"
 echo "  --fees 10000$DENOM"
 
@@ -192,18 +197,20 @@ echo "-p 26656:26656 -p 26657:26657 -p 1317:1317 -p 9090:9090 \\"
 echo "paxi-node \\"
 echo "$BINARY_NAME start"
 echo ""
+echo "For convenience, please enter the container before running the following commands:"
+echo "docker run --rm -it --network host -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE bash"
+echo ""
+echo "To view your wallet address:"
+echo "$BINARY_NAME keys show $KEY_NAME --keyring-backend file"
+echo ""
 echo "Check wallet balance:"
-echo "docker run --rm -it -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
 echo "$BINARY_NAME query bank balances <your address or key name> --keyring-backend file"
 echo ""
 echo "Check your staking rewards:"
-echo "docker run --rm -it -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
 echo "$BINARY_NAME query distribution rewards <your address or key name> --keyring-backend file"
 echo ""
 echo "Check your validator public key:"
-echo "docker run --rm -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
 echo "$BINARY_NAME tendermint show-validator"
 echo ""
 echo "Check your validator's outstanding rewards:"
-echo "docker run --rm -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
 echo "$BINARY_NAME query distribution validator-outstanding-rewards <your validator address>"

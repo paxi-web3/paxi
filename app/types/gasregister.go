@@ -8,10 +8,10 @@ import (
 func SmartContractGasRegisterConfig() wasmtypes.WasmGasRegisterConfig {
 	return wasmtypes.WasmGasRegisterConfig{
 		// Each time a wasm instance is created (cold load from disk)
-		InstanceCost: 240_000,
+		InstanceCost: 300_000,
 
 		// Discounted cost when instance is reused from memory cache (e.g. pinned)
-		InstanceCostDiscount: 60_000,
+		InstanceCostDiscount: 100_000,
 
 		// Cost per byte to compile wasm bytecode on store
 		// NOTE: this code will only take effect in the WasmDecorator

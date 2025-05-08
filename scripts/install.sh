@@ -5,23 +5,28 @@ echo "============================================================"
 echo "🚨  PAXI Validator Node Installation Warning"
 echo "============================================================"
 echo ""
+echo "🛑 CRITICAL WARNING:"
+echo "❗ If more than 1/3 of validator nodes go offline, the entire blockchain will halt."
+echo "❗ You must back up the entire paxi folder, especially your node's private keys (node_key.json, priv_validator_key.json, keyring)."
+echo "   If your machine fails, this is the only way to restore your validator and reclaim your staking rewards."
+echo ""
 echo "⚠️ Please note:"
 echo "   Once you stake and become a validator, the system will"
 echo "   automatically monitor your online status."
 echo ""
-echo "❗ If you go offline without reason (disconnect or shut down),"
-echo "   the system will consider it as malicious behavior and"
-echo "   automatically slash a portion of your staked tokens."
+echo "❗ If you go offline without undelegating (e.g. shutdown or disconnect),"
+echo "   the system will treat it as a slashing offense and"
+echo "   automatically deduct a portion of your staked tokens."
 echo ""
-echo "✅ Proper way to go offline:"
-echo "   Please use the Undelegate command to exit the validator role"
-echo "   before shutting down your node."
+echo "✅ Correct way to go offline:"
+echo "   Use the Undelegate command to leave the validator role"
+echo "   before stopping or shutting down your node."
 echo ""
-echo "🚫 Shutting down the node directly without undelegating risks slashing penalties."
+echo "🚫 Shutting down your node directly may result in slashing penalties."
 echo "   Please make sure you understand!"
 echo ""
 echo "============================================================"
-read -p "Do you understand the risks above and want to continue? (y/N): " confirm
+read -p "Do you understand the above risks and wish to continue? (y/N): " confirm
 
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
   echo "❌ Installation cancelled. Please read the instructions again before proceeding."
@@ -53,7 +58,7 @@ PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
 GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
-SEEDS="mainner-seed-1.paxi.io:26656"
+SEEDS="mainnet-seed-1.paxi.io:26656"
 PERSISTENT_PEERS="key@mainnet-node-1.paxi.io:26656"
 CONFIG="./paxi/config/config.toml"
 APP_CONFIG="./paxi/config/app.toml"
@@ -140,7 +145,7 @@ echo "Your wallet address is: $ADDR"
 echo "Please send tokens to this address and then run the following command to become a validator:"
 
 ### === Display create-validator command ===
-COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq .countryCode)
+COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq -r .countryCode)
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
 echo "You can modify validator.json at: $PAXI_DATA_PATH/validator.json"
 echo "Please add your country code at the end of the 'details' parameter, e.g., [US]. This helps us collect node location data and display it on the official website."
@@ -162,7 +167,7 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
 EOF
 echo ""
 echo "Command to become a validator (copy and paste to run):"
-echo "cd $PAXI_PATH && $BINARY_NAME tx staking create-validator ./paxi/validator.json \\"
+echo "cd $PAXI_PATH && $BINARY_NAME tx staking create-validator $PAXI_DATA_PATH/validator.json \\"
 echo "  --from $KEY_NAME --keyring-backend os \\"
 echo "  --fees 10000$DENOM"
 
