@@ -57,9 +57,10 @@ PAXI_REPO="https://github.com/paxi-web3/paxi"
 PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
-GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
 SEEDS="mainnet-seed-1.paxi.io:26656"
 PERSISTENT_PEERS="key@mainnet-node-1.paxi.io:26656"
+RPC_URL="http://mainnet-rpc-1.paxi.io:26657"
+GENESIS_URL="$RPC_URL/genesis?"
 CONFIG="./paxi/config/config.toml"
 APP_CONFIG="./paxi/config/app.toml"
 PAXI_PATH="$HOME/paxid"
@@ -116,8 +117,28 @@ fi
 ### === Initialize node ===
 if ! [ -f ./paxi/config/genesis.json ]; then
 $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
-curl -L $GENESIS_URL > ./paxi/config/genesis.json
 fi 
+
+curl -s $GENESIS_URL | jq -r .result.genesis > ./paxi/config/genesis.json
+
+### === Set state sync ===
+BLOCK_OFFSET=100
+LATEST_HEIGHT=$(curl -s "$RPC_URL/block" | jq -r .result.block.header.height)
+TRUST_HEIGHT=$((LATEST_HEIGHT - BLOCK_OFFSET))
+TRUST_HASH=$(curl -s "$RPC_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
+
+if [[ -z "$TRUST_HEIGHT" || -z "$TRUST_HASH" || "$TRUST_HASH" == "null" ]]; then
+  echo "❌ Failed to retrieve trust height or hash. Please check the RPC URL."
+  exit 1
+fi
+
+sed -i "/^\[statesync\]/,/^\[/{                               
+  s|^enable *=.*|enable = true|g
+  s|^rpc_servers *=.*|rpc_servers = \"$RPC_URL,$RPC_URL\"|g
+  s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g
+  s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g
+  s|^trust_period *=.*|trust_period = \"168h\"|g
+}" "$CONFIG"
 
 ### === Configure seeds and peers ===
 sed -i "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
@@ -131,15 +152,15 @@ sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[grpc-web\]" $APP_CONFIG -A 
 sed -i 's|^address *=.*|address = "127.0.0.1:9090"|' $(grep -l "\[grpc\]" $APP_CONFIG -A 3 | tail -n 1)
 
 ### === Create wallet (if not exists) ===
-if ! $BINARY_NAME keys show $KEY_NAME --keyring-backend os &>/dev/null; then
+if ! $BINARY_NAME keys show $KEY_NAME &>/dev/null; then
   echo ""
   echo "After creating the wallet, please write down the mnemonic phrase by hand"
   echo "to recover your wallet in case of loss."
-  $BINARY_NAME keys add $KEY_NAME --keyring-backend os
+  $BINARY_NAME keys add $KEY_NAME 
 fi
 
 ### === Display address ===
-ADDR=$($BINARY_NAME keys show $KEY_NAME -a --keyring-backend os)
+ADDR=$($BINARY_NAME keys show $KEY_NAME -a )
 echo ""
 echo "Your wallet address is: $ADDR"
 echo "Please send tokens to this address and then run the following command to become a validator:"
@@ -168,7 +189,7 @@ EOF
 echo ""
 echo "Command to become a validator (copy and paste to run):"
 echo "cd $PAXI_PATH && $BINARY_NAME tx staking create-validator $PAXI_DATA_PATH/validator.json \\"
-echo "  --from $KEY_NAME --keyring-backend os \\"
+echo "  --from $KEY_NAME \\"
 echo "  --fees 10000$DENOM"
 
 ### === Common commands ===

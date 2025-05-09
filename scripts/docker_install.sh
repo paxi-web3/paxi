@@ -55,9 +55,10 @@ PAXI_REPO="https://github.com/paxi-web3/paxi"
 PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
-GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
 SEEDS="mainnet-seed-1.paxi.io:26656"
 PERSISTENT_PEERS="key@mainnet-node-1.paxi.io:26656"
+RPC_URL="http://mainnet-rpc-1.paxi.io:26657"
+GENESIS_URL="$RPC_URL/genesis?"
 CONFIG="./paxi/config/config.toml"
 APP_CONFIG="./paxi/config/app.toml"
 PAXI_PATH="$HOME/paxid"
@@ -122,8 +123,28 @@ docker run --rm \
   $DOCKER_IMAGE \
   $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
 sudo chown -R $(whoami) $HOME/paxid
-# curl -L $GENESIS_URL > ./paxi/config/genesis.json
 fi 
+
+curl -s $GENESIS_URL | jq -r .result.genesis > ./paxi/config/genesis.json
+
+### === Set state sync ===
+BLOCK_OFFSET=100
+LATEST_HEIGHT=$(curl -s "$RPC_URL/block" | jq -r .result.block.header.height)
+TRUST_HEIGHT=$((LATEST_HEIGHT - BLOCK_OFFSET))
+TRUST_HASH=$(curl -s "$RPC_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
+
+if [[ -z "$TRUST_HEIGHT" || -z "$TRUST_HASH" || "$TRUST_HASH" == "null" ]]; then
+  echo "❌ Failed to retrieve trust height or hash. Please check the RPC URL."
+  exit 1
+fi
+
+sed -i "/^\[statesync\]/,/^\[/{                               
+  s|^enable *=.*|enable = true|g
+  s|^rpc_servers *=.*|rpc_servers = \"$RPC_URL,$RPC_URL\"|g
+  s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g
+  s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g
+  s|^trust_period *=.*|trust_period = \"168h\"|g
+}" "$CONFIG"
 
 ### === Configure seeds and peers ===
 sed -i "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG

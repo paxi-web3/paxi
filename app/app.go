@@ -28,7 +28,6 @@ import (
 	"cosmossdk.io/x/evidence"
 	evidencekeeper "cosmossdk.io/x/evidence/keeper"
 	evidencetypes "cosmossdk.io/x/evidence/types"
-	"cosmossdk.io/x/nft"
 	"cosmossdk.io/x/tx/signing"
 	"cosmossdk.io/x/upgrade"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
@@ -114,7 +113,6 @@ var (
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
-		nft.ModuleName:                 nil,
 		paxitypes.BurnTokenAccountName: {authtypes.Burner},
 	}
 )
@@ -531,7 +529,6 @@ func NewPaxiApp(
 		customminttypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
-		nft.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
@@ -551,7 +548,6 @@ func NewPaxiApp(
 		customminttypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
-		nft.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
 		circuittypes.ModuleName,

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
@@ -26,6 +27,7 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	version "github.com/paxi-web3/paxi"
+	"github.com/paxi-web3/paxi/utils"
 	paxicli "github.com/paxi-web3/paxi/x/paxi/client"
 )
 
@@ -45,6 +47,11 @@ func initRootCmd(
 
 	server.AddCommandsWithStartCmdOptions(rootCmd, app.DefaultNodeHome, newAppWithWasm, appExport, server.StartCmdOptions{
 		AddFlags: func(startCmd *cobra.Command) {
+			startCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+				// Clean wasm cache
+				utils.CleanOldWasmCache(app.DefaultNodeHome, 1*24*time.Hour)
+				return nil
+			}
 		},
 	})
 

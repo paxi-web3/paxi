@@ -2,6 +2,7 @@ syntax = "proto3";
 package x.custommint.types;
 
 import "cosmos/msg/v1/msg.proto";
+import "gogoproto/gogo.proto";
 
 option go_package = "github.com/paxi-web3/paxi/x/custommint/types";
 
@@ -18,7 +19,7 @@ message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
 
   string authority = 1;
-  ParamsInput params = 2;
+  ParamsInput params = 2 [(gogoproto.nullable) = false];
 }
 
 message MsgUpdateParamsResponse {}

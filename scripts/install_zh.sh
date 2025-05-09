@@ -53,9 +53,10 @@ PAXI_REPO="https://github.com/paxi-web3/paxi"
 PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
-GENESIS_URL="https://raw.githubusercontent.com/paxi-web3/mainnet/genesis.json"
 SEEDS="mainnet-seed-1.paxi.io:26656"
 PERSISTENT_PEERS="key@mainnet-node-1.paxi.io:26656"
+RPC_URL="http://mainnet-rpc-1.paxi.io:26657"
+GENESIS_URL="$RPC_URL/genesis?"
 CONFIG="./paxi/config/config.toml"
 APP_CONFIG="./paxi/config/app.toml"
 PAXI_PATH="$HOME/paxid"
@@ -112,8 +113,28 @@ fi
 ### === 初始化節點 ===
 if ! [ -f ./paxi/config/genesis.json ]; then
 $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
-curl -L $GENESIS_URL > ./paxi/config/genesis.json
 fi 
+
+curl -s $GENESIS_URL | jq -r .result.genesis > ./paxi/config/genesis.json
+
+### === 設置快照同步 ===
+BLOCK_OFFSET=100
+LATEST_HEIGHT=$(curl -s "$RPC_URL/block" | jq -r .result.block.header.height)
+TRUST_HEIGHT=$((LATEST_HEIGHT - BLOCK_OFFSET))
+TRUST_HASH=$(curl -s "$RPC_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
+
+if [[ -z "$TRUST_HEIGHT" || -z "$TRUST_HASH" || "$TRUST_HASH" == "null" ]]; then
+  echo "❌ 無法取得 trust 高度或 hash，請檢查 RPC URL。"
+  exit 1
+fi
+
+sed -i "/^\[statesync\]/,/^\[/{                               
+  s|^enable *=.*|enable = true|g
+  s|^rpc_servers *=.*|rpc_servers = \"$RPC_URL,$RPC_URL\"|g
+  s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g
+  s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g
+  s|^trust_period *=.*|trust_period = \"168h\"|g
+}" "$CONFIG"
 
 ### === 設定種子與peers ===
 sed -i "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
@@ -127,14 +148,14 @@ sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[grpc-web\]" $APP_CONFIG -A 
 sed -i 's|^address *=.*|address = "127.0.0.1:9090"|' $(grep -l "\[grpc\]" $APP_CONFIG -A 3 | tail -n 1)
 
 ### === 建立錢包（如不存在）===
-if ! $BINARY_NAME keys show $KEY_NAME --keyring-backend os &>/dev/null; then
+if ! $BINARY_NAME keys show $KEY_NAME &>/dev/null; then
   echo ""
   echo "錢包創建完成後，請用手寫的方式記下以下的所有助記詞，以便遺失時恢復你的錢包"
-  $BINARY_NAME keys add $KEY_NAME --keyring-backend os
+  $BINARY_NAME keys add $KEY_NAME
 fi
 
 ### === 顯示地址 ===
-ADDR=$($BINARY_NAME keys show $KEY_NAME -a --keyring-backend os)
+ADDR=$($BINARY_NAME keys show $KEY_NAME -a)
 echo ""
 echo "你的地址為: $ADDR"
 echo "請向此地址轉入代幣後執行以下指令進行質押:"
@@ -163,7 +184,7 @@ EOF
 echo ""
 echo "成為驗證人指令（複製貼上執行）:"
 echo "cd $PAXI_PATH && $BINARY_NAME tx staking create-validator $PAXI_DATA_PATH/validator.json \\"
-echo "  --from $KEY_NAME --keyring-backend os \\"
+echo "  --from $KEY_NAME \\"
 echo "  --fees 10000$DENOM"
 
 ### === 常用指令 ===
