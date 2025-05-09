@@ -13,9 +13,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/gorilla/mux"
 	"github.com/paxi-web3/paxi/x/custommint/keeper"
-	rest "github.com/paxi-web3/paxi/x/custommint/rest"
 	customminttypes "github.com/paxi-web3/paxi/x/custommint/types"
 )
 
@@ -57,11 +55,9 @@ func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) 
 
 func (am AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *gwruntime.ServeMux) {
 	// Register custom gRPC gateway routes here
-}
-
-func (am AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
-	// Register custom REST gateway routes here
-	rtr.HandleFunc("/paxi/custommint/total_minted", rest.TotalMintedHandler(clientCtx)).Methods("GET")
+	if err := customminttypes.RegisterQueryHandlerClient(context.Background(), mux, customminttypes.NewQueryClient(clientCtx)); err != nil {
+		panic(err)
+	}
 }
 
 func (am AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {

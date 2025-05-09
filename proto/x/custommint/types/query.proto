@@ -1,17 +1,41 @@
 syntax = "proto3";
+
 package x.custommint.types;
 
-import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "google/api/annotations.proto";
 
-option go_package = "github.com/paxi-web3/paxi/x/custommint/types";
+option go_package = "github.com/paxi-web3/paxi/x/custommint/types;types";
 
 service Query {
-  rpc TotalMinted(QueryTotalMintedRequest) returns (QueryTotalMintedResponse);
+  rpc TotalMinted(QueryTotalMintedRequest) returns (QueryTotalMintedResponse) {
+    option (google.api.http) = {
+      get: "/paxi/custommint/total_minted"
+    };
+  }
+
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http) = {
+      get: "/paxi/custommint/params"
+    };
+  }
 }
 
-message QueryTotalMintedRequest {}
+message QueryTotalMintedRequest {
+}
 
 message QueryTotalMintedResponse {
-  cosmos.base.v1beta1.Coin amount = 1 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin amount = 1;
+}
+
+message QueryParamsRequest {
+}
+
+message QueryParamsResponse {
+  string burn_threshold = 1;
+  string burn_ratio = 2;
+  int64 blocks_per_year = 3;
+  string first_year_inflation = 4;
+  string second_year_inflation = 5;
+  string other_year_inflation = 6;
 }

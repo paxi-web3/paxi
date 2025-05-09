@@ -92,6 +92,12 @@ import (
 	"github.com/paxi-web3/paxi/x/paxi"
 	paxikeeper "github.com/paxi-web3/paxi/x/paxi/keeper"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
+
+	"io/fs"
+	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/paxi-web3/paxi/client/docs"
 )
 
 const appName = "PaxiApp"
@@ -800,14 +806,28 @@ func (app *PaxiApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICo
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register custom REST routes for all modules
-	custommint.AppModuleBasic{}.RegisterRESTRoutes(clientCtx, apiSvr.Router)
 	paxi.AppModuleBasic{}.RegisterRESTRoutes(clientCtx, apiSvr.Router)
 
 	// register swagger API from root so that other applications can override easily
-	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
+	if err := RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
 		panic(err)
 	}
+}
 
+func RegisterSwaggerAPI(_ client.Context, rtr *mux.Router, swaggerEnabled bool) error {
+	if !swaggerEnabled {
+		return nil
+	}
+
+	root, err := fs.Sub(docs.SwaggerUI, "swagger-ui")
+	if err != nil {
+		return err
+	}
+
+	staticServer := http.FileServer(http.FS(root))
+	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
+
+	return nil
 }
 
 // RegisterTxService implements the Application.RegisterTxService method.
