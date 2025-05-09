@@ -1,12 +1,15 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "x/custommint/types/query.proto",
+    "title": "x/paxi/types/query.proto",
     "version": "version not set"
   },
   "tags": [
     {
       "name": "Query"
+    },
+    {
+      "name": "Msg"
     }
   ],
   "consumes": [
@@ -59,6 +62,148 @@
           "Query"
         ]
       }
+    },
+    "/paxi/paxi/circulating_supply": {
+      "get": {
+        "operationId": "Query_CirculatingSupply",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryCirculatingSupplyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/paxi/estimated_gas_price": {
+      "get": {
+        "operationId": "Query_EstimatedGasPrice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryEstimatedGasPriceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/paxi/last_block_gas_used": {
+      "get": {
+        "operationId": "Query_LastBlockGasUsed",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryLastBlockGasUsedResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/paxi/locked_vesting": {
+      "get": {
+        "operationId": "Query_LockedVesting",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryLockedVestingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/paxi/total_supply": {
+      "get": {
+        "operationId": "Query_TotalSupply",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryTotalSupplyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/tx/paxi/burn_token": {
+      "post": {
+        "operationId": "Msg_BurnToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgBurnTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgBurnToken"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
     }
   },
   "definitions": {
@@ -90,6 +235,57 @@
         }
       }
     },
+    "typesMsgBurnToken": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1beta1Coin"
+          }
+        }
+      }
+    },
+    "typesMsgBurnTokenResponse": {
+      "type": "object"
+    },
+    "typesQueryCirculatingSupplyResponse": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "$ref": "#/definitions/v1beta1Coin"
+        }
+      }
+    },
+    "typesQueryEstimatedGasPriceResponse": {
+      "type": "object",
+      "properties": {
+        "gasPrice": {
+          "type": "string"
+        }
+      }
+    },
+    "typesQueryLastBlockGasUsedResponse": {
+      "type": "object",
+      "properties": {
+        "gasUsed": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "typesQueryLockedVestingResponse": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "$ref": "#/definitions/v1beta1Coin"
+        }
+      }
+    },
     "typesQueryParamsResponse": {
       "type": "object",
       "properties": {
@@ -115,6 +311,14 @@
       }
     },
     "typesQueryTotalMintedResponse": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "$ref": "#/definitions/v1beta1Coin"
+        }
+      }
+    },
+    "typesQueryTotalSupplyResponse": {
       "type": "object",
       "properties": {
         "amount": {

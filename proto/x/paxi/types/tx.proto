@@ -3,10 +3,12 @@ package x.paxi.types;
 
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/msg/v1/msg.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/paxi-web3/paxi/x/paxi/types";
 
 message MsgBurnToken {
+  // Address of the sender. NOTE: This message must be signed externally.
   option (cosmos.msg.v1.signer) = "sender"; 
   string sender = 1; 
   repeated cosmos.base.v1beta1.Coin amount = 2;
@@ -16,5 +18,10 @@ message MsgBurnTokenResponse {}
 
 service Msg {
   option (cosmos.msg.v1.service) = true;
-  rpc BurnToken(MsgBurnToken) returns (MsgBurnTokenResponse);
+  rpc BurnToken(MsgBurnToken) returns (MsgBurnTokenResponse) {
+    option (google.api.http) = {
+        post: "/tx/paxi/burn_token"
+        body: "*"
+    };
+  }
 }

@@ -805,15 +805,13 @@ func (app *PaxiApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICo
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// Register custom REST routes for all modules
-	paxi.AppModuleBasic{}.RegisterRESTRoutes(clientCtx, apiSvr.Router)
-
 	// register swagger API from root so that other applications can override easily
 	if err := RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
 		panic(err)
 	}
 }
 
+// Paxi clones the original Swagger UI from the Cosmos SDK and integrates the Paxi API into it.
 func RegisterSwaggerAPI(_ client.Context, rtr *mux.Router, swaggerEnabled bool) error {
 	if !swaggerEnabled {
 		return nil

@@ -13,9 +13,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/gorilla/mux"
 	"github.com/paxi-web3/paxi/x/paxi/keeper"
-	rest "github.com/paxi-web3/paxi/x/paxi/rest"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
 )
 
@@ -67,15 +65,9 @@ func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) 
 
 func (am AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *gwruntime.ServeMux) {
 	// Register custom gRPC gateway routes here
-}
-
-func (am AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
-	// Register custom REST gateway routes here
-	rtr.HandleFunc("/paxi/paxi/locked_vesting", rest.LockedVestingHandler(clientCtx)).Methods("GET")
-	rtr.HandleFunc("/paxi/paxi/circulating_supply", rest.CirculatingSupplyHandler(clientCtx)).Methods("GET")
-	rtr.HandleFunc("/paxi/paxi/total_supply", rest.TotalSupplyHandler(clientCtx)).Methods("GET")
-	rtr.HandleFunc("/paxi/paxi/estimated_gas_price", rest.EstimatedGasPriceHandler(clientCtx)).Methods("GET")
-	rtr.HandleFunc("/paxi/paxi/last_block_gas_used", rest.LastBlockGasUsedHandler(clientCtx)).Methods("GET")
+	if err := paxitypes.RegisterQueryHandlerClient(context.Background(), mux, paxitypes.NewQueryClient(clientCtx)); err != nil {
+		panic(err)
+	}
 }
 
 func (am AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
