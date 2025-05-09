@@ -18,7 +18,7 @@ func (w WasmDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, nex
 		case *wasmtypes.MsgStoreCode:
 			// Increase the cost of storing code of smart contract
 			codeLen := len(m.WASMByteCode)
-			baseGas := uint64(150_000_000)
+			baseGas := uint64(240_000_000)
 			extraGas := baseGas + uint64(codeLen)*w.gasRegister.CompileCost
 			ctx.GasMeter().ConsumeGas(extraGas, "custom wasm store code penalty")
 		case *wasmtypes.MsgInstantiateContract:
