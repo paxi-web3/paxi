@@ -11,7 +11,7 @@ func SmartContractGasRegisterConfig() wasmtypes.WasmGasRegisterConfig {
 		InstanceCost: 300_000,
 
 		// Discounted cost when instance is reused from memory cache (e.g. pinned)
-		InstanceCostDiscount: 100_000,
+		InstanceCostDiscount: 120_000,
 
 		// Cost per byte to compile wasm bytecode on store
 		// NOTE: this code will only take effect in the WasmDecorator
