@@ -26,7 +26,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/typesQueryParamsResponse"
+              "$ref": "#/definitions/xcustomminttypesQueryParamsResponse"
             }
           },
           "default": {
@@ -49,6 +49,28 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/typesQueryTotalMintedResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/customwasm/params": {
+      "get": {
+        "operationId": "Query_Params",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/xcustomwasmtypesQueryParamsResponse"
             }
           },
           "default": {
@@ -286,30 +308,6 @@
         }
       }
     },
-    "typesQueryParamsResponse": {
-      "type": "object",
-      "properties": {
-        "burnThreshold": {
-          "type": "string"
-        },
-        "burnRatio": {
-          "type": "string"
-        },
-        "blocksPerYear": {
-          "type": "string",
-          "format": "int64"
-        },
-        "firstYearInflation": {
-          "type": "string"
-        },
-        "secondYearInflation": {
-          "type": "string"
-        },
-        "otherYearInflation": {
-          "type": "string"
-        }
-      }
-    },
     "typesQueryTotalMintedResponse": {
       "type": "object",
       "properties": {
@@ -337,6 +335,51 @@
         }
       },
       "description": "Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto."
+    },
+    "xcustomminttypesQueryParamsResponse": {
+      "type": "object",
+      "properties": {
+        "burnThreshold": {
+          "type": "string"
+        },
+        "burnRatio": {
+          "type": "string"
+        },
+        "blocksPerYear": {
+          "type": "string",
+          "format": "int64"
+        },
+        "firstYearInflation": {
+          "type": "string"
+        },
+        "secondYearInflation": {
+          "type": "string"
+        },
+        "otherYearInflation": {
+          "type": "string"
+        }
+      }
+    },
+    "xcustomwasmtypesQueryParamsResponse": {
+      "type": "object",
+      "properties": {
+        "storeCodeBaseGas": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "storeCodeMultiplier": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "instBaseGas": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "instMultiplier": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
     }
   }
 }

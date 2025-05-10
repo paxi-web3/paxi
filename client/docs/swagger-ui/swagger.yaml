@@ -32,6 +32,20 @@ paths:
             $ref: '#/definitions/rpcStatus'
       tags:
       - Query
+  /paxi/customwasm/params:
+    get:
+      operationId: Query_Params
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/xcustomwasmtypesQueryParamsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      tags:
+      - Query    
   /paxi/paxi/circulating_supply:
     get:
       operationId: Query_CirculatingSupply
@@ -36173,6 +36187,21 @@ definitions:
     properties:
       amount:
         $ref: '#/definitions/v1beta1Coin'
+  xcustomwasmtypesQueryParamsResponse:
+    type: object
+    properties:
+      storeCodeBaseGas:
+        type: string
+        format: uint64
+      storeCodeMultiplier:
+        type: string
+        format: uint64
+      instBaseGas:
+        type: string
+        format: uint64
+      instMultiplier:
+        type: string
+        format: uint64      
   typesQueryTotalSupplyResponse:
     type: object
     properties:

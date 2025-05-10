@@ -1,0 +1,28 @@
+syntax = "proto3";
+package x.customwasm.types;
+
+import "cosmos/msg/v1/msg.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/paxi-web3/paxi/x/customwasm/types";
+
+message ParamsInput {
+  uint64 store_code_base_gas = 1;
+	uint64 store_code_multiplier = 2;
+	uint64 inst_base_gas = 3;
+	uint64 inst_multiplier = 4;
+}
+
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1;
+  ParamsInput params = 2 [(gogoproto.nullable) = false];
+}
+
+message MsgUpdateParamsResponse {}
+
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+}

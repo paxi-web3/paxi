@@ -89,6 +89,9 @@ import (
 	custommintkeeper "github.com/paxi-web3/paxi/x/custommint/keeper"
 	customminttypes "github.com/paxi-web3/paxi/x/custommint/types"
 	customstaking "github.com/paxi-web3/paxi/x/customstaking"
+	"github.com/paxi-web3/paxi/x/customwasm"
+	customwasmkeeper "github.com/paxi-web3/paxi/x/customwasm/keeper"
+	customwasmtypes "github.com/paxi-web3/paxi/x/customwasm/types"
 	"github.com/paxi-web3/paxi/x/paxi"
 	paxikeeper "github.com/paxi-web3/paxi/x/paxi/keeper"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
@@ -173,7 +176,8 @@ type PaxiApp struct {
 	PaxiKeeper            paxikeeper.Keeper
 
 	// supplementary keepers
-	WasmKeeper wasmkeeper.Keeper
+	WasmKeeper       wasmkeeper.Keeper
+	CustomWasmKeeper customwasmkeeper.Keeper
 
 	// the module manager
 	ModuleManager      *module.Manager
@@ -244,6 +248,7 @@ func NewPaxiApp(
 		circuittypes.StoreKey,
 		wasmtypes.StoreKey,
 		paxitypes.StoreKey,
+		customwasmtypes.StoreKey,
 	)
 
 	// register streaming services
@@ -455,6 +460,12 @@ func NewPaxiApp(
 		)
 	}
 
+	app.CustomWasmKeeper = customwasmkeeper.NewKeeper(
+		appCodec,
+		cosmosruntime.NewKVStoreService(keys[customwasmtypes.StoreKey]),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
 	/****  Module Options ****/
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -477,6 +488,7 @@ func NewPaxiApp(
 		circuit.NewAppModule(appCodec, app.CircuitKeeper),
 		paxi.NewAppModule(appCodec, app.PaxiKeeper, app),
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper.Keeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
+		customwasm.NewAppModule(appCodec, app.CustomWasmKeeper),
 	)
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
@@ -510,6 +522,7 @@ func NewPaxiApp(
 		evidencetypes.ModuleName,
 		stakingtypes.ModuleName,
 		genutiltypes.ModuleName,
+		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
 	)
@@ -518,6 +531,7 @@ func NewPaxiApp(
 		stakingtypes.ModuleName,
 		genutiltypes.ModuleName,
 		circuittypes.ModuleName,
+		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
 	)
@@ -539,6 +553,7 @@ func NewPaxiApp(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		circuittypes.ModuleName,
+		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
 	}
@@ -557,6 +572,7 @@ func NewPaxiApp(
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
 		circuittypes.ModuleName,
+		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
 	}
@@ -645,6 +661,7 @@ func (app *PaxiApp) setAnteHandler(txConfig client.TxConfig) {
 		app,
 		app.WasmKeeper,
 		app.AccountKeeper,
+		app.CustomWasmKeeper,
 	)
 	if err != nil {
 		panic(err)

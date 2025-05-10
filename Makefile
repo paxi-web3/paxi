@@ -61,6 +61,15 @@ proto:
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/grpc-ecosystem/grpc-gateway)/third_party/googleapis \
 	--gogofaster_out=plugins=grpc,paths=source_relative:. \
+	./proto/x/customwasm/types/query.proto 
+
+	protoc \
+	-I=proto \
+	-I=proto/third_party \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/grpc-ecosystem/grpc-gateway)/third_party/googleapis \
+	--gogofaster_out=plugins=grpc,paths=source_relative:. \
 	./proto/x/paxi/types/query.proto \
 	./proto/x/paxi/types/tx.proto 
 
@@ -74,7 +83,8 @@ proto:
 	--openapiv2_out=logtostderr=true,allow_merge=true,merge_file_name=paxi:./client/docs/swagger-ui \
 	./proto/x/paxi/types/query.proto \
 	./proto/x/custommint/types/query.proto \
-	./proto/x/paxi/types/tx.proto 
+	./proto/x/paxi/types/tx.proto \
+	./proto/x/customwasm/types/query.proto 
 
 	protoc \
 	-I=proto \
@@ -83,3 +93,11 @@ proto:
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
 	--gogofaster_out=plugins=grpc,paths=source_relative:./ \
 	./proto/x/custommint/types/tx.proto
+
+	protoc \
+	-I=proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
+	--gogofaster_out=plugins=grpc,paths=source_relative:./ \
+	./proto/x/customwasm/types/tx.proto
