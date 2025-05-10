@@ -127,5 +127,6 @@ func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
 		if err != nil {
 			panic(err)
 		}
+		ctx.Logger().Info("Token burned", "amount", fees.Amount.String())
 	}
 }
