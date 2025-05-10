@@ -22,7 +22,7 @@ echo ""
 echo "🚫 直接關機或停止節點會造成懲罰風險。請務必確認！"
 echo ""
 echo "============================================================"
-read -p "你已了解以上風險，是否繼續安裝？ (y/N): " 確定
+read -p "你已了解以上風險，是否繼續安裝？ (y/N): " confirm
 
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
   echo "❌ 已取消安裝。請再次閱讀說明後再啟動此腳本。"
@@ -202,12 +202,6 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "min-self-delegation": "1"
 }
 EOF
-echo ""
-echo "成為驗證人指令（複製貼上執行）:"
-echo "docker run --rm -it --network host -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
-echo "$BINARY_NAME tx staking create-validator $DOCKER_PAXI_DATA_PATH/validator.json \\"
-echo "  --from $KEY_NAME --keyring-backend file \\"
-echo "  --fees 10000$DENOM"
 
 ### === 常用指令 ===
 echo ""
@@ -217,8 +211,13 @@ echo "-p 26656:26656 -p 26657:26657 -p 1317:1317 -p 9090:9090 \\"
 echo "paxi-node \\"
 echo "$BINARY_NAME start"
 echo ""
-echo "爲了方便，請在執行以下指令前進入容器:"
+echo "爲了方便操作，請在執行以下指令前進入容器:"
 echo "docker run --rm -it --network host -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE bash"
+echo ""
+echo "成為驗證人指令（複製貼上執行）:"
+echo "$BINARY_NAME tx staking create-validator $DOCKER_PAXI_DATA_PATH/validator.json \\"
+echo "  --from $KEY_NAME --keyring-backend file \\"
+echo "  --fees 10000$DENOM"
 echo ""
 echo "查看錢包地址:"
 echo "$BINARY_NAME keys show $KEY_NAME --keyring-backend file"

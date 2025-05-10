@@ -203,12 +203,6 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "min-self-delegation": "1"
 }
 EOF
-echo ""
-echo "Validator creation command (copy & paste to execute):"
-echo "docker run --rm -it -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE \\"
-echo "$BINARY_NAME tx staking create-validator $DOCKER_PAXI_DATA_PATH/validator.json \\"
-echo "  --from $KEY_NAME --keyring-backend file \\"
-echo "  --fees 10000$DENOM"
 
 ### === Common commands ===
 echo ""
@@ -220,6 +214,11 @@ echo "$BINARY_NAME start"
 echo ""
 echo "For convenience, please enter the container before running the following commands:"
 echo "docker run --rm -it --network host -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH $DOCKER_IMAGE bash"
+echo ""
+echo "Validator creation command (copy & paste to execute):"
+echo "$BINARY_NAME tx staking create-validator $DOCKER_PAXI_DATA_PATH/validator.json \\"
+echo "  --from $KEY_NAME --keyring-backend file \\"
+echo "  --fees 10000$DENOM"
 echo ""
 echo "To view your wallet address:"
 echo "$BINARY_NAME keys show $KEY_NAME --keyring-backend file"

@@ -30,6 +30,28 @@ func CmdQueryTotalMinted() *cobra.Command {
 	return cmd
 }
 
+func CmdQueryTotalBurned() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "total-burned",
+		Short: "Query total burned tokens",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.TotalBurned(context.Background(), &types.QueryTotalBurnedRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	return cmd
+}
+
 func CmdQueryParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "params",
@@ -60,6 +82,7 @@ func GetQueryCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		CmdQueryTotalMinted(),
+		CmdQueryTotalBurned(),
 		CmdQueryParams(),
 	)
 

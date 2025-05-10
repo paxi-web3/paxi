@@ -32,6 +32,20 @@ paths:
             $ref: '#/definitions/rpcStatus'
       tags:
       - Query
+  /paxi/custommint/total_burned:
+    get:
+      operationId: Query_TotalBurned
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryTotalBurnedResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      tags:
+      - Query
   /paxi/customwasm/params:
     get:
       operationId: Query_Params
@@ -36183,6 +36197,11 @@ definitions:
       otherYearInflation:
         type: string
   typesQueryTotalMintedResponse:
+    type: object
+    properties:
+      amount:
+        $ref: '#/definitions/v1beta1Coin'
+  typesQueryTotalBurnedResponse:
     type: object
     properties:
       amount:

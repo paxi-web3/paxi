@@ -107,6 +107,21 @@ func (k Keeper) GetTotalMinted(ctx sdk.Context) sdkmath.Int {
 	return sdkmath.NewIntFromBigInt(new(big.Int).SetBytes(bz))
 }
 
+func (k Keeper) SetTotalBurned(ctx sdk.Context, amount sdkmath.Int) {
+	store := k.storeService.OpenKVStore(ctx)
+	bz := amount.BigInt().Bytes()
+	store.Set([]byte(customminttypes.TotalBurned), bz)
+}
+
+func (k Keeper) GetTotalBurned(ctx sdk.Context) sdkmath.Int {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := store.Get([]byte(customminttypes.TotalBurned))
+	if err != nil || bz == nil {
+		return sdkmath.ZeroInt()
+	}
+	return sdkmath.NewIntFromBigInt(new(big.Int).SetBytes(bz))
+}
+
 func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
 	// Get params
 	params := k.GetParams(ctx)
@@ -127,6 +142,8 @@ func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
 		if err != nil {
 			panic(err)
 		}
+		totalBurned := k.GetTotalBurned(ctx).Add(fees.Amount)
+		k.SetTotalBurned(ctx, totalBurned)
 		ctx.Logger().Info("Token burned", "amount", fees.Amount.String())
 	}
 }

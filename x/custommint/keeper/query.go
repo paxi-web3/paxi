@@ -26,6 +26,16 @@ func (q *queryServer) TotalMinted(ctx context.Context, req *types.QueryTotalMint
 	}, nil
 }
 
+func (q *queryServer) TotalBurned(ctx context.Context, req *types.QueryTotalBurnedRequest) (*types.QueryTotalBurnedResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	total := q.k.GetTotalBurned(sdkCtx)
+	coin := sdk.NewCoin(types.DefaultDenom, total)
+
+	return &types.QueryTotalBurnedResponse{
+		Amount: &coin,
+	}, nil
+}
+
 func (q *queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	params := q.k.GetParams(sdkCtx)

@@ -14,6 +14,12 @@ service Query {
     };
   }
 
+  rpc TotalBurned(QueryTotalBurnedRequest) returns (QueryTotalBurnedResponse) {
+    option (google.api.http) = {
+      get: "/paxi/custommint/total_burned"
+    };
+  }
+
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http) = {
       get: "/paxi/custommint/params"
@@ -27,6 +33,14 @@ message QueryTotalMintedRequest {
 message QueryTotalMintedResponse {
   cosmos.base.v1beta1.Coin amount = 1;
 }
+
+message QueryTotalBurnedRequest {
+}
+
+message QueryTotalBurnedResponse {
+  cosmos.base.v1beta1.Coin amount = 1;
+}
+
 
 message QueryParamsRequest {
 }

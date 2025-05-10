@@ -11,6 +11,7 @@ const (
 	StoreKey     = ModuleName
 	TotalMinted  = "total_minted"
 	DefaultDenom = "upaxi"
+	TotalBurned  = "total_burned"
 )
 
 var KeyParams = []byte("custommint_params")
