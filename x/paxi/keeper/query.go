@@ -60,3 +60,10 @@ func (q *queryServer) LastBlockGasUsed(ctx context.Context, req *types.QueryLast
 		GasUsed: gasUsed,
 	}, nil
 }
+
+func (q *queryServer) TotalTxs(ctx context.Context, req *types.QueryTotalTxsRequest) (*types.QueryTotalTxsResponse, error) {
+	totalTxs := q.k.blockStatusKeeper.GetTotalTxs()
+	return &types.QueryTotalTxsResponse{
+		TotalTxs: totalTxs,
+	}, nil
+}

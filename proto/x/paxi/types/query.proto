@@ -32,6 +32,11 @@ service Query {
             get: "/paxi/paxi/last_block_gas_used"
         };
     }
+    rpc TotalTxs(QueryTotalTxsRequest) returns (QueryTotalTxsResponse) {
+        option (google.api.http) = {
+            get: "/paxi/paxi/total_txs"
+        };
+    }
 }
 
 message QueryLockedVestingRequest {}
@@ -62,4 +67,10 @@ message QueryLastBlockGasUsedRequest {}
 
 message QueryLastBlockGasUsedResponse {
     uint64 gas_used = 1;
+}
+
+message QueryTotalTxsRequest {}
+
+message QueryTotalTxsResponse {
+    uint64 total_txs = 1;
 }

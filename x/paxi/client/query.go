@@ -118,6 +118,28 @@ func CmdQueryLastBlockGasUsed() *cobra.Command {
 	return cmd
 }
 
+func CmdQueryTotalTxs() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "total-txs",
+		Short: "Query total txs that recorded",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.TotalTxs(context.Background(), &types.QueryTotalTxsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	return cmd
+}
+
 func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "paxi",

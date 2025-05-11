@@ -27,7 +27,7 @@ func (p BlockStatusDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	// accumulate txs
 	p.App.TotalTxs += 1
 
-	return next(ctx, tx, simulate)
+	return ctx, nil
 }
 
 func (app *PaxiApp) GetLastBlockGasUsed() uint64 {

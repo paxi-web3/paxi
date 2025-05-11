@@ -217,6 +217,28 @@
         ]
       }
     },
+    "/paxi/paxi/total_txs": {
+      "get": {
+        "operationId": "Query_TotalTxs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryTotalTxsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/tx/paxi/burn_token": {
       "post": {
         "operationId": "Msg_BurnToken",
@@ -351,6 +373,15 @@
       "properties": {
         "amount": {
           "$ref": "#/definitions/v1beta1Coin"
+        }
+      }
+    },
+    "typesQueryTotalTxsResponse": {
+      "type": "object",
+      "properties": {
+        "totalTxs": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

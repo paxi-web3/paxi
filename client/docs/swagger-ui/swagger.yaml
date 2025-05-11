@@ -130,6 +130,20 @@ paths:
             $ref: '#/definitions/rpcStatus'
       tags:
       - Query
+  /paxi/paxi/total_txs:
+    get:
+      operationId: Query_TotalTxs
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: "#/definitions/typesQueryTotalTxsResponse"
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: "#/definitions/rpcStatus"
+      tags:
+        - Query
   /tx/paxi/burn_token:
     post:
       operationId: Msg_BurnToken
@@ -36239,6 +36253,12 @@ definitions:
       NOTE: The amount field is an Int which implements the custom method
 
       signatures required by gogoproto.'
+  typesQueryTotalTxsResponse:
+    type: object
+    properties:
+      total_txs:
+        type: string
+        description: Total number of transactions since genesis (as string for uint64 compatibility)
   cosmos.auth.v1beta1.AddressBytesToStringResponse:
     type: object
     properties:
