@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"sort"
 
@@ -215,7 +216,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			}
 			seed := binary.BigEndian.Uint64(appHash) ^ uint64(ctx.BlockHeader().Time.UnixNano())
 			r := rand.New(rand.NewSource(int64(seed)))
-			newValidators = append(newValidators, pickRandomSubset(r, remainingCandidates, int(maxValidators)-len(newValidators))...)
+			newValidators = append(newValidators, pickWeightedRandomSubsetBinarySearch(r, remainingCandidates, int(maxValidators)-len(newValidators))...)
 		}
 
 		// Add to updates
@@ -404,21 +405,39 @@ func (k CustomStakingKeeper) getValidatorsAboveThreshold(ctx sdk.Context, minTok
 	return validators, nil
 }
 
-func pickRandomSubset[T any](r *rand.Rand, candidates []T, count int) []T {
+func pickWeightedRandomSubsetBinarySearch(r *rand.Rand, candidates []types.Validator, count int) []types.Validator {
 	n := len(candidates)
 	if count >= n {
-		return append([]T(nil), candidates...)
+		return append([]types.Validator(nil), candidates...)
 	}
 
-	indices := make(map[int]struct{}, count)
-	result := make([]T, 0, count)
-
-	for len(result) < count && len(result) < len(candidates) {
-		idx := r.Intn(n)
-		if _, exists := indices[idx]; !exists {
-			indices[idx] = struct{}{}
-			result = append(result, candidates[idx])
+	// Build prefix sum
+	prefixSums := make([]int64, n)
+	var total int64 = 0
+	for i, val := range candidates {
+		w := int64(math.Sqrt(float64(val.Tokens.Int64())))
+		if w < 0 {
+			w = 0 // safeguard
 		}
+		total += w
+		prefixSums[i] = total
+	}
+
+	// Result
+	selected := make(map[int]bool)
+	result := make([]types.Validator, 0, count)
+
+	for len(result) < count {
+		randWeight := r.Int63n(total)
+		// Binary search
+		i := sort.Search(n, func(i int) bool { return prefixSums[i] > randWeight })
+
+		// Skip if already selected
+		if selected[i] {
+			continue
+		}
+		selected[i] = true
+		result = append(result, candidates[i])
 	}
 
 	return result
