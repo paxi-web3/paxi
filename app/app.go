@@ -190,8 +190,9 @@ type PaxiApp struct {
 	configurator module.Configurator
 
 	// block status
-	LastBlockGasUsed    uint64
-	CurrentBlockGasUsed uint64
+	LastBlockGasUsed    uint64 // for observation only, don't use it for consensus
+	CurrentBlockGasUsed uint64 // for observation only, don't use it for consensus
+	TotalTxs            uint64 // for observation only, don't use it for consensus
 }
 
 // NewPaxiApp returns a reference to an initialized PaxiApp.
@@ -332,7 +333,7 @@ func NewPaxiApp(
 		appCodec,
 		app.BankKeeper,
 		app.AccountKeeper,
-		cosmosruntime.NewKVStoreService(keys[customminttypes.StoreKey]),
+		cosmosruntime.NewKVStoreService(keys[paxitypes.StoreKey]),
 		app,
 	)
 

@@ -14,7 +14,7 @@ func (p BlockStatusDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	startGas := ctx.GasMeter().GasConsumed() // consumed at the begin
 
 	ctx, err := next(ctx, tx, simulate)
-	if err != nil {
+	if err != nil || ctx.IsCheckTx() || simulate {
 		return ctx, err
 	}
 
@@ -24,7 +24,10 @@ func (p BlockStatusDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	gasUsed := endGas - startGas
 	p.App.CurrentBlockGasUsed += gasUsed
 
-	return ctx, nil
+	// accumulate txs
+	p.App.TotalTxs += 1
+
+	return next(ctx, tx, simulate)
 }
 
 func (app *PaxiApp) GetLastBlockGasUsed() uint64 {
@@ -43,4 +46,8 @@ func (app *PaxiApp) GetEstimatedGasPrice() float32 {
 	minGasPrice := 0.025 // upaxi
 	estimatedGasPrice := minGasPrice + math.Log(1+float64(lastGasUsed)/float64(expectedMaxGasUsed))*minGasPrice
 	return float32(estimatedGasPrice)
+}
+
+func (app *PaxiApp) GetTotalTxs() uint64 {
+	return app.TotalTxs
 }

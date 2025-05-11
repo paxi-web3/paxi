@@ -126,6 +126,10 @@ func GetQueryCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		CmdQueryLockedVesting(),
+		CmdQueryLastBlockGasUsed(),
+		CmdQueryEstimatedGasPrice(),
+		CmdQueryTotalSupply(),
+		CmdQueryCirculatingSupply(),
 	)
 
 	return cmd

@@ -26,6 +26,7 @@ type BlockStatsKeeper interface {
 	GetLastBlockGasUsed() uint64
 	SetLastBlockGasUsed()
 	GetEstimatedGasPrice() float32
+	GetTotalTxs() uint64
 }
 
 func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, accountKeeper authkeeper.AccountKeeper, storeService storetypes.KVStoreService, blockStatusKeeper BlockStatsKeeper) Keeper {
