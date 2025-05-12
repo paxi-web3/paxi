@@ -1,13 +1,23 @@
 package app
 
 import (
+	"encoding/json"
 	"math"
+	"os"
+	"path/filepath"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type BlockStatusDecorator struct {
 	App *PaxiApp
+}
+
+const fileName = "block_status.json"
+
+type BlockStatusData struct {
+	TotalTxs uint64 `json:"total_txs"`
 }
 
 func (p BlockStatusDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
@@ -50,4 +60,62 @@ func (app *PaxiApp) GetEstimatedGasPrice() float32 {
 
 func (app *PaxiApp) GetTotalTxs() uint64 {
 	return app.TotalTxs
+}
+
+func (app *PaxiApp) ReadBlockStatusFromFile() error {
+	cleanPath := filepath.Clean("/" + fileName)
+	fullPath := filepath.Join(DefaultNodeHome, cleanPath)
+
+	if !strings.HasPrefix(fullPath, filepath.Clean(DefaultNodeHome)+string(os.PathSeparator)) {
+		return os.ErrPermission
+	}
+
+	bz, err := os.ReadFile(fullPath)
+	if bz == nil || err != nil {
+		return nil
+	}
+
+	bsData := BlockStatusData{}
+	if err = json.Unmarshal(bz, &bsData); err != nil {
+		return nil
+	}
+
+	app.TotalTxs = bsData.TotalTxs
+
+	return nil
+}
+
+func (app *PaxiApp) WriteBlockStatusToFile() error {
+	cleanPath := filepath.Clean("/" + fileName)
+	fullPath := filepath.Join(DefaultNodeHome, cleanPath)
+
+	if !strings.HasPrefix(fullPath, filepath.Clean(DefaultNodeHome)+string(os.PathSeparator)) {
+		return os.ErrPermission
+	}
+
+	tmpFile, err := os.CreateTemp(DefaultNodeHome, "tmpfile-*")
+	if err != nil {
+		return err
+	}
+
+	defer os.Remove(tmpFile.Name())
+
+	bsData := BlockStatusData{
+		TotalTxs: app.TotalTxs,
+	}
+
+	bz, err := json.Marshal(bsData)
+	if err != nil {
+		return err
+	}
+
+	if _, err := tmpFile.Write(bz); err != nil {
+		return err
+	}
+
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpFile.Name(), fullPath)
 }

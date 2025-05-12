@@ -27,6 +27,7 @@ type BlockStatsKeeper interface {
 	SetLastBlockGasUsed()
 	GetEstimatedGasPrice() float32
 	GetTotalTxs() uint64
+	WriteBlockStatusToFile() error
 }
 
 func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, accountKeeper authkeeper.AccountKeeper, storeService storetypes.KVStoreService, blockStatusKeeper BlockStatsKeeper) Keeper {

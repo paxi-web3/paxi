@@ -128,5 +128,6 @@ func (am AppModule) BeginBlock(ctx context.Context) error {
 
 func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
 	am.blockStatusKeeper.SetLastBlockGasUsed()
+	am.blockStatusKeeper.WriteBlockStatusToFile()
 	return []abci.ValidatorUpdate{}, nil
 }

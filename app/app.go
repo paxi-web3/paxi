@@ -644,6 +644,9 @@ func NewPaxiApp(
 		}
 	}
 
+	// Read local block status like TotalTxs
+	app.ReadBlockStatusFromFile()
+
 	return app
 }
 
