@@ -406,12 +406,8 @@ func (k CustomStakingKeeper) getValidatorsAboveThreshold(ctx sdk.Context, minTok
 }
 
 func pickWeightedRandomSubsetBinarySearch(r *rand.Rand, candidates []types.Validator, count int) []types.Validator {
-	n := len(candidates)
-	if count >= n {
-		return append([]types.Validator(nil), candidates...)
-	}
-
 	// Build prefix sum
+	n := len(candidates)
 	prefixSums := make([]int64, n)
 	var total int64 = 0
 	for i, val := range candidates {
