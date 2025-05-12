@@ -81,7 +81,7 @@ func initAppConfig() (string, interface{}) {
 
 	// Pruning
 	srvCfg.Pruning = "custom"
-	srvCfg.PruningKeepRecent = "20000"
+	srvCfg.PruningKeepRecent = "40000"
 	srvCfg.PruningInterval = "100"
 
 	// Use a custom database backend
