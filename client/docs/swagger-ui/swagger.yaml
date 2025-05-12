@@ -144,6 +144,20 @@ paths:
             $ref: "#/definitions/rpcStatus"
       tags:
         - Query
+  /paxi/paxi/unlock_schedules:
+    get:
+      operationId: Query_UnlockSchedules
+      responses:
+        200:
+          description: A successful response.
+          schema:
+            $ref: "#/definitions/typesQueryUnlockSchedulesResponse"
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: "#/definitions/rpcStatus"
+      tags:
+        - Query
   /tx/paxi/burn_token:
     post:
       operationId: Msg_BurnToken
@@ -36259,6 +36273,34 @@ definitions:
       total_txs:
         type: string
         description: Total number of transactions since genesis (as string for uint64 compatibility)
+  typesQueryUnlockSchedulesResponse:
+    type: object
+    properties:
+      schedules:
+        type: array
+        items:
+          $ref: "#/definitions/typesUnlockSchedule"
+
+  typesUnlockSchedule:
+    type: object
+    properties:
+      address:
+        type: string
+        description: Bech32 account address
+      time_str:
+        type: string
+        description: Human-readable time string, e.g. "2025-05-12 12:00:00"
+      time_unix:
+        type: integer
+        format: int64
+        description: Unix timestamp of unlock time
+      amount:
+        type: integer
+        format: int64
+        description: Amount of upaxi to be unlocked
+      denom:
+        type: string
+        description: Denomination of the token to be unlocked (e.g. "upaxi")
   cosmos.auth.v1beta1.AddressBytesToStringResponse:
     type: object
     properties:

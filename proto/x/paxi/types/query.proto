@@ -37,6 +37,11 @@ service Query {
             get: "/paxi/paxi/total_txs"
         };
     }
+    rpc UnlockSchedules(QueryUnlockSchedulesRequest) returns (QueryUnlockSchedulesResponse) {
+        option (google.api.http) = {
+            get: "/paxi/paxi/unlock_schedules"
+        };
+    }
 }
 
 message QueryLockedVestingRequest {}
@@ -73,4 +78,18 @@ message QueryTotalTxsRequest {}
 
 message QueryTotalTxsResponse {
     uint64 total_txs = 1;
+}
+
+message UnlockSchedule {
+  string address = 1;
+  string time_str = 2;     
+  int64  time_unix = 3;   
+  int64  amount = 4;  
+  string denom = 5;
+}
+
+message QueryUnlockSchedulesRequest {}
+
+message QueryUnlockSchedulesResponse {
+    repeated UnlockSchedule unlock_schedules = 1;
 }

@@ -140,6 +140,28 @@ func CmdQueryTotalTxs() *cobra.Command {
 	return cmd
 }
 
+func CmdQueryUnlockSchedules() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "unlock-schedules",
+		Short: "Query unlock schedules",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.UnlockSchedules(context.Background(), &types.QueryUnlockSchedulesRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	return cmd
+}
+
 func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "paxi",
@@ -152,6 +174,8 @@ func GetQueryCmd() *cobra.Command {
 		CmdQueryEstimatedGasPrice(),
 		CmdQueryTotalSupply(),
 		CmdQueryCirculatingSupply(),
+		CmdQueryTotalTxs(),
+		CmdQueryUnlockSchedules(),
 	)
 
 	return cmd

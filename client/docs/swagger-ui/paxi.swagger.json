@@ -239,6 +239,28 @@
         ]
       }
     },
+    "/paxi/paxi/unlock_schedules": {
+      "get": {
+        "operationId": "Query_UnlockSchedules",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryUnlockSchedulesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/tx/paxi/burn_token": {
       "post": {
         "operationId": "Msg_BurnToken",
@@ -382,6 +404,40 @@
         "totalTxs": {
           "type": "string",
           "format": "uint64"
+        }
+      }
+    },
+    "typesQueryUnlockSchedulesResponse": {
+      "type": "object",
+      "properties": {
+        "unlockSchedules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/typesUnlockSchedule"
+          }
+        }
+      }
+    },
+    "typesUnlockSchedule": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "timeStr": {
+          "type": "string"
+        },
+        "timeUnix": {
+          "type": "string",
+          "format": "int64"
+        },
+        "amount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "denom": {
+          "type": "string"
         }
       }
     },

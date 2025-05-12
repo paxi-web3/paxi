@@ -67,3 +67,11 @@ func (q *queryServer) TotalTxs(ctx context.Context, req *types.QueryTotalTxsRequ
 		TotalTxs: totalTxs,
 	}, nil
 }
+
+func (q *queryServer) UnlockSchedules(ctx context.Context, req *types.QueryUnlockSchedulesRequest) (*types.QueryUnlockSchedulesResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	unlockSchedules := q.k.GetUnlockSchedules(sdkCtx)
+	return &types.QueryUnlockSchedulesResponse{
+		UnlockSchedules: unlockSchedules,
+	}, nil
+}

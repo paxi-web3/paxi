@@ -2,6 +2,8 @@ package keeper
 
 import (
 	"fmt"
+	"sort"
+	"time"
 
 	storetypes "cosmossdk.io/core/store"
 	sdkmath "cosmossdk.io/math"
@@ -141,4 +143,46 @@ func (k Keeper) BurnFromUser(ctx sdk.Context, sender sdk.AccAddress, amount sdk.
 	}
 
 	return nil
+}
+
+func (k Keeper) GetUnlockSchedules(ctx sdk.Context) []*paxitypes.UnlockSchedule {
+	store := k.storeService.OpenKVStore(ctx)
+	prefix := []byte(paxitypes.VestingAccountPrefix)
+	start, end := utils.PrefixRange(prefix)
+	iterator, err := store.Iterator(start, end)
+	if err != nil {
+		panic(err)
+	}
+
+	var unlockSchedules []*paxitypes.UnlockSchedule
+	for ; iterator.Valid(); iterator.Next() {
+		addrStr := string(iterator.Key()[len(paxitypes.VestingAccountPrefix):])
+		addr, err := sdk.AccAddressFromBech32(addrStr)
+		if err != nil {
+			continue
+		}
+
+		if acc := k.accountKeeper.GetAccount(ctx, addr); acc != nil {
+			if pva, ok := acc.(*vestingtypes.PeriodicVestingAccount); ok {
+				startTime := pva.StartTime
+				currentTime := startTime
+				for _, period := range pva.VestingPeriods {
+					currentTime += period.Length
+					unlockSchedules = append(unlockSchedules, &paxitypes.UnlockSchedule{
+						TimeUnix: time.Unix(currentTime, 0).Unix(),
+						TimeStr:  time.Unix(currentTime, 0).Format("2006-01-02"),
+						Address:  pva.Address,
+						Amount:   period.Amount[0].Amount.Abs().Int64(),
+						Denom:    period.Amount[0].Denom,
+					})
+				}
+			}
+		}
+	}
+
+	sort.Slice(unlockSchedules, func(i, j int) bool {
+		return unlockSchedules[i].TimeUnix < unlockSchedules[j].TimeUnix
+	})
+
+	return unlockSchedules
 }
