@@ -197,6 +197,7 @@ echo "  --fees 10000$DENOM"
 
 ### === Common commands ===
 echo ""
+echo "Before starting the node, remember to set 'your public IP:26656' to the 'external_address' parameter of paxi/config/config.toml, otherwise others will not be able to connect to your node"
 echo "Start the node:"
 echo "$BINARY_NAME start"
 echo ""

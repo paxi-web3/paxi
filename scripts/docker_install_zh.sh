@@ -208,9 +208,10 @@ EOF
 
 ### === 常用指令 ===
 echo ""
+echo "啓動節點前記得設置'你的公網IP:26656'到 paxi/config/config.toml 的 'external_address' 參數，不然其他人無法連接到你的節點"
 echo "啓動節點(這節點會在後台運行，在電腦啓動後它也會自動啓動，除非你手動關停):"
 echo "docker run -d --name paxi-node-1 --restart unless-stopped -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \\"
-echo "-p 26656:26656 -p 26657:26657 -p 1317:1317 -p 9090:9090 \\"
+echo "--network=host \\"
 echo "paxi-node \\"
 echo "$BINARY_NAME start"
 echo ""

@@ -209,9 +209,10 @@ EOF
 
 ### === Common commands ===
 echo ""
+echo "Before starting the node, remember to set 'your public IP:26656' to the 'external_address' parameter of paxi/config/config.toml, otherwise others will not be able to connect to your node"
 echo "Start the node (this node runs in the background and auto-starts on system reboot unless stopped manually):"
 echo "docker run -d --name paxi-node-1 --restart unless-stopped -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \\"
-echo "-p 26656:26656 -p 26657:26657 -p 1317:1317 -p 9090:9090 \\"
+echo "--network=host \\"
 echo "paxi-node \\"
 echo "$BINARY_NAME start"
 echo ""

@@ -192,6 +192,7 @@ echo "  --fees 10000$DENOM"
 
 ### === 常用指令 ===
 echo ""
+echo "啓動節點前記得設置'你的公網IP:26656'到 paxi/config/config.toml 的 'external_address' 參數，不然其他人無法連接到你的節點"
 echo "啓動節點:"
 echo "$BINARY_NAME start"
 echo ""
