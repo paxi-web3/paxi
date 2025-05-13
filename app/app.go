@@ -846,6 +846,11 @@ func RegisterSwaggerAPI(_ client.Context, rtr *mux.Router, swaggerEnabled bool) 
 	staticServer := http.FileServer(http.FS(root))
 	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
 
+	// Redirect /swagger to /swagger/
+	rtr.HandleFunc("/swagger", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
+	})
+
 	return nil
 }
 

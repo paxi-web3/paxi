@@ -56,6 +56,7 @@ BINARY_NAME="./paxid"
 SEEDS="mainnet-seed.paxinet.io:26656"
 PERSISTENT_PEERS="key@mainnet-node-1.paxinet.io:26656"
 RPC_URL="http://mainnet-rpc.paxinet.io:26657"
+SNAPSHOT_URL="http://mainnet-snapshot.paxinet.io:26657"
 GENESIS_URL="$RPC_URL/genesis?"
 CONFIG="./paxi/config/config.toml"
 APP_CONFIG="./paxi/config/app.toml"
@@ -119,22 +120,24 @@ curl -s $GENESIS_URL | jq -r .result.genesis > ./paxi/config/genesis.json
 
 ### === 設置快照同步 ===
 BLOCK_OFFSET=1000
-LATEST_HEIGHT=$(curl -s "$RPC_URL/block" | jq -r .result.block.header.height)
+LATEST_HEIGHT=$(curl -s "$SNAPSHOT_URL/block" | jq -r .result.block.header.height)
 TRUST_HEIGHT=$((LATEST_HEIGHT - BLOCK_OFFSET))
-TRUST_HASH=$(curl -s "$RPC_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
+TRUST_HASH=$(curl -s "$SNAPSHOT_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
 
-if [[ -z "$TRUST_HEIGHT" || -z "$TRUST_HASH" || "$TRUST_HASH" == "null" ]]; then
-  echo "❌ 無法取得 trust 高度或 hash，請檢查 RPC URL。"
-  exit 1
+if [ "$LATEST_HEIGHT" -gt "$BLOCK_OFFSET" ]; then
+  if [[ -z "$TRUST_HEIGHT" || -z "$TRUST_HASH" || "$TRUST_HASH" == "null" ]]; then
+    echo "❌ 無法取得 trust 高度或 hash，請檢查 RPC URL。"
+    exit 1
+  fi
+
+  sed -i "/^\[statesync\]/,/^\[/{                               
+    s|^enable *=.*|enable = true|g
+    s|^rpc_servers *=.*|rpc_servers = \"$SNAPSHOT_URL,$SNAPSHOT_URL\"|g
+    s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g
+    s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g
+    s|^trust_period *=.*|trust_period = \"168h\"|g
+  }" "$CONFIG"
 fi
-
-sed -i "/^\[statesync\]/,/^\[/{                               
-  s|^enable *=.*|enable = true|g
-  s|^rpc_servers *=.*|rpc_servers = \"$RPC_URL,$RPC_URL\"|g
-  s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g
-  s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g
-  s|^trust_period *=.*|trust_period = \"168h\"|g
-}" "$CONFIG"
 
 ### === 設定種子與peers ===
 sed -i "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
