@@ -843,13 +843,13 @@ func RegisterSwaggerAPI(_ client.Context, rtr *mux.Router, swaggerEnabled bool) 
 		return err
 	}
 
-	staticServer := http.FileServer(http.FS(root))
-	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
-
-	// Redirect /swagger to /swagger/
+	// redirect /swagger to /swagger/
 	rtr.HandleFunc("/swagger", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
 	})
+
+	staticServer := http.FileServer(http.FS(root))
+	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
 
 	return nil
 }
