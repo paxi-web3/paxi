@@ -124,6 +124,11 @@ LATEST_HEIGHT=$(curl -s "$SNAPSHOT_URL/block" | jq -r .result.block.header.heigh
 TRUST_HEIGHT=$((LATEST_HEIGHT - BLOCK_OFFSET))
 TRUST_HASH=$(curl -s "$SNAPSHOT_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
 
+if ! [[ "$LATEST_HEIGHT" =~ ^[0-9]+$ ]]; then
+  echo "❌ 無法取得 trust 高度或 hash，請檢查 RPC URL。"
+  exit 1
+fi
+
 if [ "$LATEST_HEIGHT" -gt "$BLOCK_OFFSET" ]; then
   if [[ -z "$TRUST_HEIGHT" || -z "$TRUST_HASH" || "$TRUST_HASH" == "null" ]]; then
     echo "❌ 無法取得 trust 高度或 hash，請檢查 RPC URL。"

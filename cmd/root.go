@@ -64,6 +64,7 @@ func NewRootCmd() *cobra.Command {
 				"init":    true,
 				"version": true,
 				"help":    true,
+				"keys":    true,
 			}
 			if os.IsNotExist(err) && !allowedWithoutInit[cmd.Name()] {
 				return fmt.Errorf("node is not initialized yet. Run 'paxid init [moniker] --chain-id [chain-id]' first")
