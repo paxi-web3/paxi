@@ -44,12 +44,12 @@ func initCometBFTConfig() *cmtcfg.Config {
 	cfg.Consensus.PeerQueryMaj23SleepDuration = 1 * time.Second
 
 	// Mempool configuration
-	cfg.Mempool.Size = 10000                         // Max txs in mempool
-	cfg.Mempool.MaxTxsBytes = 1 * 1024 * 1024 * 1024 // 1 GB mempool capacity
-	cfg.Mempool.MaxTxBytes = 3 * 1024 * 1024         // 3 MB per tx
-	cfg.Mempool.CacheSize = 20000                    // Tx cache size
-	cfg.Mempool.Recheck = true                       // Recheck mempool on reorg
-	cfg.Mempool.Broadcast = true                     // Enable gossip broadcast
+	cfg.Mempool.Size = 10000                    // Max txs in mempool
+	cfg.Mempool.MaxTxsBytes = 512 * 1024 * 1024 // 512 MB mempool capacity
+	cfg.Mempool.MaxTxBytes = 3 * 1024 * 1024    // 3 MB per tx
+	cfg.Mempool.CacheSize = 10000               // Tx cache size
+	cfg.Mempool.Recheck = true                  // Recheck mempool on reorg
+	cfg.Mempool.Broadcast = true                // Enable gossip broadcast
 
 	// Database backend for storing blockchain data
 	cfg.BaseConfig.DBBackend = "rocksdb" // Options: goleveldb, rocksdb, etc.
