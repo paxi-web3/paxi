@@ -21,7 +21,7 @@
   "paths": {
     "/paxi/custommint/params": {
       "get": {
-        "operationId": "Query_Params",
+        "operationId": "Query_Custommint_Params",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -87,7 +87,7 @@
     },
     "/paxi/customwasm/params": {
       "get": {
-        "operationId": "Query_Params",
+        "operationId": "Query_Customwasm_Params",
         "responses": {
           "200": {
             "description": "A successful response.",
