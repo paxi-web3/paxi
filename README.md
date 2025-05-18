@@ -57,6 +57,9 @@ graph TD
   A --> C[CometBFT]
   A --> D[CosmWasm]
   A --> E[Paxi Custom Modules]
+  D --> F[PRC-20 Token]
+  D --> G[PRC-721 NFT]
+  D --> H[Other Contracts]
   ```
 
 
