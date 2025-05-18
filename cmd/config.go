@@ -102,7 +102,7 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.StateSync.SnapshotKeepRecent = 5
 
 	// IavlCacheSize set the size of the iavl tree cache (in number of nodes).
-	srvCfg.IAVLCacheSize = 500_000
+	srvCfg.IAVLCacheSize = 250_000
 
 	// Set default values for the custom configuration section
 	customAppConfig := CustomAppConfig{
