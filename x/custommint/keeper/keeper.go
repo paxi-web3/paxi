@@ -138,7 +138,7 @@ func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
 	seed := binary.BigEndian.Uint64(blockHash[:8]) ^ uint64(ctx.BlockHeight())
 	if seed%2 == 0 {
 		fees.Amount = fees.Amount.ToLegacyDec().Mul(params.BurnRatio).RoundInt()
-		err := k.bankKeeper.BurnCoins(ctx, authtypes.FeeCollectorName, sdk.NewCoins())
+		err := k.bankKeeper.BurnCoins(ctx, authtypes.FeeCollectorName, sdk.NewCoins(fees))
 		if err != nil {
 			panic(err)
 		}
