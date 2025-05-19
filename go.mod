@@ -249,7 +249,4 @@ replace (
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
 
-replace (
-	github.com/cometbft/cometbft-db => github.com/paxi-web3/cometbft-db v0.14.1-paxi
-	github.com/linxGnu/grocksdb => github.com/linxGnu/grocksdb v1.9.2
-)
+replace github.com/linxGnu/grocksdb => github.com/linxGnu/grocksdb v1.9.2
