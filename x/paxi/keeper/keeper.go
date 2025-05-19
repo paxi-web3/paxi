@@ -70,6 +70,8 @@ func (k Keeper) SetLockedVestingToStore(ctx sdk.Context) {
 		panic(err)
 	}
 
+	defer iterator.Close()
+
 	// Iterate over all the vesting accounts and sum the locked vesting
 	lockedVesting := sdkmath.LegacyNewDecFromInt(sdkmath.ZeroInt())
 	for ; iterator.Valid(); iterator.Next() {
