@@ -57,9 +57,5 @@ func NewAnteHandler(options HandlerOptions, app *PaxiApp, wasmKeeper wasmkeeper.
 		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
 	}
 
-	if options.UnorderedNonceManager != nil {
-		anteDecorators = append(anteDecorators, ante.NewUnorderedTxDecorator(options.UnorderedNonceManager, options.UnorderedTxOptions...))
-	}
-
 	return sdk.ChainAnteDecorators(anteDecorators...), nil
 }

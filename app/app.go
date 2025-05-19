@@ -654,11 +654,10 @@ func (app *PaxiApp) setAnteHandler(txConfig client.TxConfig) {
 	anteHandler, err := NewAnteHandler(
 		HandlerOptions{
 			ante.HandlerOptions{
-				UnorderedNonceManager: app.AccountKeeper,
-				AccountKeeper:         app.AccountKeeper,
-				BankKeeper:            app.BankKeeper,
-				SignModeHandler:       txConfig.SignModeHandler(),
-				SigGasConsumer:        ante.DefaultSigVerificationGasConsumer,
+				AccountKeeper:   app.AccountKeeper,
+				BankKeeper:      app.BankKeeper,
+				SignModeHandler: txConfig.SignModeHandler(),
+				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
 			&app.CircuitKeeper,
 		},
