@@ -156,6 +156,8 @@ func (k Keeper) GetUnlockSchedules(ctx sdk.Context) []*paxitypes.UnlockSchedule 
 		panic(err)
 	}
 
+	defer iterator.Close()
+
 	var unlockSchedules []*paxitypes.UnlockSchedule
 	for ; iterator.Valid(); iterator.Next() {
 		addrStr := string(iterator.Key()[len(paxitypes.VestingAccountPrefix):])
