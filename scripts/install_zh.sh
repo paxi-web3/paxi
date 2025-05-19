@@ -153,7 +153,6 @@ sed -i '/^\[rpc\]/,/^\[/s|^\s*laddr\s*=.*|laddr = "tcp://0.0.0.0:26657"|' $CONFI
 sed -i 's|^prometheus *=.*|prometheus = false|' $CONFIG
 sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[api\]" $APP_CONFIG -A 3 | tail -n 1)
 sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[grpc-web\]" $APP_CONFIG -A 3 | tail -n 1)
-sed -i 's|^address *=.*|address = "127.0.0.1:9090"|' $(grep -l "\[grpc\]" $APP_CONFIG -A 3 | tail -n 1)
 
 ### === 建立錢包（如不存在）===
 if ! $BINARY_NAME keys show $KEY_NAME &>/dev/null; then
