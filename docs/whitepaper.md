@@ -2,13 +2,13 @@
 
 ## Introduction
 
-In a world where blockchain technology often feels out of reach — dominated by whales and large institutions — we dare to dream bigger. Imagine a blockchain ecosystem that is fast, secure, and radically decentralized. A protocol designed not just for the elite, but for everyone. Welcome to Paxi, the next-generation blockchain built with simplicity, speed, and inclusivity at its core.
+In a world where blockchain technology often feels inaccessible — complicated by technical barriers and dominated by whales and large institutions — we dare to dream bigger. Imagine a blockchain ecosystem that is fast, secure, and radically decentralized. A protocol designed not just for the elite, but for everyone. Welcome to Paxi, the next-generation blockchain built with simplicity, speed, and inclusivity at its core.
 
 Built on the Cosmos SDK and CometBFT consensus engine — with deep optimizations tailored for enhanced performance and security — and implemented in the Go programming language, Paxi aims to provide a highly efficient, low-fee, and user-friendly blockchain infrastructure that is open to all. Paxi also supports CosmWasm, a smart contract platform based on Wasm, enabling developers to build secure and efficient contracts in Rust — perfect for DeFi, DAOs, and cross-chain dApps.
 
 Paxi believes in the philosophy of "less is more" — every feature exists to serve purpose and efficiency. By focusing on essential functionality and avoiding unnecessary complexity, Paxi ensures a seamless experience for developers, validators, and end users alike.
 
-Our mission is clear: to empower individuals, communities, and businesses with a truly decentralized network that breaks barriers and redefines ownership. With cutting-edge technology and a commitment to fairness, Paxi is more than just a blockchain—it's a movement.
+Our mission is clear: to empower individuals, communities, and businesses with a truly decentralized network that breaks barriers and redefines ownership. With cutting-edge technology and a commitment to fairness, Paxi is more than just a blockchain — it's a movement.
 
 Join us as we build a future where blockchain belongs to everyone.
 
@@ -71,7 +71,7 @@ Paxi's native token has an initial supply of **100 million tokens** and adopts a
 
 ### Block Reward Distribution
 - **95% of newly minted tokens** (block rewards) are distributed to staking participants: Including **validators** and **delegators**
-- **5% of newly minted tokens** (block rewards) 5% are allocated to the **DAO community**
+- **5% of newly minted tokens** (block rewards) are allocated to the **DAO community**
 - The system will automatically monitor supply and demand. When transaction fees exceed a certain threshold, **there will be a probability-based mechanism to burn a portion of the tokens**. This helps prevent excessive inflation and reduces the risk of token concentration in the hands of a few
 
 ### Important Note: Concentrated Rewards Under Low Staking Ratio
