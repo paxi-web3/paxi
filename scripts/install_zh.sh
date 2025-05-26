@@ -182,8 +182,8 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "website": "",
   "security": "",
   "details": "PAXI validator node [$COUNTRY_CODE]",
-  "commission-rate": "0.1",
-  "commission-max-rate": "0.2",
+  "commission-rate": "0.2",
+  "commission-max-rate": "0.3",
   "commission-max-change-rate": "0.01",
   "min-self-delegation": "1"
 }
