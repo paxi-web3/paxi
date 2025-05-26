@@ -126,7 +126,7 @@ func CustomDefaultConsensusParams() *cmttypes.ConsensusParams {
 	cp := cmttypes.DefaultConsensusParams()
 	cp.Block = cmttypes.BlockParams{
 		MaxBytes: 5 * 1024 * 1024,
-		MaxGas:   3_000_000_000,
+		MaxGas:   4_000_000_000,
 	}
 	return cp
 }
