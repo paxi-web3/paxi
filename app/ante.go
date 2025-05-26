@@ -11,6 +11,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	apptypes "github.com/paxi-web3/paxi/app/types"
 	customwasmkeeper "github.com/paxi-web3/paxi/x/customwasm/keeper"
+	paxikeeper "github.com/paxi-web3/paxi/x/paxi/keeper"
 )
 
 // HandlerOptions are the options required for constructing a default SDK AnteHandler.
@@ -22,7 +23,7 @@ type HandlerOptions struct {
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
 // numbers, checks signatures & account numbers, and deducts fees from the first
 // signer.
-func NewAnteHandler(options HandlerOptions, app *PaxiApp, wasmKeeper wasmkeeper.Keeper, ak authkeeper.AccountKeeper, customWasmkeeper customwasmkeeper.Keeper) (sdk.AnteHandler, error) {
+func NewAnteHandler(options HandlerOptions, app *PaxiApp, wasmKeeper wasmkeeper.Keeper, ak authkeeper.AccountKeeper, customWasmKeeper customwasmkeeper.Keeper, paxiKeeper paxikeeper.Keeper) (sdk.AnteHandler, error) {
 	if options.AccountKeeper == nil {
 		return nil, errors.New("account keeper is required for ante builder")
 	}
@@ -40,11 +41,11 @@ func NewAnteHandler(options HandlerOptions, app *PaxiApp, wasmKeeper wasmkeeper.
 		BlockStatusDecorator{App: app},  // Status of Paxi blockchain
 		circuitante.NewCircuitBreakerDecorator(options.CircuitKeeper),
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
-		SpamPreventDecorator{ak: ak}, // Raise the cost for some types of transcation in order to prevent spam
+		SpamPreventDecorator{ak: ak, paxiKeeper: paxiKeeper}, // Raise the cost for some types of transcation in order to prevent spam
 		WasmDecorator{
 			gasRegister:      apptypes.SmartContractGasRegisterConfig(),
 			wasmKeeper:       wasmKeeper,
-			customWasmKeeper: customWasmkeeper,
+			customWasmKeeper: customWasmKeeper,
 		}, // Raise the cost of stroing code / initial of smart contract
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),

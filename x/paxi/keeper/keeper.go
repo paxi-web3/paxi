@@ -22,6 +22,7 @@ type Keeper struct {
 	accountKeeper     authkeeper.AccountKeeper
 	blockStatusKeeper BlockStatsKeeper
 	storeService      storetypes.KVStoreService
+	authority         string
 }
 
 type BlockStatsKeeper interface {
@@ -32,13 +33,14 @@ type BlockStatsKeeper interface {
 	WriteBlockStatusToFile() error
 }
 
-func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, accountKeeper authkeeper.AccountKeeper, storeService storetypes.KVStoreService, blockStatusKeeper BlockStatsKeeper) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, accountKeeper authkeeper.AccountKeeper, storeService storetypes.KVStoreService, blockStatusKeeper BlockStatsKeeper, authority string) Keeper {
 	return Keeper{
 		cdc:               cdc,
 		bankKeeper:        bankKeeper,
 		accountKeeper:     accountKeeper,
 		storeService:      storeService,
 		blockStatusKeeper: blockStatusKeeper,
+		authority:         authority,
 	}
 }
 
@@ -117,7 +119,10 @@ func (k Keeper) GetLockedVesting(ctx sdk.Context) sdkmath.LegacyDec {
 	}
 }
 
-func (k Keeper) InitGenesis(ctx sdk.Context) {
+func (k Keeper) InitGenesis(ctx sdk.Context, data paxitypes.GenesisState) {
+	// Set params
+	k.SetParams(ctx, data.Params)
+
 	// Interate all the accounts and store the vesting accounts
 	accounts := k.accountKeeper.GetAllAccounts(ctx)
 	store := k.storeService.OpenKVStore(ctx)
@@ -189,4 +194,11 @@ func (k Keeper) GetUnlockSchedules(ctx sdk.Context) []*paxitypes.UnlockSchedule 
 	})
 
 	return unlockSchedules
+}
+
+func (k Keeper) ExportGenesis(ctx sdk.Context) *paxitypes.GenesisState {
+	params := k.GetParams(ctx)
+	return &paxitypes.GenesisState{
+		Params: params,
+	}
 }

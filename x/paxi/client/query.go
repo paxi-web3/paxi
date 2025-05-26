@@ -162,6 +162,28 @@ func CmdQueryUnlockSchedules() *cobra.Command {
 	return cmd
 }
 
+func CmdQueryParams() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "params",
+		Short: "Query params of paxi module",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.Params(context.Background(), &types.QueryParamsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	return cmd
+}
+
 func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "paxi",
@@ -176,6 +198,7 @@ func GetQueryCmd() *cobra.Command {
 		CmdQueryCirculatingSupply(),
 		CmdQueryTotalTxs(),
 		CmdQueryUnlockSchedules(),
+		CmdQueryParams(),
 	)
 
 	return cmd

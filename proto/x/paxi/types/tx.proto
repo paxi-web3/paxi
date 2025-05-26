@@ -4,6 +4,7 @@ package x.paxi.types;
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/msg/v1/msg.proto";
 import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
 
 option go_package = "github.com/paxi-web3/paxi/x/paxi/types";
 
@@ -16,6 +17,19 @@ message MsgBurnToken {
 
 message MsgBurnTokenResponse {}
 
+message ParamsInput {
+  uint64 extra_gas_per_new_account = 1;
+}
+
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1;
+  ParamsInput params = 2 [(gogoproto.nullable) = false];
+}
+
+message MsgUpdateParamsResponse {}
+
 service Msg {
   option (cosmos.msg.v1.service) = true;
   rpc BurnToken(MsgBurnToken) returns (MsgBurnTokenResponse) {
@@ -24,4 +38,6 @@ service Msg {
         body: "*"
     };
   }
+
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
 }

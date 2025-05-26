@@ -42,6 +42,12 @@ service Query {
             get: "/paxi/paxi/unlock_schedules"
         };
     }
+
+    rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+        option (google.api.http) = {
+            get: "/paxi/paxi/params"
+        };
+    }
 }
 
 message QueryLockedVestingRequest {}
@@ -92,4 +98,12 @@ message QueryUnlockSchedulesRequest {}
 
 message QueryUnlockSchedulesResponse {
     repeated UnlockSchedule unlock_schedules = 1;
+}
+
+
+message QueryParamsRequest {
+}
+
+message QueryParamsResponse {
+    uint64 extra_gas_per_new_account = 1;
 }

@@ -4,6 +4,20 @@ info:
   description: A REST interface for state queries.
   version: 1.0.0
 paths:
+  /paxi/paxi/params:
+    get:
+      operationId: Query_Paxi_Params
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryPaxiParamsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      tags:
+      - Query
   /paxi/custommint/params:
     get:
       operationId: Query_Custommint_Params
@@ -53,7 +67,7 @@ paths:
         '200':
           description: A successful response.
           schema:
-            $ref: '#/definitions/xcustomwasmtypesQueryParamsResponse'
+            $ref: '#/definitions/typesQueryCustomwasmParamsResponse'
         default:
           description: An unexpected error response.
           schema:
@@ -36234,7 +36248,13 @@ definitions:
     properties:
       amount:
         $ref: '#/definitions/v1beta1Coin'
-  xcustomwasmtypesQueryParamsResponse:
+  typesQueryPaxiParamsResponse:
+    type: object
+    properties:
+      extraGasPerNewAccount:
+        type: string
+        format: uint64  
+  typesQueryCustomwasmParamsResponse:
     type: object
     properties:
       storeCodeBaseGas:

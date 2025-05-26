@@ -55,7 +55,7 @@ func CmdQueryTotalBurned() *cobra.Command {
 func CmdQueryParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "params",
-		Short: "Query params of mint modules",
+		Short: "Query params of mint module",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)

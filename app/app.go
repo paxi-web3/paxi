@@ -335,6 +335,7 @@ func NewPaxiApp(
 		app.AccountKeeper,
 		cosmosruntime.NewKVStoreService(keys[paxitypes.StoreKey]),
 		app,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	app.DistrKeeper = distrkeeper.NewKeeper(
@@ -665,6 +666,7 @@ func (app *PaxiApp) setAnteHandler(txConfig client.TxConfig) {
 		app.WasmKeeper,
 		app.AccountKeeper,
 		app.CustomWasmKeeper,
+		app.PaxiKeeper,
 	)
 	if err != nil {
 		panic(err)

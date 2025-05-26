@@ -21,7 +21,7 @@
   "paths": {
     "/paxi/custommint/params": {
       "get": {
-        "operationId": "Query_Custommint_Params",
+        "operationId": "Query_Params",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -87,7 +87,7 @@
     },
     "/paxi/customwasm/params": {
       "get": {
-        "operationId": "Query_Customwasm_Params",
+        "operationId": "Query_Params",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -181,6 +181,28 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/typesQueryLockedVestingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/paxi/params": {
+      "get": {
+        "operationId": "Query_Params",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/xpaxitypesQueryParamsResponse"
             }
           },
           "default": {
@@ -341,6 +363,18 @@
     "typesMsgBurnTokenResponse": {
       "type": "object"
     },
+    "typesMsgUpdateParamsResponse": {
+      "type": "object"
+    },
+    "typesParamsInput": {
+      "type": "object",
+      "properties": {
+        "extraGasPerNewAccount": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "typesQueryCirculatingSupplyResponse": {
       "type": "object",
       "properties": {
@@ -493,6 +527,15 @@
           "format": "uint64"
         },
         "instMultiplier": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "xpaxitypesQueryParamsResponse": {
+      "type": "object",
+      "properties": {
+        "extraGasPerNewAccount": {
           "type": "string",
           "format": "uint64"
         }

@@ -3,6 +3,7 @@ package paxi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 
@@ -71,11 +72,20 @@ func (am AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux
 }
 
 func (am AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
-	return nil
+	genesis := paxitypes.DefaultGenesisState()
+	bz, err := json.Marshal(genesis)
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingConfig, bz json.RawMessage) error {
-	return nil
+	var data paxitypes.GenesisState
+	if err := json.Unmarshal(bz, &data); err != nil {
+		return fmt.Errorf("failed to unmarshal %s genesis state: %w", paxitypes.ModuleName, err)
+	}
+	return data.Validate()
 }
 
 // AppModule implements the AppModule interface
@@ -109,7 +119,9 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
-	am.keeper.InitGenesis(ctx)
+	var genesisState paxitypes.GenesisState
+	json.Unmarshal(data, &genesisState)
+	am.keeper.InitGenesis(ctx, genesisState)
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {

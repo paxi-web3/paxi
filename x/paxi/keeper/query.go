@@ -75,3 +75,12 @@ func (q *queryServer) UnlockSchedules(ctx context.Context, req *types.QueryUnloc
 		UnlockSchedules: unlockSchedules,
 	}, nil
 }
+
+func (q *queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	params := q.k.GetParams(sdkCtx)
+
+	return &types.QueryParamsResponse{
+		ExtraGasPerNewAccount: params.ExtraGasPerNewAccount,
+	}, nil
+}
