@@ -33,7 +33,7 @@ func (gs GenesisState) Validate() error {
 
 func DefaultParams() Params {
 	return Params{
-		StoreCodeBaseGas:    uint64(1_000_000_000),
+		StoreCodeBaseGas:    uint64(800_000_000),
 		StoreCodeMultiplier: uint64(300),
 		InstBaseGas:         uint64(40_000_000),
 		InstMultiplier:      uint64(100),
