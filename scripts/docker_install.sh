@@ -173,7 +173,7 @@ if ! [ -f ./paxi/keyring-file/$KEY_NAME.info ]; then
   docker run --rm -it \
     -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
     $DOCKER_IMAGE \
-    $BINARY_NAME keys add $KEY_NAME --keyring-backend file
+    $BINARY_NAME keys add $KEY_NAME
 fi
 sudo chown -R $(whoami) $HOME/paxid
 
@@ -183,7 +183,7 @@ echo "Your wallet address:"
 docker run --rm -it \
   -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
   $DOCKER_IMAGE \
-  $BINARY_NAME keys show $KEY_NAME -a --keyring-backend file
+  $BINARY_NAME keys show $KEY_NAME -a
 echo "Please fund this address and run the following command to become a validator:"
 
 ### === Generate create-validator command ===
@@ -225,17 +225,17 @@ echo "docker run --rm -it --network host -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PA
 echo ""
 echo "Validator creation command (copy & paste to execute):"
 echo "$BINARY_NAME tx staking create-validator $DOCKER_PAXI_DATA_PATH/validator.json \\"
-echo "  --from $KEY_NAME --keyring-backend file \\"
+echo "  --from $KEY_NAME \\"
 echo "  --fees 10000$DENOM"
 echo ""
 echo "To view your wallet address:"
-echo "$BINARY_NAME keys show $KEY_NAME --keyring-backend file"
+echo "$BINARY_NAME keys show $KEY_NAME"
 echo ""
 echo "Check wallet balance:"
-echo "$BINARY_NAME query bank balances <your address or key name> --keyring-backend file"
+echo "$BINARY_NAME query bank balances <your address or key name>"
 echo ""
 echo "Check your staking rewards:"
-echo "$BINARY_NAME query distribution rewards <your address or key name> --keyring-backend file"
+echo "$BINARY_NAME query distribution rewards <your address or key name>"
 echo ""
 echo "Check your validator public key:"
 echo "$BINARY_NAME tendermint show-validator"

@@ -171,7 +171,7 @@ if ! [ -f ./paxi/keyring-file/$KEY_NAME.info ]; then
   docker run --rm -it \
     -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
     $DOCKER_IMAGE \
-    $BINARY_NAME keys add $KEY_NAME --keyring-backend file
+    $BINARY_NAME keys add $KEY_NAME
 fi
 sudo chown -R $(whoami) $HOME/paxid
 
@@ -182,7 +182,7 @@ echo "你的地址為: "
 docker run --rm -it \
   -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
   $DOCKER_IMAGE \
-  $BINARY_NAME keys show $KEY_NAME -a --keyring-backend file
+  $BINARY_NAME keys show $KEY_NAME -a
 echo "請向此地址轉入代幣後執行以下指令進行質押:"
 
 ### === 顯示 create-validator 指令 ===
@@ -224,17 +224,17 @@ echo "docker run --rm -it --network host -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PA
 echo ""
 echo "成為驗證人指令（複製貼上執行）:"
 echo "$BINARY_NAME tx staking create-validator $DOCKER_PAXI_DATA_PATH/validator.json \\"
-echo "  --from $KEY_NAME --keyring-backend file \\"
+echo "  --from $KEY_NAME \\"
 echo "  --fees 10000$DENOM"
 echo ""
 echo "查看錢包地址:"
-echo "$BINARY_NAME keys show $KEY_NAME --keyring-backend file"
+echo "$BINARY_NAME keys show $KEY_NAME"
 echo ""
 echo "查看錢包餘額指令:"
-echo "$BINARY_NAME query bank balances <你的地址/錢包名稱> --keyring-backend file"
+echo "$BINARY_NAME query bank balances <你的地址/錢包名稱>"
 echo ""
 echo "查看你的質押收益:"
-echo "$BINARY_NAME query distribution rewards <你的地址/錢包名稱> --keyring-backend file"
+echo "$BINARY_NAME query distribution rewards <你的地址/錢包名稱>"
 echo ""
 echo "查看你的驗證人地址指令:"
 echo "$BINARY_NAME tendermint show-validator"
