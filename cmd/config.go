@@ -33,9 +33,9 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// Consensus configuration
 	cfg.Consensus.TimeoutPropose = 3 * time.Second // Timeout for proposing a block
 	cfg.Consensus.TimeoutProposeDelta = 400 * time.Millisecond
-	cfg.Consensus.TimeoutPrevote = 1500 * time.Millisecond
+	cfg.Consensus.TimeoutPrevote = 1200 * time.Millisecond
 	cfg.Consensus.TimeoutPrevoteDelta = 400 * time.Millisecond
-	cfg.Consensus.TimeoutPrecommit = 1500 * time.Millisecond
+	cfg.Consensus.TimeoutPrecommit = 1200 * time.Millisecond
 	cfg.Consensus.TimeoutPrecommitDelta = 400 * time.Millisecond
 	cfg.Consensus.TimeoutCommit = 4000 * time.Millisecond      // Timeout before getting into next block
 	cfg.Consensus.CreateEmptyBlocks = true                     // Create blocks even with no transactions
@@ -98,11 +98,11 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.Telemetry.PrometheusRetentionTime = 120
 
 	// Enable snapshots to support state sync and archiving
-	srvCfg.StateSync.SnapshotInterval = 1000
+	srvCfg.StateSync.SnapshotInterval = 0
 	srvCfg.StateSync.SnapshotKeepRecent = 5
 
 	// IavlCacheSize set the size of the iavl tree cache (in number of nodes).
-	srvCfg.IAVLCacheSize = 500_000
+	srvCfg.IAVLCacheSize = 1_000_000
 
 	// Set default values for the custom configuration section
 	customAppConfig := CustomAppConfig{
