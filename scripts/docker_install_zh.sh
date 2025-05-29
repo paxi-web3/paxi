@@ -116,7 +116,7 @@ cd $HOME/paxid
 
 
 ### === 初始化節點 ===
-if ! [ -f ./paxi/config/genesis.json ]; then
+if ! [ -f ./paxi/keyring-file/$KEY_NAME.info ] && ! [ -f ./paxi/$KEY_NAME.info ]; then
 docker run --rm \
   -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
   $DOCKER_IMAGE \

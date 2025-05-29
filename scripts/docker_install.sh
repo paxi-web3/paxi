@@ -165,7 +165,7 @@ sed -i 's|^prometheus *=.*|prometheus = false|' $CONFIG
 #sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[grpc-web\]" $APP_CONFIG -A 3 | tail -n 1)
 
 ### === Create wallet (if not exists) ===
-if ! [ -f ./paxi/keyring-file/$KEY_NAME.info ]; then
+if ! [ -f ./paxi/keyring-file/$KEY_NAME.info ] && ! [ -f ./paxi/$KEY_NAME.info ]; then
   echo ""
   echo "After the wallet is created, please write down the mnemonic phrase"
   echo "manually to ensure you can recover it if lost."
