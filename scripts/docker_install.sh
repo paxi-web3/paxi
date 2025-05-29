@@ -109,6 +109,7 @@ if [ ! -d "paxi" ]; then
   make docker
 else
   cd paxi
+  git checkout $PAXI_TAG
   make docker
 fi
 
@@ -131,12 +132,19 @@ curl -s $GENESIS_URL | jq -r .result.genesis > ./paxi/config/genesis.json
 ### === Set state sync ===
 BLOCK_OFFSET=1000
 LATEST_HEIGHT=$(curl -s "$SNAPSHOT_URL/block" | jq -r .result.block.header.height)
-TRUST_HEIGHT=$((LATEST_HEIGHT - BLOCK_OFFSET))
+TRUST_HEIGHT=$(( ( (LATEST_HEIGHT - BLOCK_OFFSET) / BLOCK_OFFSET ) * BLOCK_OFFSET ))
 TRUST_HASH=$(curl -s "$SNAPSHOT_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
 
 if ! [[ "$LATEST_HEIGHT" =~ ^[0-9]+$ ]]; then
   echo "❌ Failed to retrieve trust height or hash. Please check the RPC URL."
   exit 1
+fi
+
+### === Detect platform ===
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    SED="sed -i ''"
+else
+    SED="sed -i"
 fi
 
 if [ "$LATEST_HEIGHT" -gt "$BLOCK_OFFSET" ]; then
@@ -145,24 +153,32 @@ if [ "$LATEST_HEIGHT" -gt "$BLOCK_OFFSET" ]; then
     exit 1
   fi
 
-  sed -i "/^\[statesync\]/,/^\[/{                               
-    s|^enable *=.*|enable = true|g
-    s|^rpc_servers *=.*|rpc_servers = \"$SNAPSHOT_URL,$SNAPSHOT_URL\"|g
-    s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g
-    s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g
-    s|^trust_period *=.*|trust_period = \"168h\"|g
+  $SED "/^\[statesync\]/,/^\[/{ \
+    s|^enable *=.*|enable = true|g; \
+    s|^rpc_servers *=.*|rpc_servers = \"$SNAPSHOT_URL,$SNAPSHOT_URL\"|g; \
+    s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g; \
+    s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g; \
+    s|^trust_period *=.*|trust_period = \"168h\"|g; \
   }" "$CONFIG"
 fi 
 
-### === Configure seeds and peers ===
-sed -i "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
-sed -i "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFIG
+### === Get network information ===
+IP_DATA=$(curl -s http://ip-api.com/json)
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to retrieve country code. Please check your internet connection."
+  exit 1
+fi
+COUNTRY_CODE=$(echo "$IP_DATA" | jq -r .countryCode)
+IP_ADDRESS=$(echo "$IP_DATA" | jq -r .query)
 
-### === Disable unused ports for security ===
-sed -i '/^\[rpc\]/,/^\[/s|^\s*laddr\s*=.*|laddr = "tcp://0.0.0.0:26657"|' $CONFIG
-sed -i 's|^prometheus *=.*|prometheus = false|' $CONFIG
-#sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[api\]" $APP_CONFIG -A 3 | tail -n 1)
-#sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[grpc-web\]" $APP_CONFIG -A 3 | tail -n 1)
+### === Configure seeds and peers ===
+$SED "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
+$SED "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFIG
+$SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26657\"|" $CONFIG
+
+### === Disable unnecessary ports for security ===
+$SED '/^\[rpc\]/,/^\[/s|^\s*laddr\s*=.*|laddr = "tcp://0.0.0.0:26657"|' $CONFIG
+$SED 's|^prometheus *=.*|prometheus = false|' $CONFIG
 
 ### === Create wallet (if not exists) ===
 if ! [ -f ./paxi/keyring-file/$KEY_NAME.info ] && ! [ -f ./paxi/$KEY_NAME.info ]; then
@@ -187,11 +203,6 @@ docker run --rm -it \
 echo "Please fund this address and run the following command to become a validator:"
 
 ### === Generate create-validator command ===
-COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq -r .countryCode)
-VAL_PUBKEY=$(docker run --rm \
-  -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
-  $DOCKER_IMAGE \
-  $BINARY_NAME tendermint show-validator)
 echo "You may edit validator.json at: $PAXI_DATA_PATH/validator.json"
 echo "Please add your country code at the end of the 'details' parameter, e.g., [US]. This helps us collect node location data and display it on the official website."
 echo "Generating validator.json..."

@@ -95,6 +95,7 @@ make install
 cd $PAXI_PATH
 else
 cd paxi
+git checkout $PAXI_TAG
 make install
 cd $PAXI_PATH
 fi
@@ -109,12 +110,19 @@ curl -s $GENESIS_URL | jq -r .result.genesis > ./paxi/config/genesis.json
 ### === Set state sync ===
 BLOCK_OFFSET=1000
 LATEST_HEIGHT=$(curl -s "$SNAPSHOT_URL/block" | jq -r .result.block.header.height)
-TRUST_HEIGHT=$((LATEST_HEIGHT - BLOCK_OFFSET))
+TRUST_HEIGHT=$(( ( (LATEST_HEIGHT - BLOCK_OFFSET) / BLOCK_OFFSET ) * BLOCK_OFFSET ))
 TRUST_HASH=$(curl -s "$SNAPSHOT_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
 
 if ! [[ "$LATEST_HEIGHT" =~ ^[0-9]+$ ]]; then
   echo "❌ Failed to retrieve trust height or hash. Please check the RPC URL."
   exit 1
+fi
+
+### === Detect platform ===
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    SED="sed -i ''"
+else
+    SED="sed -i"
 fi
 
 if [ "$LATEST_HEIGHT" -gt "$BLOCK_OFFSET" ]; then
@@ -123,24 +131,32 @@ if [ "$LATEST_HEIGHT" -gt "$BLOCK_OFFSET" ]; then
     exit 1
   fi
 
-  sed -i "/^\[statesync\]/,/^\[/{                               
-    s|^enable *=.*|enable = true|g
-    s|^rpc_servers *=.*|rpc_servers = \"$SNAPSHOT_URL,$SNAPSHOT_URL\"|g
-    s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g
-    s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g
-    s|^trust_period *=.*|trust_period = \"168h\"|g
+  $SED "/^\[statesync\]/,/^\[/{ \
+    s|^enable *=.*|enable = true|g; \
+    s|^rpc_servers *=.*|rpc_servers = \"$SNAPSHOT_URL,$SNAPSHOT_URL\"|g; \
+    s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g; \
+    s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g; \
+    s|^trust_period *=.*|trust_period = \"168h\"|g; \
   }" "$CONFIG"
 fi
 
+### === Get network information ===
+IP_DATA=$(curl -s http://ip-api.com/json)
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to retrieve country code. Please check your internet connection."
+  exit 1
+fi
+COUNTRY_CODE=$(echo "$IP_DATA" | jq -r .countryCode)
+IP_ADDRESS=$(echo "$IP_DATA" | jq -r .query)
+
 ### === Configure seeds and peers ===
-sed -i "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
-sed -i "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFIG
+$SED "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
+$SED "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFIG
+$SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26657\"|" $CONFIG
 
 ### === Disable unnecessary ports for security ===
-sed -i '/^\[rpc\]/,/^\[/s|^\s*laddr\s*=.*|laddr = "tcp://0.0.0.0:26657"|' $CONFIG
-sed -i 's|^prometheus *=.*|prometheus = false|' $CONFIG
-#sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[api\]" $APP_CONFIG -A 3 | tail -n 1)
-#sed -i 's|^enable *=.*|enable = false|' $(grep -l "\[grpc-web\]" $APP_CONFIG -A 3 | tail -n 1)
+$SED '/^\[rpc\]/,/^\[/s|^\s*laddr\s*=.*|laddr = "tcp://0.0.0.0:26657"|' $CONFIG
+$SED 's|^prometheus *=.*|prometheus = false|' $CONFIG
 
 ### === Create wallet (if not exists) ===
 if ! $BINARY_NAME keys show $KEY_NAME &>/dev/null; then
@@ -157,7 +173,6 @@ echo "Your wallet address is: $ADDR"
 echo "Please send tokens to this address and then run the following command to become a validator:"
 
 ### === Display create-validator command ===
-COUNTRY_CODE=$(curl -s http://ip-api.com/json | jq -r .countryCode)
 VAL_PUBKEY=$($BINARY_NAME tendermint show-validator)
 echo "You can modify validator.json at: $PAXI_DATA_PATH/validator.json"
 echo "Please add your country code at the end of the 'details' parameter, e.g., [US]. This helps us collect node location data and display it on the official website."
