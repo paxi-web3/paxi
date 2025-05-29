@@ -25,25 +25,6 @@ RUN curl -LO https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
 
 ENV PATH="/usr/local/go/bin:${PATH}"
 
-# Build and install RocksDB (v9.2.1) from source
-WORKDIR /deps
-RUN git clone https://github.com/facebook/rocksdb.git && \
-    cd rocksdb && \
-    git checkout v9.2.1 && \
-    mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release \
-          -DWITH_TESTS=OFF \
-          -DWITH_TOOLS=OFF \
-          -DWITH_GFLAGS=ON \
-          -DPORTABLE=ON \
-          -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
-    make -j$(nproc) && \
-    make install
-
-# Update dynamic linker with RocksDB path
-RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/rocksdb.conf && \
-    ldconfig
-
 # Build paxid
 WORKDIR /app
 COPY go.mod ./
@@ -51,8 +32,8 @@ COPY go.sum ./
 RUN go mod download
 COPY . .
 
-# Build the binary with required build tags (cosmwasm and rocksdb)
-RUN go build -mod=readonly -tags "rocksdb cosmwasm" -o paxid ./cmd/paxid
+# Build the binary with required build tags (cosmwasm and pebbledb)
+RUN go build -mod=readonly -tags "pebbledb cosmwasm" -o paxid ./cmd/paxid
 
 # Copy wasmvm from the cache
 RUN mkdir -p /root/.wasmvm/lib && \
@@ -78,11 +59,6 @@ WORKDIR /root/
 
 # Copy the binary from the build stage
 COPY --from=builder /app/paxid .
-
-# Copy the rocksdb dynamic lib from the build stage
-COPY --from=builder /usr/local/lib/librocksdb.so* /usr/local/lib/
-RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/rocksdb.conf && \
-    ldconfig
 
 # Copy the wasm dynamic lib from the build stage
 COPY --from=builder /root/.wasmvm/lib/libwasmvm* /usr/local/lib/

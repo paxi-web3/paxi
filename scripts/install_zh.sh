@@ -81,22 +81,6 @@ if ! command -v go &> /dev/null; then
     sudo ln -s /usr/local/go/bin/go /usr/bin/go
 fi
 
-### === 安裝 Rocksdb ===
-if ! [ -f /usr/local/lib/librocksdb.so ]; then
-    echo "正在安裝 Rocksdb..."
-    
-    if ! [ -d ./rocksdb ]; then
-      git clone https://github.com/facebook/rocksdb.git
-    fi
-
-    cd rocksdb
-    git checkout $ROCKSDB_VERSION
-    make -j$(nproc) shared_lib
-    sudo make install-shared INSTALL_PATH=/usr/local
-    sudo echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/rocksdb.conf
-    sudo ldconfig && cd ..
-fi
-
 ### === 編譯 Paxi ===
 if ! [ -d ./paxi ]; then
 echo "正在安裝 Paxi..."

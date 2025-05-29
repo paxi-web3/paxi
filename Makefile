@@ -3,10 +3,9 @@
 APP_NAME = paxid
 VERSION ?= v1.0.1
 DOCKER_IMAGE = paxi-node
-BUILD_TAGS = "rocksdb cosmwasm"
+BUILD_TAGS = "cosmwasm pebbledb"
 CGO_ENABLED=1
 CGO_CFLAGS="-I/usr/local/include" 
-CGO_LDFLAGS="-L/usr/local/lib -lrocksdb"
 
 .PHONY: all build install clean proto config run test
 

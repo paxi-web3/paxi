@@ -52,7 +52,7 @@ func initCometBFTConfig() *cmtcfg.Config {
 	cfg.Mempool.Broadcast = true                // Enable gossip broadcast
 
 	// Database backend for storing blockchain data
-	cfg.BaseConfig.DBBackend = "rocksdb" // Options: goleveldb, rocksdb, etc.
+	cfg.BaseConfig.DBBackend = "pebbledb" // Options: goleveldb, rocksdb, pebbledb, etc.
 
 	return cfg
 }
@@ -83,9 +83,6 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.Pruning = "custom"
 	srvCfg.PruningKeepRecent = "40000"
 	srvCfg.PruningInterval = "100"
-
-	// Use a custom database backend
-	srvCfg.AppDBBackend = "rocksdb" // Use RocksDB as the database backend
 
 	// Enable essential APIs and endpoints
 	srvCfg.API.Enable = true
