@@ -48,7 +48,6 @@ fi
 echo "✅ 錢包名稱設定為: $KEY_NAME"
 
 GOLANG_VERSION=1.24.2
-ROCKSDB_VERSION=v9.2.1 
 PAXI_REPO="https://github.com/paxi-web3/paxi"
 PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
