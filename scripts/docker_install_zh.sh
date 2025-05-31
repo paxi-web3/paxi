@@ -172,7 +172,7 @@ IP_ADDRESS=$(echo "$IP_DATA" | jq -r .query)
 ### === 設定種子與peers ===
 $SED "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
 $SED "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFIG
-$SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26657\"|" $CONFIG
+$SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26656\"|" $CONFIG
 
 ### === 關閉不必要端口，強化安全性 ===
 $SED '/^\[rpc\]/,/^\[/s|^\s*laddr\s*=.*|laddr = "tcp://0.0.0.0:26657"|' $CONFIG
