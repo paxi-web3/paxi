@@ -88,7 +88,7 @@ import (
 	"github.com/paxi-web3/paxi/x/custommint"
 	custommintkeeper "github.com/paxi-web3/paxi/x/custommint/keeper"
 	customminttypes "github.com/paxi-web3/paxi/x/custommint/types"
-	customstaking "github.com/paxi-web3/paxi/x/customstaking"
+	"github.com/paxi-web3/paxi/x/customstaking"
 	"github.com/paxi-web3/paxi/x/customwasm"
 	customwasmkeeper "github.com/paxi-web3/paxi/x/customwasm/keeper"
 	customwasmtypes "github.com/paxi-web3/paxi/x/customwasm/types"
@@ -311,6 +311,7 @@ func NewPaxiApp(
 	app.txConfig = txConfig
 
 	stakingStoreService := cosmosruntime.NewKVStoreService(keys[stakingtypes.StoreKey])
+
 	app.StakingKeeper = customstaking.NewCustomKeeper(stakingkeeper.NewKeeper(
 		appCodec,
 		stakingStoreService,
