@@ -150,7 +150,6 @@ $SED "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFI
 $SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26656\"|" $CONFIG
 
 ### === 關閉不必要端口，強化安全性 ===
-$SED '/^\[rpc\]/,/^\[/s|^\s*laddr\s*=.*|laddr = "tcp://0.0.0.0:26657"|' $CONFIG
 $SED 's|^prometheus *=.*|prometheus = false|' $CONFIG
 
 ### === 建立錢包（如不存在）===
