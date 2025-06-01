@@ -1,0 +1,1 @@
+*/10 * * * * flock -n /tmp/wasm_packer.py.lock /usr/bin/python3 ~/wasm_packer.py ~/paxi

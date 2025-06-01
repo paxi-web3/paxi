@@ -17,23 +17,30 @@ def get_current_block_height():
         return int(response.json()['result']['block']['header']['height'])
     else:
         raise Exception("Failed to fetch block height")
-    
-def align_to_bucket(bh, bucket_size=1000):
-    """
-    Align the block height to the nearest bucket size.
-    """
-    return (bh // bucket_size) * bucket_size
 
-def zip_wasm_files(wasm_dir, output_zip):
+def zip_wasm_files(wasm_dir, output_tmp, output_zip):
     """
     Create a zip file containing all wasm files in the specified directory.
     """
-    with zipfile.ZipFile(output_zip, 'w') as zipf:
+    with zipfile.ZipFile(output_tmp, 'w') as zipf:
         for root, _, files in os.walk(wasm_dir):
             for file in files:
                 if file.endswith('.wasm'):
                     file_path = os.path.join(root, file)
                     zipf.write(file_path, os.path.relpath(file_path, wasm_dir))
+    os.rename(output_tmp, output_tmp.replace('.tmp', '.zip'))
+
+def clear_old_snapshots(wasm_snapshots_path):
+    file_list = []
+    for file in os.listdir(wasm_snapshots_path):
+        if file.endswith('.zip'):
+            file_height = int(file.split('.')[0])
+            file_list.append((file, file_height))
+    file_list.sort(key=lambda x: x[1], reverse=True)
+
+    keep_top = 3
+    for file, _ in file_list[keep_top:]:
+        os.remove(os.path.join(wasm_snapshots_path, file))
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -47,14 +54,18 @@ if __name__ == "__main__":
 
     # Get the current block height
     block_height = get_current_block_height()
-    aligned_height = align_to_bucket(block_height)
 
     # Create a zip file of the wasm files
-    output_zip = os.path.join(wasm_snapshots_path, f"wasm_files_{aligned_height}.zip")
-    if os.path.exists(output_zip):
-        print(f"Zip file {output_zip} already exists. Skipping creation.")
+    output_tmp = os.path.join(wasm_snapshots_path, f"{block_height}.tmp")
+    output_zip = os.path.join(wasm_snapshots_path, f"{block_height}.zip")
+    if os.path.exists(output_tmp):
+        print(f"Zip file {output_tmp} already exists. Skipping creation.")
         sys.exit(1)
 
     wasm_path = os.path.join(paxi_path, "wasm")
-    zip_wasm_files(wasm_path, output_zip)
+    zip_wasm_files(wasm_path, output_tmp, output_zip)
     print(f"Created zip file: {output_zip}")
+    
+    # Clear old snapshots
+    clear_old_snapshots(wasm_snapshots_path)
+    
