@@ -38,7 +38,7 @@ def clear_old_snapshots(wasm_snapshots_path):
             file_list.append((file, file_height))
     file_list.sort(key=lambda x: x[1], reverse=True)
 
-    keep_top = 3
+    keep_top = 5
     for file, _ in file_list[keep_top:]:
         os.remove(os.path.join(wasm_snapshots_path, file))
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     paxi_path = sys.argv[1]
-    wasm_snapshots_path = os.path.join(paxi_path, "wasm_snapshots")
+    wasm_snapshots_path = os.path.join(os.path.expanduser("~"), "wasm_snapshots")
     if not os.path.exists(wasm_snapshots_path):
         os.makedirs(wasm_snapshots_path)
 
@@ -62,7 +62,12 @@ if __name__ == "__main__":
         print(f"Zip file {output_tmp} already exists. Skipping creation.")
         sys.exit(1)
 
-    wasm_path = os.path.join(paxi_path, "wasm")
+    wasm_path = os.path.join(paxi_path, "wasm/wasm/state/wasm/")
+    has_wasm = any(f.endswith('.wasm') for f in os.listdir(wasm_path) if os.path.isfile(os.path.join(wasm_path, f)))
+    if not has_wasm:
+        print(f"No wasm files found in {wasm_path}. Please ensure the path is correct.")
+        sys.exit(1)
+    
     zip_wasm_files(wasm_path, output_tmp, output_zip)
     print(f"Created zip file: {output_zip}")
     

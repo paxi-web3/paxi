@@ -56,6 +56,7 @@ SEEDS="key@mainnet-seed.paxinet.io:26656"
 PERSISTENT_PEERS="key@mainnet-node-1.paxinet.io:26656"
 RPC_URL="http://mainnet-rpc.paxinet.io:26657"
 SNAPSHOT_URL="http://mainnet-snapshot.paxinet.io:26657"
+SNAPSHOT_DOWNLOAD_HOST="http://mainnet-snapshot.paxinet.io"
 GENESIS_URL="$RPC_URL/genesis?"
 CONFIG="./paxi/config/config.toml"
 APP_CONFIG="./paxi/config/app.toml"
@@ -70,7 +71,7 @@ sudo apt-get update && sudo apt-get install -y \
     build-essential git cmake \
     libsnappy-dev zlib1g-dev libbz2-dev \
     liblz4-dev libzstd-dev wget curl pkg-config \
-    ca-certificates 
+    ca-certificates unzip jq
 
 ### === 安裝 Go ===
 if ! command -v go &> /dev/null; then
@@ -104,13 +105,25 @@ curl -s $GENESIS_URL | jq -r .result.genesis > ./paxi/config/genesis.json
 
 ### === 設置快照同步 ===
 BLOCK_OFFSET=1000
-LATEST_HEIGHT=$(curl -s "$SNAPSHOT_URL/block" | jq -r .result.block.header.height)
+LATEST_HEIGHT=$(curl -s "$RPC_URL/block" | jq -r .result.block.header.height)
 TRUST_HEIGHT=$(( ( (LATEST_HEIGHT - BLOCK_OFFSET) / BLOCK_OFFSET ) * BLOCK_OFFSET ))
-TRUST_HASH=$(curl -s "$SNAPSHOT_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
+TRUST_HASH=$(curl -s "$RPC_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
 
 if ! [[ "$LATEST_HEIGHT" =~ ^[0-9]+$ ]]; then
   echo "❌ 無法取得 trust 高度或 hash，請檢查 RPC URL。"
   exit 1
+fi
+
+### === 下載 wasm snapshot ===
+WASM_SNAPSHOT_URL=$(curl -s "$SNAPSHOT_DOWNLOAD_HOST/utils/latest_wasm_snapshot" | jq -r .url)
+curl -f -o wasm_snapshot.zip "$WASM_SNAPSHOT_URL"
+if [ $? -ne 0 ]; then
+  echo "❌ 無法下載 wasm snapshot。請手動下載並解壓到 $PAXI_DATA_PATH/wasm/wasm/state/wasm。"
+else
+  mkdir -p "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
+  unzip wasm_snapshot.zip -d "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
+  rm wasm_snapshot.zip
+  echo "✅ Wasm snapshot 已下載並解壓到 $PAXI_DATA_PATH/wasm/wasm/state/wasm。"
 fi
 
 ### === 檢測系統類別 ===
