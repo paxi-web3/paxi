@@ -96,6 +96,13 @@ make install
 cd $PAXI_PATH
 fi
 
+### === 複製 libwasmvm.x86_64.so 到 /usr/loca/lib ===
+WASM_SO_FILE="$HOME/go/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@v2.2.1/internal/api/libwasmvm.x86_64.so"
+if [ -f "$WASM_SO_FILE" ]; then
+  sudo cp $WASM_SO_FILE /usr/local/lib/
+  sudo ldconfig
+fi
+
 ### === 初始化節點 ===
 if ! [ -f ./paxi/config/genesis.json ]; then
 $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID

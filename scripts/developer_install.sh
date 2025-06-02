@@ -41,6 +41,13 @@ make install
 cd $PAXI_PATH
 fi
 
+### === Copy libwasmvm.x86_64.so to /usr/loca/lib ===
+WASM_SO_FILE="$HOME/go/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@v2.2.1/internal/api/libwasmvm.x86_64.so"
+if [ -f "$WASM_SO_FILE" ]; then
+  sudo cp $WASM_SO_FILE /usr/local/lib/
+  sudo ldconfig
+fi
+
 ### === Initialize node ===
 if ! [ -f ./paxi/config/genesis.json ]; then
 $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
