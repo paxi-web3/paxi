@@ -131,6 +131,9 @@ func init() {
 	// and seal config
 	apptypes.InitAddressRules()
 
+	// Set wasm config
+	wasmtypes.MaxWasmSize = int(1.5 * 1024 * 1024) // 1.5 MB
+
 	// DefaultNodeHome is set to the home directory of the application
 	DefaultNodeHome = (func() string {
 		// Get the directory of the executable (not working dir)

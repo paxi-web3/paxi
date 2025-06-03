@@ -234,7 +234,6 @@ require (
 
 replace (
 	cosmossdk.io/store => github.com/paxi-web3/store v1.1.2-paxi
-	github.com/CosmWasm/wasmd => github.com/paxi-web3/wasmd v0.55.0-paxi-1.1
 	github.com/cosmos/cosmos-sdk/client/v2 => cosmossdk.io/client/v2 v2.0.0-beta.5
 	github.com/cosmos/cosmos-sdk/store => cosmossdk.io/store v1.1.2
 )
