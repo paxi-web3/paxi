@@ -5,6 +5,7 @@
 [![Cosmos SDK](https://img.shields.io/badge/Cosmos%20SDK-v0.53.0-blue?style=flat-square)](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.53.0)
 [![CometBFT](https://img.shields.io/badge/CometBFT-v0.38.0-blue?style=flat-square)](https://github.com/cometbft/cometbft/releases/tag/v0.38.17)
 [![CosmWasm](https://img.shields.io/badge/CosmWasm-v0.55.0-blue?style=flat-square)](https://github.com/CosmWasm/wasmd/releases/tag/v0.55.0)
+[![Rust](https://img.shields.io/badge/Rust-v1.81.0-blue?style=flat-square)](https://github.com/rust-lang/rust/releases/tag/1.81.0)
 
 
 <img src="assets/banner.png" alt="Paxi Logo" width="100%"/>

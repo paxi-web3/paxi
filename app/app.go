@@ -93,6 +93,7 @@ import (
 	ibcporttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
+	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 	"github.com/paxi-web3/paxi/x/custommint"
 	custommintkeeper "github.com/paxi-web3/paxi/x/custommint/keeper"
 	customminttypes "github.com/paxi-web3/paxi/x/custommint/types"
@@ -186,8 +187,10 @@ type PaxiApp struct {
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
 	CircuitKeeper         circuitkeeper.Keeper
 	PaxiKeeper            paxikeeper.Keeper
-	IBCKeeper             *ibckeeper.Keeper
-	IBCTransferKeeper     ibctransferkeeper.Keeper
+
+	// ibc keepers
+	IBCKeeper         *ibckeeper.Keeper
+	IBCTransferKeeper ibctransferkeeper.Keeper
 
 	// supplementary keepers
 	WasmKeeper       wasmkeeper.Keeper
@@ -507,8 +510,13 @@ func NewPaxiApp(
 	)
 
 	ibcRouter := ibcporttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, ibctransfer.NewIBCModule(app.IBCTransferKeeper))
+	ibcRouter.AddRoute(ibctransfertypes.PortID, ibctransfer.NewIBCModule(app.IBCTransferKeeper))
 	app.IBCKeeper.SetRouter(ibcRouter)
+
+	clientKeeper := app.IBCKeeper.ClientKeeper
+	storeProvider := clientKeeper.GetStoreProvider()
+	tmModule := ibctm.NewLightClientModule(appCodec, storeProvider)
+	clientKeeper.AddRoute(ibctm.ModuleName, &tmModule)
 
 	/****  Module Options ****/
 
@@ -535,6 +543,7 @@ func NewPaxiApp(
 		customwasm.NewAppModule(appCodec, app.CustomWasmKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
 		ibctransfer.NewAppModule(app.IBCTransferKeeper),
+		ibctm.NewAppModule(tmModule),
 	)
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
