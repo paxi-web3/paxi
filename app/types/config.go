@@ -17,6 +17,8 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	gogoany "github.com/cosmos/gogoproto/types/any"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	ibctypes "github.com/cosmos/ibc-go/v10/modules/core/types"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
 )
 
@@ -242,6 +244,10 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 	slasingParams.SlashFractionDowntime = sdkmath.LegacyMustNewDecFromStr("0.01")
 	slasingGenesis.Params = slasingParams
 
+	// custom ibc genesis
+	ibcGenesis := ibctypes.DefaultGenesisState()
+	ibcGenesis.ClientGenesis.Params.AllowedClients = []string{"07-tendermint"}
+
 	// Rewrite genesis data
 	(*pGenesisData)[govtypes.ModuleName] = cdc.MustMarshalJSON(govGenesis)
 	(*pGenesisData)[banktypes.ModuleName] = cdc.MustMarshalJSON(bankGenesis)
@@ -249,4 +255,5 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 	(*pGenesisData)[stakingtypes.ModuleName] = cdc.MustMarshalJSON(stakingGenesis)
 	(*pGenesisData)[distrtypes.ModuleName] = cdc.MustMarshalJSON(distrGenesis)
 	(*pGenesisData)[slashingtypes.ModuleName] = cdc.MustMarshalJSON(slasingGenesis)
+	(*pGenesisData)[ibcexported.ModuleName] = cdc.MustMarshalJSON(ibcGenesis)
 }

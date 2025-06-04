@@ -80,11 +80,19 @@ import (
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	ibctransfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v10/modules/core"
+	ibcporttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	"github.com/paxi-web3/paxi/x/custommint"
 	custommintkeeper "github.com/paxi-web3/paxi/x/custommint/keeper"
 	customminttypes "github.com/paxi-web3/paxi/x/custommint/types"
@@ -123,6 +131,7 @@ var (
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
 		paxitypes.BurnTokenAccountName: {authtypes.Burner},
+		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -177,6 +186,8 @@ type PaxiApp struct {
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
 	CircuitKeeper         circuitkeeper.Keeper
 	PaxiKeeper            paxikeeper.Keeper
+	IBCKeeper             *ibckeeper.Keeper
+	IBCTransferKeeper     ibctransferkeeper.Keeper
 
 	// supplementary keepers
 	WasmKeeper       wasmkeeper.Keeper
@@ -253,6 +264,8 @@ func NewPaxiApp(
 		wasmtypes.StoreKey,
 		paxitypes.StoreKey,
 		customwasmtypes.StoreKey,
+		ibcexported.StoreKey,
+		ibctransfertypes.StoreKey,
 	)
 
 	// register streaming services
@@ -472,6 +485,31 @@ func NewPaxiApp(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
+	// create the ibc keeper
+	app.IBCKeeper = ibckeeper.NewKeeper(
+		appCodec,
+		cosmosruntime.NewKVStoreService(keys[ibcexported.StoreKey]),
+		paramtypes.Subspace{},
+		app.UpgradeKeeper,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
+	app.IBCTransferKeeper = ibctransferkeeper.NewKeeper(
+		appCodec,
+		cosmosruntime.NewKVStoreService(keys[ibctransfertypes.StoreKey]),
+		paramtypes.Subspace{},
+		app.IBCKeeper.ChannelKeeper,
+		app.IBCKeeper.ChannelKeeper,
+		app.MsgServiceRouter(),
+		app.AccountKeeper,
+		app.BankKeeper,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
+	ibcRouter := ibcporttypes.NewRouter()
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, ibctransfer.NewIBCModule(app.IBCTransferKeeper))
+	app.IBCKeeper.SetRouter(ibcRouter)
+
 	/****  Module Options ****/
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -495,6 +533,8 @@ func NewPaxiApp(
 		paxi.NewAppModule(appCodec, app.PaxiKeeper, app),
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper.Keeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 		customwasm.NewAppModule(appCodec, app.CustomWasmKeeper),
+		ibc.NewAppModule(app.IBCKeeper),
+		ibctransfer.NewAppModule(app.IBCTransferKeeper),
 	)
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
@@ -531,6 +571,7 @@ func NewPaxiApp(
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
+		ibcexported.ModuleName,
 	)
 	app.ModuleManager.SetOrderEndBlockers(
 		govtypes.ModuleName,
@@ -540,6 +581,7 @@ func NewPaxiApp(
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
+		ibcexported.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -562,6 +604,8 @@ func NewPaxiApp(
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
+		ibcexported.ModuleName,
+		ibctransfertypes.ModuleName,
 	}
 
 	exportModuleOrder := []string{
@@ -581,6 +625,8 @@ func NewPaxiApp(
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
+		ibcexported.ModuleName,
+		ibctransfertypes.ModuleName,
 	}
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
