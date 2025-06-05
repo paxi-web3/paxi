@@ -1,4 +1,4 @@
-package app
+package decorators
 
 import (
 	errorsmod "cosmossdk.io/errors"
@@ -9,9 +9,15 @@ import (
 )
 
 type WasmDecorator struct {
-	gasRegister      wasmtypes.WasmGasRegisterConfig
 	wasmKeeper       wasmkeeper.Keeper
 	customWasmKeeper customwasmkeeper.Keeper
+}
+
+func NewWasmDecorator(wasmKeeper wasmkeeper.Keeper, customWasmKeeper customwasmkeeper.Keeper) WasmDecorator {
+	return WasmDecorator{
+		wasmKeeper:       wasmKeeper,
+		customWasmKeeper: customWasmKeeper,
+	}
 }
 
 func (w WasmDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {

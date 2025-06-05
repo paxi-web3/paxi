@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	apptypes "github.com/paxi-web3/paxi/app/types"
+	"github.com/paxi-web3/paxi/app/decorators"
 	customwasmkeeper "github.com/paxi-web3/paxi/x/customwasm/keeper"
 	paxikeeper "github.com/paxi-web3/paxi/x/paxi/keeper"
 )
@@ -38,15 +38,11 @@ func NewAnteHandler(options HandlerOptions, app *PaxiApp, wasmKeeper wasmkeeper.
 
 	anteDecorators := []sdk.AnteDecorator{
 		ante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-		BlockStatusDecorator{App: app},  // Status of Paxi blockchain
+		NewBlockStatusDecorator(app),    // Status of Paxi blockchain
 		circuitante.NewCircuitBreakerDecorator(options.CircuitKeeper),
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
-		SpamPreventDecorator{ak: ak, paxiKeeper: paxiKeeper}, // Raise the cost for some types of transcation in order to prevent spam
-		WasmDecorator{
-			gasRegister:      apptypes.SmartContractGasRegisterConfig(),
-			wasmKeeper:       wasmKeeper,
-			customWasmKeeper: customWasmKeeper,
-		}, // Raise the cost of stroing code / initial of smart contract
+		decorators.NewSpamPreventDecorator(ak, paxiKeeper),        // Raise the cost for some types of transcation in order to prevent spam
+		decorators.NewWasmDecorator(wasmKeeper, customWasmKeeper), // Custom wasm decorator to raise the cost of storing code / instantiation of smart contract
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),

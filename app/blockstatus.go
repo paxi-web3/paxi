@@ -20,6 +20,12 @@ type BlockStatusData struct {
 	TotalTxs uint64 `json:"total_txs"`
 }
 
+func NewBlockStatusDecorator(app *PaxiApp) BlockStatusDecorator {
+	return BlockStatusDecorator{
+		App: app,
+	}
+}
+
 func (p BlockStatusDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	startGas := ctx.GasMeter().GasConsumed() // consumed at the begin
 

@@ -1,4 +1,4 @@
-package app
+package decorators
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -9,8 +9,14 @@ import (
 
 type SpamPreventDecorator struct {
 	ak         authkeeper.AccountKeeper
-	App        *PaxiApp
 	paxiKeeper paxikeeper.Keeper
+}
+
+func NewSpamPreventDecorator(ak authkeeper.AccountKeeper, paxiKeeper paxikeeper.Keeper) SpamPreventDecorator {
+	return SpamPreventDecorator{
+		ak:         ak,
+		paxiKeeper: paxiKeeper,
+	}
 }
 
 func (s SpamPreventDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
