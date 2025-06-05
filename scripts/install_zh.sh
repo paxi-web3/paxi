@@ -66,7 +66,6 @@ DENOM="upaxi"
 
 ### === 安裝依賴 ===
 echo ""
-sudo apt update
 sudo apt-get update && sudo apt-get install -y \
     build-essential git cmake \
     libsnappy-dev zlib1g-dev libbz2-dev \
@@ -228,3 +227,13 @@ echo "$BINARY_NAME tendermint show-validator"
 echo ""
 echo "查看你的驗證人收益:"
 echo "$BINARY_NAME query distribution validator-outstanding-rewards <你的驗證人地址>"
+echo ""
+echo "發送代幣:"
+echo "$BINARY_NAME tx bank send <你的錢包名稱> <接收地址> <數量>$DENOM --fees 10000$DENOM --gas auto"
+echo ""
+echo "============================================================"
+echo "❗當你啟動完 Paxi 節點（執行 paxid start）後，務必要再次執行一次 WASM 智能合約同步指令（bash sync_wasm_zh.sh）。"
+echo "❗否則若缺失了某些 WASM 文件，將會導致共識錯誤，進而使你的驗證人節點被系統懲罰（例如被扣除一部分質押資產）。"
+echo ""
+echo "curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm_zh.sh | bash"
+echo ""

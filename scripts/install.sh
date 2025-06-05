@@ -70,7 +70,6 @@ DENOM="upaxi"
 
 ### === Install dependencies ===
 echo ""
-sudo apt update
 sudo apt-get update && sudo apt-get install -y \
     build-essential git cmake \
     libsnappy-dev zlib1g-dev libbz2-dev \
@@ -233,3 +232,13 @@ echo "$BINARY_NAME tendermint show-validator"
 echo ""
 echo "Check your validator rewards:"
 echo "$BINARY_NAME query distribution validator-outstanding-rewards <your validator address>"
+echo ""
+echo "Send token:"
+echo "$BINARY_NAME tx bank send <your address or key name> <receiver's address> <amount>$DENOM --fees 10000$DENOM --gas auto"
+echo ""
+echo "============================================================"
+echo "❗After starting the Paxi node (paxid start), make sure to run the WASM contract synchronization script again."
+echo "❗Failing to do so may cause consensus failures due to missing WASM files, which can result in your validator being slashed (i.e., a portion of your stake may be deducted)."
+echo ""
+echo "curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm.sh | bash"
+echo ""

@@ -73,12 +73,22 @@ curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/developer_inst
 
 ### 🐧 Linux Native Install for Mainnet
 ```bash
+# Install paxid
 curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/install.sh | bash
+
+# After starting the Paxi node (paxid start), make sure to run the WASM contract synchronization script again.
+# Failing to do so may cause consensus failures due to missing WASM files, which can result in your validator being slashed (i.e., a portion of your stake may be deducted)
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm.sh | bash
 ```
 
 ### 🐳 Docker Install for Mainnet
 ```bash
+# Install paxid
 curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/docker_install.sh | bash
+
+# After starting the Paxi node (paxid start), make sure to run the WASM contract synchronization script again.
+# Failing to do so may cause consensus failures due to missing WASM files, which can result in your validator being slashed (i.e., a portion of your stake may be deducted)
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm.sh | bash
 ```
 
 ## Whitepaper

@@ -12,7 +12,6 @@ PAXI_PATH="$HOME/paxid"
 
 ### === Install dependencies ===
 echo ""
-sudo apt update
 sudo apt-get update && sudo apt-get install -y \
     build-essential git cmake \
     libsnappy-dev zlib1g-dev libbz2-dev \
@@ -75,3 +74,6 @@ echo "$BINARY_NAME genesis collect-gentxs"
 echo ""
 echo "Start the blockchain node:"
 echo "$BINARY_NAME start"
+echo ""
+echo "Send token:"
+echo "$BINARY_NAME tx bank send <your address or key name> <receiver's address> <amount>$DENOM --fees 10000$DENOM --gas auto"
