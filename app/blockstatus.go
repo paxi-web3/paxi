@@ -59,7 +59,7 @@ func (app *PaxiApp) GetEstimatedGasPrice() float32 {
 	// This is an estimation for reasonable gas price by gas used in last block
 	expectedMaxGasUsed := 5_000_000
 	lastGasUsed := app.LastBlockGasUsed
-	minGasPrice := 0.025 // upaxi
+	minGasPrice := 0.05 // upaxi
 	estimatedGasPrice := minGasPrice + math.Log(1+float64(lastGasUsed)/float64(expectedMaxGasUsed))*minGasPrice
 	return float32(estimatedGasPrice)
 }

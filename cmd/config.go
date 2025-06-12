@@ -76,7 +76,7 @@ func initAppConfig() (string, interface{}) {
 
 	// Set a minimum gas price (required for node startup)
 	// This avoids the validator node halting due to missing gas price
-	srvCfg.MinGasPrices = "0.025" + apptypes.DefaultDenom
+	srvCfg.MinGasPrices = "0.05" + apptypes.DefaultDenom
 	srvCfg.QueryGasLimit = 500000 // Set a reasonable gas limit for queries
 
 	// Pruning
