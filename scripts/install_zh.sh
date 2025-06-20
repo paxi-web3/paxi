@@ -47,6 +47,14 @@ if [[ -z "$KEY_NAME" ]]; then
 fi
 echo "✅ 錢包名稱設定為: $KEY_NAME"
 
+read -p "請輸入您的緊急聯絡電子郵件: " SECURITY_CONTACT
+if [[ -z "$SECURITY_CONTACT" ]]; then
+  echo "❌ 緊急聯絡信箱不能為空，請重新執行本腳本。"
+  exit 1
+fi
+read -p "請輸入您的網站或聯絡頁面（可以是 X / Facebook / Telegram / WhatsApp / Discor / Github 等）: " WEBSITE
+
+
 GOLANG_VERSION=1.24.2
 PAXI_REPO="https://github.com/paxi-web3/paxi"
 PAXI_TAG="latest-main"
@@ -195,8 +203,8 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "amount": "1000000000$DENOM",
   "moniker": "$NODE_MONIKER",
   "identity": "",
-  "website": "",
-  "security": "",
+  "website": "$WEBSITE",
+  "security_contact": "$SECURITY_CONTACT",
   "details": "PAXI validator node [$COUNTRY_CODE]",
   "commission-rate": "0.2",
   "commission-max-rate": "0.3",

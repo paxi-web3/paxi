@@ -51,6 +51,14 @@ if [[ -z "$KEY_NAME" ]]; then
 fi
 echo "✅ Wallet name set to: $KEY_NAME"
 
+read -p "Enter your emergency contact email: " SECURITY_CONTACT
+if [[ -z "$SECURITY_CONTACT" ]]; then
+  echo "❌ Emergency contact cannot be empty. Please rerun the script."
+  exit 1
+fi
+read -p "Enter your website or contact page (can be X, Facebook, Telegram, WhatsApp, Discord, Github, etc.): " WEBSITE
+
+
 PAXI_REPO="https://github.com/paxi-web3/paxi"
 PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
@@ -224,8 +232,8 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "amount": "1000000000$DENOM",
   "moniker": "$NODE_MONIKER",
   "identity": "",
-  "website": "",
-  "security": "",
+  "website": "$WEBSITE",
+  "security_contact": "$SECURITY_CONTACT",
   "details": "PAXI validator node [$COUNTRY_CODE]",
   "commission-rate": "0.2",
   "commission-max-rate": "0.3",
