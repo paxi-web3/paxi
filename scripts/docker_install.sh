@@ -269,7 +269,7 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "moniker": "$NODE_MONIKER",
   "identity": "",
   "website": "$WEBSITE",
-  "security_contact": "$SECURITY_CONTACT",
+  "security-contact": "$SECURITY_CONTACT",
   "details": "PAXI validator node [$COUNTRY_CODE]",
   "commission-rate": "0.2",
   "commission-max-rate": "0.3",
