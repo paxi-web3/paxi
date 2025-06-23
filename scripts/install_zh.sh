@@ -4,7 +4,7 @@ set -e
 ### === 需求參數 ===
 REQUIRED_CPU=8
 REQUIRED_RAM_GB=32
-REQUIRED_DISK_GB=1024
+REQUIRED_DISK_GB=1000
 
 ### ===  取得 CPU cores ===
 CPU_CORES=$(nproc)
