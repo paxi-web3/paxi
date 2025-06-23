@@ -255,6 +255,10 @@ docker run --rm -it \
 echo "Please fund this address and run the following command to become a validator:"
 
 ### === Generate create-validator command ===
+VAL_PUBKEY=$(docker run --rm \
+  -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
+  $DOCKER_IMAGE \
+  $BINARY_NAME tendermint show-validator)
 echo "You may edit validator.json at: $PAXI_DATA_PATH/validator.json"
 echo "Please add your country code at the end of the 'details' parameter, e.g., [US]. This helps us collect node location data and display it on the official website."
 echo "Generating validator.json..."
