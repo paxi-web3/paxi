@@ -1,6 +1,38 @@
 #!/bin/bash
 set -e
 
+### === 需求參數 ===
+REQUIRED_CPU=8
+REQUIRED_RAM_GB=32
+REQUIRED_DISK_GB=1024
+
+### ===  取得 CPU cores ===
+CPU_CORES=$(nproc)
+
+### ===  取得實體記憶體 (轉 GB) ===
+TOTAL_MEM=$(free -g | awk '/^Mem:/{print $2}')
+
+### ===  取得可用磁碟空間 (轉 GB)，以 / 根目錄為例 ===
+DISK_SPACE=$(df -BG / | awk 'NR==2 {gsub("G","",$4); print $4}')
+
+### ===  檢查 CPU ===
+if [ "$CPU_CORES" -lt "$REQUIRED_CPU" ]; then
+  echo "❌ CPU cores不足: 需要至少 ${REQUIRED_CPU} cores，當前 ${CPU_CORES} cores"
+  exit 1
+fi
+
+### ===  檢查 RAM ===
+if [ "$TOTAL_MEM" -lt "$REQUIRED_RAM_GB" ]; then
+  echo "❌ 記憶體不足: 需要至少 ${REQUIRED_RAM_GB} GB，當前 ${TOTAL_MEM} GB"
+  exit 1
+fi
+
+### ===  檢查磁碟空間 ===
+if [ "$DISK_SPACE" -lt "$REQUIRED_DISK_GB" ]; then
+  echo "❌ 磁碟空間不足: 需要至少 ${REQUIRED_DISK_GB} GB，當前 ${DISK_SPACE} GB"
+  exit 1
+fi
+
 echo "============================================================"
 echo "🚨  PAXI 驗證人節點安裝警告"
 echo "============================================================"

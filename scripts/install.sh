@@ -1,6 +1,38 @@
 #!/bin/bash
 set -e
 
+### === Required parameters ===
+REQUIRED_CPU=8
+REQUIRED_RAM_GB=32
+REQUIRED_DISK_GB=1024
+
+### === Get CPU cores ===
+CPU_CORES=$(nproc)
+
+### === Get total memory (in GB) ===
+TOTAL_MEM=$(free -g | awk '/^Mem:/{print $2}')
+
+### === Get available disk space (in GB), using root directory / ===
+DISK_SPACE=$(df -BG / | awk 'NR==2 {gsub("G","",$4); print $4}')
+
+### === Check CPU ===
+if [ "$CPU_CORES" -lt "$REQUIRED_CPU" ]; then
+  echo "❌ Insufficient CPU cores: Required at least ${REQUIRED_CPU} cores, but found ${CPU_CORES} cores"
+  exit 1
+fi
+
+### === Check RAM ===
+if [ "$TOTAL_MEM" -lt "$REQUIRED_RAM_GB" ]; then
+  echo "❌ Insufficient memory: Required at least ${REQUIRED_RAM_GB} GB, but found ${TOTAL_MEM} GB"
+  exit 1
+fi
+
+### === Check disk space ===
+if [ "$DISK_SPACE" -lt "$REQUIRED_DISK_GB" ]; then
+  echo "❌ Insufficient disk space: Required at least ${REQUIRED_DISK_GB} GB, but found ${DISK_SPACE} GB"
+  exit 1
+fi
+
 echo "============================================================"
 echo "🚨  PAXI Validator Node Installation Warning"
 echo "============================================================"
