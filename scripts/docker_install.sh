@@ -3,7 +3,7 @@ set -e
 
 ### === Required parameters ===
 REQUIRED_CPU=8
-REQUIRED_RAM_GB=32
+REQUIRED_RAM_GB=30
 REQUIRED_DISK_GB=1000
 
 ### === Get CPU cores ===
