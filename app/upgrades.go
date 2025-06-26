@@ -11,7 +11,7 @@ import (
 
 // UpgradeName is the name of the upgrade.
 // It is used to identify the upgrade in the upgrade handler and
-const UpgradeName = "v1.0.1"
+const UpgradeName = "v1.0.2"
 
 func (app *PaxiApp) RegisterUpgradeHandlers() {
 	app.UpgradeKeeper.SetUpgradeHandler(
