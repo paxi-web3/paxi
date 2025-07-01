@@ -100,3 +100,22 @@ proto:
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
 	--gogofaster_out=plugins=grpc,paths=source_relative:./ \
 	./proto/x/customwasm/types/tx.proto
+
+proto-ts:
+	@echo "Generating ts-proto files for frontend..."
+
+	protoc \
+	--plugin=$(HOME)/node_modules/.bin/protoc-gen-ts_proto \
+	--ts_proto_out=./ts_proto \
+	--ts_proto_opt=esModuleInterop=true,forceLong=long,useOptionals=messages \
+	-I=proto \
+	-I=proto/third_party \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/grpc-ecosystem/grpc-gateway)/third_party/googleapis \
+	proto/x/custommint/types/query.proto \
+	proto/x/custommint/types/tx.proto \
+	proto/x/customwasm/types/query.proto \
+	proto/x/paxi/types/query.proto \
+	proto/x/paxi/types/tx.proto
