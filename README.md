@@ -100,6 +100,7 @@ curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm.sh |
 ## Official Website
 
 👉 [https://x.com/paxiweb3](https://x.com/paxiweb3)
+🔎 [https://explorer.paxinet.io](https://explorer.paxinet.io)
 
 ## License
 
