@@ -29,6 +29,7 @@ import (
 	version "github.com/paxi-web3/paxi"
 	"github.com/paxi-web3/paxi/utils"
 	paxicli "github.com/paxi-web3/paxi/x/paxi/client"
+	swapcli "github.com/paxi-web3/paxi/x/swap/client"
 )
 
 func initRootCmd(
@@ -94,6 +95,8 @@ func queryCommand() *cobra.Command {
 		authcmd.QueryTxCmd(),
 		server.QueryBlockResultsCmd(),
 		wasmcli.GetQueryCmd(),
+		paxicli.GetQueryCmd(),
+		swapcli.GetQueryCmd(),
 	)
 
 	return cmd
@@ -120,6 +123,7 @@ func txCommand() *cobra.Command {
 		authcmd.GetSimulateCmd(),
 		paxicli.GetTxCmd(),
 		wasmcli.GetTxCmd(),
+		swapcli.GetTxCmd(),
 	)
 
 	return cmd

@@ -1,0 +1,28 @@
+syntax = "proto3";
+package x.swap.types;
+
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/paxi-web3/paxi/x/swap/types";
+
+message ParamsInput {
+  uint64 code_id = 1;
+  uint64 swap_fee_bps = 2;
+}
+
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1;
+  ParamsInput params = 2 [(gogoproto.nullable) = false];
+}
+
+message MsgUpdateParamsResponse {}
+
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+}

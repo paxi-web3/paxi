@@ -104,6 +104,9 @@ import (
 	"github.com/paxi-web3/paxi/x/paxi"
 	paxikeeper "github.com/paxi-web3/paxi/x/paxi/keeper"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
+	"github.com/paxi-web3/paxi/x/swap"
+	swapkeeper "github.com/paxi-web3/paxi/x/swap/keeper"
+	swaptypes "github.com/paxi-web3/paxi/x/swap/types"
 
 	"io/fs"
 	"net/http"
@@ -187,6 +190,7 @@ type PaxiApp struct {
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
 	CircuitKeeper         circuitkeeper.Keeper
 	PaxiKeeper            paxikeeper.Keeper
+	SwapKeeper            swapkeeper.Keeper
 
 	// ibc keepers
 	IBCKeeper         *ibckeeper.Keeper
@@ -266,6 +270,7 @@ func NewPaxiApp(
 		circuittypes.StoreKey,
 		wasmtypes.StoreKey,
 		paxitypes.StoreKey,
+		swaptypes.StoreKey,
 		customwasmtypes.StoreKey,
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
@@ -518,6 +523,15 @@ func NewPaxiApp(
 	tmModule := ibctm.NewLightClientModule(appCodec, storeProvider)
 	clientKeeper.AddRoute(ibctm.ModuleName, &tmModule)
 
+	// Set swap keeper
+	app.SwapKeeper = swapkeeper.NewKeeper(
+		appCodec,
+		app.BankKeeper,
+		app.AccountKeeper,
+		cosmosruntime.NewKVStoreService(keys[swaptypes.StoreKey]),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
 	/****  Module Options ****/
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -541,6 +555,7 @@ func NewPaxiApp(
 		paxi.NewAppModule(appCodec, app.PaxiKeeper, app),
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper.Keeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 		customwasm.NewAppModule(appCodec, app.CustomWasmKeeper),
+		swap.NewAppModule(appCodec, app.SwapKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
 		ibctransfer.NewAppModule(app.IBCTransferKeeper),
 		ibctm.NewAppModule(tmModule),
@@ -581,6 +596,7 @@ func NewPaxiApp(
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
 		ibcexported.ModuleName,
+		swaptypes.ModuleName,
 	)
 	app.ModuleManager.SetOrderEndBlockers(
 		govtypes.ModuleName,
@@ -591,6 +607,7 @@ func NewPaxiApp(
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
 		ibcexported.ModuleName,
+		swaptypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -615,6 +632,7 @@ func NewPaxiApp(
 		paxitypes.ModuleName,
 		ibcexported.ModuleName,
 		ibctransfertypes.ModuleName,
+		swaptypes.ModuleName,
 	}
 
 	exportModuleOrder := []string{
@@ -636,6 +654,7 @@ func NewPaxiApp(
 		paxitypes.ModuleName,
 		ibcexported.ModuleName,
 		ibctransfertypes.ModuleName,
+		swaptypes.ModuleName,
 	}
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
@@ -886,7 +905,7 @@ func (app *PaxiApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICo
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// register swagger API from root so that other applications can override easily
+	// Register swagger API from root so that other applications can override easily
 	if err := RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
 		panic(err)
 	}

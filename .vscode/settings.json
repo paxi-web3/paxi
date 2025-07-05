@@ -1,7 +1,7 @@
 {
     "makefile.configureOnOpen": false,
-    "go.buildTags": "rocksdb",
-    "go.lintFlags": ["-tags=rocksdb"],
+    "go.buildTags": "",
+    "go.lintFlags": [],
     "go.toolsEnvVars": {
         "CGO_ENABLED": "1"
     }

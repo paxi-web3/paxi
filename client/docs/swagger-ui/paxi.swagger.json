@@ -283,6 +283,28 @@
         ]
       }
     },
+    "/paxi/swap/params": {
+      "get": {
+        "operationId": "Query_Params",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/xswaptypesQueryParamsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/tx/paxi/burn_token": {
       "post": {
         "operationId": "Msg_BurnToken",
@@ -536,6 +558,19 @@
       "type": "object",
       "properties": {
         "extraGasPerNewAccount": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "xswaptypesQueryParamsResponse": {
+      "type": "object",
+      "properties": {
+        "codeId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "swapFeeBps": {
           "type": "string",
           "format": "uint64"
         }

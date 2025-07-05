@@ -1,0 +1,23 @@
+syntax = "proto3";
+package x.swap.types;
+
+import "cosmos/base/v1beta1/coin.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/paxi-web3/paxi/x/swap/types";
+
+service Query {
+    rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+        option (google.api.http) = {
+            get: "/paxi/swap/params"
+        };
+    }
+}
+
+message QueryParamsRequest {
+}
+
+message QueryParamsResponse {
+    uint64 code_id = 1;
+    uint64 swap_fee_bps = 2;
+}
