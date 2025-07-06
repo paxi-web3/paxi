@@ -573,6 +573,10 @@
         "swapFeeBps": {
           "type": "string",
           "format": "uint64"
+        },
+        "minLiquidity": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     }

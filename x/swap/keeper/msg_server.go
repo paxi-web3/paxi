@@ -44,3 +44,12 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }
+
+func (m msgServer) ProvideLiquidity(goCtx context.Context, msg *types.MsgProvideLiquidity) (*types.MsgProvideLiquidityResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	err := m.Keeper.ProvideLiquidity(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProvideLiquidityResponse{}, nil
+}

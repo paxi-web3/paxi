@@ -11,6 +11,7 @@ option go_package = "github.com/paxi-web3/paxi/x/swap/types";
 message ParamsInput {
   uint64 code_id = 1;
   uint64 swap_fee_bps = 2;
+  uint64 min_liquidity = 3;
 }
 
 message MsgUpdateParams {
@@ -22,7 +23,23 @@ message MsgUpdateParams {
 
 message MsgUpdateParamsResponse {}
 
+message MsgProvideLiquidity {
+  string creator = 1;
+  string prc20 = 2;
+  cosmos.base.v1beta1.Coin paxi_amount = 3;
+  string prc20_amount = 4;
+}
+
+message MsgProvideLiquidityResponse {}
+
 service Msg {
   option (cosmos.msg.v1.service) = true;
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+
+  rpc ProvideLiquidity(MsgProvideLiquidity) returns (MsgProvideLiquidityResponse) {
+    option (google.api.http) = {
+        post: "/tx/swap/provide_liquidity"
+        body: "*"
+    };
+  }
 }

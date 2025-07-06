@@ -528,6 +528,8 @@ func NewPaxiApp(
 		appCodec,
 		app.BankKeeper,
 		app.AccountKeeper,
+		wasmkeeper.NewDefaultPermissionKeeper(app.WasmKeeper),
+		app.WasmKeeper,
 		cosmosruntime.NewKVStoreService(keys[swaptypes.StoreKey]),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)

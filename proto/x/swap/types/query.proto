@@ -20,4 +20,5 @@ message QueryParamsRequest {
 message QueryParamsResponse {
     uint64 code_id = 1;
     uint64 swap_fee_bps = 2;
+    uint64 min_liquidity = 3;
 }
