@@ -61,3 +61,29 @@ func CmdProvideLiquidity() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
+
+func CmdWithdrawLiquidity() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "withdraw [prc20] [lp_amount]",
+		Short: "Withdraw liquidity from a pool",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			from := clientCtx.GetFromAddress().String()
+
+			msg := &types.MsgWithdrawLiquidity{
+				Creator:  from,
+				Prc20:    args[0],
+				LpAmount: args[1],
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}

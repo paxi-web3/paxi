@@ -53,3 +53,12 @@ func (m msgServer) ProvideLiquidity(goCtx context.Context, msg *types.MsgProvide
 	}
 	return &types.MsgProvideLiquidityResponse{}, nil
 }
+
+func (m msgServer) WithdrawLiquidity(goCtx context.Context, msg *types.MsgWithdrawLiquidity) (*types.MsgWithdrawLiquidityResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	err := m.Keeper.WithdrawLiquidity(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgWithdrawLiquidityResponse{}, nil
+}

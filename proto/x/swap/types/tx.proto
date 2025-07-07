@@ -32,6 +32,14 @@ message MsgProvideLiquidity {
 
 message MsgProvideLiquidityResponse {}
 
+message MsgWithdrawLiquidity {
+  string creator = 1;     
+  string prc20 = 2;        
+  string lp_amount = 3;  
+}
+
+message MsgWithdrawLiquidityResponse {}
+
 service Msg {
   option (cosmos.msg.v1.service) = true;
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
@@ -39,6 +47,13 @@ service Msg {
   rpc ProvideLiquidity(MsgProvideLiquidity) returns (MsgProvideLiquidityResponse) {
     option (google.api.http) = {
         post: "/tx/swap/provide_liquidity"
+        body: "*"
+    };
+  }
+
+  rpc WithdrawLiquidity(MsgWithdrawLiquidity) returns (MsgWithdrawLiquidityResponse) {
+    option (google.api.http) = {
+        post: "/tx/swap/withdraw_liquidity"
         body: "*"
     };
   }

@@ -54,3 +54,7 @@ func (p Params) Validate() error {
 	}
 	return nil
 }
+
+func LPTokenDenom(prc20 string) string {
+	return fmt.Sprintf("lp/%s", prc20)
+}

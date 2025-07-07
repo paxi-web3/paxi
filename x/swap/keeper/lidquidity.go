@@ -13,22 +13,14 @@ import (
 func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity) error {
 	params := k.GetParams(ctx)
 
-	// Validate that the PRC20 contract exists and is created from the allowed CodeID
-	contractInfo := k.wasmQueryKeeper.GetContractInfo(ctx, sdk.MustAccAddressFromBech32(msg.Prc20))
+	// Validate PRC20 contract
+	contractAddr := sdk.MustAccAddressFromBech32(msg.Prc20)
+	contractInfo := k.wasmQueryKeeper.GetContractInfo(ctx, contractAddr)
 	if contractInfo == nil || contractInfo.CodeID != params.CodeID {
 		return fmt.Errorf("PRC20 contract %s not found or invalid CodeID: %d", msg.Prc20, contractInfo.CodeID)
 	}
 
-	// Retrieve the pool or initialize a new one
-	pool, found := k.GetPool(ctx, msg.Prc20)
-	if !found {
-		pool = types.Pool{
-			Prc20:        msg.Prc20,
-			ReservePaxi:  sdkmath.ZeroInt(),
-			ReservePRC20: sdkmath.ZeroInt(),
-		}
-	}
-
+	// Parse amounts
 	paxiAmt := msg.PaxiAmount.Amount
 	if msg.PaxiAmount.Denom != types.DefaultDenom {
 		return fmt.Errorf("only %s accepted as base token", types.DefaultDenom)
@@ -39,32 +31,78 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 		return fmt.Errorf("invalid prc20 amount: %s", msg.Prc20Amount)
 	}
 
-	// Check minimum liquidity requirement
 	if paxiAmt.LT(sdkmath.NewInt(int64(params.MinLidquidity))) || prc20Amt.LT(sdkmath.NewInt(int64(params.MinLidquidity))) {
 		return fmt.Errorf("below minimum liquidity: %d", params.MinLidquidity)
 	}
 
-	// Transfer PAXI tokens from user to module account
+	// Convert creator address
 	creator, err := sdk.AccAddressFromBech32(msg.Creator)
 	if err != nil {
 		return fmt.Errorf("invalid creator address: %w", err)
 	}
 
+	// Transfer tokens to module
 	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName, sdk.NewCoins(sdk.NewCoin(types.DefaultDenom, paxiAmt)))
 	if err != nil {
 		return err
 	}
-
-	// Transfer PRC20 tokens from user to module account using contract
 	err = k.transferPRC20(ctx, msg.Creator, msg.Prc20, prc20Amt)
 	if err != nil {
 		return err
 	}
 
-	// Update the pool reserves
-	pool.ReservePaxi = pool.ReservePaxi.Add(paxiAmt)
-	pool.ReservePRC20 = pool.ReservePRC20.Add(prc20Amt)
+	// Load or init pool
+	pool, found := k.GetPool(ctx, msg.Prc20)
+	lpDenom := types.LPTokenDenom(msg.Prc20)
+
+	var lpToMint sdkmath.Int
+	if !found {
+		// Initial liquidity provider, direct minting LP = paxiAmt
+		lpToMint = paxiAmt
+		pool = types.Pool{
+			Prc20:        msg.Prc20,
+			ReservePaxi:  paxiAmt,
+			ReservePRC20: prc20Amt,
+			TotalShares:  lpToMint,
+		}
+	} else {
+		// Subsequent liquidity providers will mint LP tokens in proportion
+		share1 := paxiAmt.Mul(pool.TotalShares).Quo(pool.ReservePaxi)
+		share2 := prc20Amt.Mul(pool.TotalShares).Quo(pool.ReservePRC20)
+		lpToMint = sdkmath.MinInt(share1, share2)
+
+		pool.ReservePaxi = pool.ReservePaxi.Add(paxiAmt)
+		pool.ReservePRC20 = pool.ReservePRC20.Add(prc20Amt)
+		pool.TotalShares = pool.TotalShares.Add(lpToMint)
+	}
+
+	// Mint LP token to user
+	lpCoin := sdk.NewCoin(lpDenom, lpToMint)
+	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(lpCoin)); err != nil {
+		return fmt.Errorf("failed to mint LP token: %w", err)
+	}
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, creator, sdk.NewCoins(lpCoin)); err != nil {
+		return fmt.Errorf("failed to send LP token: %w", err)
+	}
+
 	k.SetPool(ctx, pool)
+
+	// Update LP token ownership
+	pos, found := k.GetPosition(ctx, msg.Prc20, creator)
+	if !found {
+		pos = types.ProviderPosition{
+			Creator:     creator.String(),
+			Prc20:       msg.Prc20,
+			LpAmount:    lpToMint.String(),
+			DepositedLp: lpToMint.String(),
+		}
+	} else {
+		lpAmount, _ := sdkmath.NewIntFromString(pos.LpAmount)
+		pos.LpAmount = lpAmount.Add(lpToMint).String()
+		depositedLp, _ := sdkmath.NewIntFromString(pos.DepositedLp)
+		pos.DepositedLp = depositedLp.Add(lpToMint).String()
+	}
+	k.SetPosition(ctx, pos)
 
 	return nil
 }

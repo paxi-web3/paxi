@@ -305,6 +305,42 @@
         ]
       }
     },
+    "/paxi/swap/position/{creator}/{prc20}": {
+      "get": {
+        "operationId": "Query_Position",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryPositionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "creator",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "prc20",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/tx/paxi/burn_token": {
       "post": {
         "operationId": "Msg_BurnToken",
@@ -397,6 +433,23 @@
         }
       }
     },
+    "typesProviderPosition": {
+      "type": "object",
+      "properties": {
+        "creator": {
+          "type": "string"
+        },
+        "prc20": {
+          "type": "string"
+        },
+        "lpAmount": {
+          "type": "string"
+        },
+        "depositedLp": {
+          "type": "string"
+        }
+      }
+    },
     "typesQueryCirculatingSupplyResponse": {
       "type": "object",
       "properties": {
@@ -427,6 +480,23 @@
       "properties": {
         "amount": {
           "$ref": "#/definitions/v1beta1Coin"
+        }
+      }
+    },
+    "typesQueryPositionResponse": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/definitions/typesProviderPosition"
+        },
+        "expectedPaxi": {
+          "type": "string"
+        },
+        "expectedPrc20": {
+          "type": "string"
+        },
+        "profitLp": {
+          "type": "string"
         }
       }
     },

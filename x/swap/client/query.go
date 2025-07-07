@@ -30,6 +30,32 @@ func CmdQueryParams() *cobra.Command {
 	return cmd
 }
 
+func CmdQueryPosition() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "position [creator] [prc20]",
+		Short: "Query a user's LP position in a specific pool",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			creator := args[0]
+			prc20 := args[1]
+
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.Position(context.Background(), &types.QueryPositionRequest{
+				Creator: creator,
+				Prc20:   prc20,
+			})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	return cmd
+}
+
 func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "swap",
@@ -38,6 +64,7 @@ func GetQueryCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		CmdQueryParams(),
+		CmdQueryPosition(),
 	)
 
 	return cmd

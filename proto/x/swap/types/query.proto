@@ -12,6 +12,10 @@ service Query {
             get: "/paxi/swap/params"
         };
     }
+
+    rpc Position(QueryPositionRequest) returns (QueryPositionResponse) {
+        option (google.api.http).get = "/paxi/swap/position/{creator}/{prc20}";
+    }
 }
 
 message QueryParamsRequest {
@@ -21,4 +25,23 @@ message QueryParamsResponse {
     uint64 code_id = 1;
     uint64 swap_fee_bps = 2;
     uint64 min_liquidity = 3;
+}
+
+message ProviderPosition {
+  string creator = 1;
+  string prc20 = 2;
+  string lp_amount = 3;
+  string deposited_lp = 4;
+}
+
+message QueryPositionRequest {
+  string creator = 1;
+  string prc20 = 2;
+}
+
+message QueryPositionResponse {
+  ProviderPosition position = 1;
+  string expected_paxi = 2;
+  string expected_prc20 = 3;
+  string profit_lp = 4;
 }
