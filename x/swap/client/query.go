@@ -56,6 +56,59 @@ func CmdQueryPosition() *cobra.Command {
 	return cmd
 }
 
+func CmdQueryPool() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "pool [prc20]",
+		Short: "Query the swap pool for a specific PRC20",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.Pool(context.Background(), &types.QueryPoolRequest{
+				Prc20: args[0],
+			})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	return cmd
+}
+
+func CmdQueryAllPools() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "all-pools",
+		Short: "Query all swap pools",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			queryClient := types.NewQueryClient(clientCtx)
+
+			pageReq, err := client.ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			res, err := queryClient.AllPools(context.Background(), &types.QueryAllPoolsRequest{
+				Pagination: pageReq,
+			})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	cmd.Flags().Uint64("limit", 100, "limit number of pools returned")
+
+	return cmd
+}
+
 func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "swap",
@@ -65,6 +118,8 @@ func GetQueryCmd() *cobra.Command {
 	cmd.AddCommand(
 		CmdQueryParams(),
 		CmdQueryPosition(),
+		CmdQueryPool(),
+		CmdQueryAllPools(),
 	)
 
 	return cmd

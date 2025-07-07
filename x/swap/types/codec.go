@@ -10,5 +10,7 @@ func RegisterMsg(cdc codectypes.InterfaceRegistry) {
 		(*sdk.Msg)(nil),
 		&MsgUpdateParams{},
 		&MsgProvideLiquidity{},
+		&MsgWithdrawLiquidity{},
+		&MsgSwap{},
 	)
 }

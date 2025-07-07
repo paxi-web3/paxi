@@ -11,18 +11,31 @@ import (
 
 // ProvideLiquidity processes a liquidity provision message. If the pool does not exist, it is created.
 func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity) error {
+	defer func() {
+		if r := recover(); r != nil {
+			ctx.Logger().Error("swap panic recovered", "err", r)
+		}
+	}()
+
 	params := k.GetParams(ctx)
 
 	// Validate PRC20 contract
 	contractAddr := sdk.MustAccAddressFromBech32(msg.Prc20)
 	contractInfo := k.wasmQueryKeeper.GetContractInfo(ctx, contractAddr)
-	if contractInfo == nil || contractInfo.CodeID != params.CodeID {
-		return fmt.Errorf("PRC20 contract %s not found or invalid CodeID: %d", msg.Prc20, contractInfo.CodeID)
+	if contractInfo == nil {
+		return fmt.Errorf("PRC20 contract %s not found", msg.Prc20)
+	}
+	if contractInfo.CodeID != params.CodeID {
+		return fmt.Errorf("PRC20 contract %s has invalid CodeID: %d", msg.Prc20, contractInfo.CodeID)
 	}
 
 	// Parse amounts
-	paxiAmt := msg.PaxiAmount.Amount
-	if msg.PaxiAmount.Denom != types.DefaultDenom {
+	paxiAmount, err := sdk.ParseCoinNormalized(msg.PaxiAmount)
+	if err != nil {
+		return fmt.Errorf("invalid paxi amount: %w", err)
+	}
+	paxiAmt := paxiAmount.Amount
+	if paxiAmount.Denom != types.DefaultDenom {
 		return fmt.Errorf("only %s accepted as base token", types.DefaultDenom)
 	}
 
@@ -31,8 +44,8 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 		return fmt.Errorf("invalid prc20 amount: %s", msg.Prc20Amount)
 	}
 
-	if paxiAmt.LT(sdkmath.NewInt(int64(params.MinLidquidity))) || prc20Amt.LT(sdkmath.NewInt(int64(params.MinLidquidity))) {
-		return fmt.Errorf("below minimum liquidity: %d", params.MinLidquidity)
+	if paxiAmt.LT(sdkmath.NewInt(int64(params.MinLiquidity))) || prc20Amt.LT(sdkmath.NewInt(int64(params.MinLiquidity))) {
+		return fmt.Errorf("below minimum liquidity: %d", params.MinLiquidity)
 	}
 
 	// Convert creator address
@@ -91,16 +104,13 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 	pos, found := k.GetPosition(ctx, msg.Prc20, creator)
 	if !found {
 		pos = types.ProviderPosition{
-			Creator:     creator.String(),
-			Prc20:       msg.Prc20,
-			LpAmount:    lpToMint.String(),
-			DepositedLp: lpToMint.String(),
+			Creator:  creator.String(),
+			Prc20:    msg.Prc20,
+			LpAmount: lpToMint.String(),
 		}
 	} else {
 		lpAmount, _ := sdkmath.NewIntFromString(pos.LpAmount)
 		pos.LpAmount = lpAmount.Add(lpToMint).String()
-		depositedLp, _ := sdkmath.NewIntFromString(pos.DepositedLp)
-		pos.DepositedLp = depositedLp.Add(lpToMint).String()
 	}
 	k.SetPosition(ctx, pos)
 
@@ -124,9 +134,47 @@ func (k Keeper) transferPRC20(ctx sdk.Context, from string, contract string, amo
 
 	_, err = k.wasmKeeper.Execute(ctx,
 		sdk.MustAccAddressFromBech32(contract),
-		sdk.MustAccAddressFromBech32(from),
+		k.accountKeeper.GetModuleAddress(types.ModuleName),
 		bz,
 		nil, // no attached funds
 	)
 	return err
+}
+
+// SetPool saves the pool to KVStore using protobuf
+func (k Keeper) SetPool(ctx sdk.Context, pool types.Pool) {
+	store := k.storeService.OpenKVStore(ctx)
+
+	poolProto := pool.ToProto()
+	bz, err := k.cdc.Marshal(&poolProto)
+	if err != nil {
+		panic(err)
+	}
+
+	err = store.Set(types.PoolStoreKey(pool.Prc20), bz)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// GetPool fetches a pool by PRC20 contract address using protobuf
+func (k Keeper) GetPool(ctx sdk.Context, prc20 string) (types.Pool, bool) {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := store.Get(types.PoolStoreKey(prc20))
+	if err != nil || bz == nil {
+		return types.Pool{}, false
+	}
+
+	var poolProto types.PoolProto
+	err = k.cdc.Unmarshal(bz, &poolProto)
+	if err != nil {
+		return types.Pool{}, false
+	}
+
+	pool, err := types.PoolFromProto(&poolProto)
+	if err != nil {
+		return types.Pool{}, false
+	}
+
+	return pool, true
 }

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/paxi-web3/paxi/x/customwasm/types"
@@ -17,6 +18,10 @@ func NewQueryServer(k Keeper) types.QueryServer {
 }
 
 func (q *queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	params := q.k.GetParams(sdkCtx)
 

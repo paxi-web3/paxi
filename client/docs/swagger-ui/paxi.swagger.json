@@ -283,6 +283,68 @@
         ]
       }
     },
+    "/paxi/swap/all_pools": {
+      "get": {
+        "operationId": "Query_AllPools",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryAllPoolsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pagination.key",
+            "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "pagination.offset",
+            "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.countTotal",
+            "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.reverse",
+            "description": "reverse is set to true if results are to be returned in the descending order.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/paxi/swap/params": {
       "get": {
         "operationId": "Query_Params",
@@ -300,6 +362,36 @@
             }
           }
         },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/swap/pool/{prc20}": {
+      "get": {
+        "operationId": "Query_Pool",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryPoolResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "prc20",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "tags": [
           "Query"
         ]
@@ -372,6 +464,102 @@
           "Msg"
         ]
       }
+    },
+    "/tx/swap/provide_liquidity": {
+      "post": {
+        "operationId": "Msg_ProvideLiquidity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgProvideLiquidityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgProvideLiquidity"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/swap/swap": {
+      "post": {
+        "operationId": "Msg_Swap",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgSwapResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgSwap"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/swap/withdraw_liquidity": {
+      "post": {
+        "operationId": "Msg_WithdrawLiquidity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgWithdrawLiquidityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgWithdrawLiquidity"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
     }
   },
   "definitions": {
@@ -421,17 +609,68 @@
     "typesMsgBurnTokenResponse": {
       "type": "object"
     },
-    "typesMsgUpdateParamsResponse": {
-      "type": "object"
-    },
-    "typesParamsInput": {
+    "typesMsgProvideLiquidity": {
       "type": "object",
       "properties": {
-        "extraGasPerNewAccount": {
-          "type": "string",
-          "format": "uint64"
+        "creator": {
+          "type": "string"
+        },
+        "prc20": {
+          "type": "string"
+        },
+        "paxiAmount": {
+          "type": "string"
+        },
+        "prc20Amount": {
+          "type": "string"
         }
       }
+    },
+    "typesMsgProvideLiquidityResponse": {
+      "type": "object"
+    },
+    "typesMsgSwap": {
+      "type": "object",
+      "properties": {
+        "creator": {
+          "type": "string"
+        },
+        "prc20": {
+          "type": "string"
+        },
+        "offerDenom": {
+          "type": "string",
+          "title": "\"upaxi\" or PRC20 contract address"
+        },
+        "offerAmount": {
+          "type": "string",
+          "title": "string to support big.Int"
+        },
+        "minReceive": {
+          "type": "string",
+          "title": "slippage protection"
+        }
+      }
+    },
+    "typesMsgSwapResponse": {
+      "type": "object"
+    },
+    "typesMsgWithdrawLiquidity": {
+      "type": "object",
+      "properties": {
+        "creator": {
+          "type": "string"
+        },
+        "prc20": {
+          "type": "string"
+        },
+        "lpAmount": {
+          "type": "string"
+        }
+      }
+    },
+    "typesMsgWithdrawLiquidityResponse": {
+      "type": "object"
     },
     "typesProviderPosition": {
       "type": "object",
@@ -444,9 +683,21 @@
         },
         "lpAmount": {
           "type": "string"
+        }
+      }
+    },
+    "typesQueryAllPoolsResponse": {
+      "type": "object",
+      "properties": {
+        "pools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/typesQueryPoolResponse"
+          }
         },
-        "depositedLp": {
-          "type": "string"
+        "pagination": {
+          "$ref": "#/definitions/v1beta1PageResponse"
         }
       }
     },
@@ -483,6 +734,29 @@
         }
       }
     },
+    "typesQueryPoolResponse": {
+      "type": "object",
+      "properties": {
+        "prc20": {
+          "type": "string"
+        },
+        "reservePaxi": {
+          "type": "string"
+        },
+        "reservePrc20": {
+          "type": "string"
+        },
+        "pricePaxiPerPrc20": {
+          "type": "string"
+        },
+        "pricePrc20PerPaxi": {
+          "type": "string"
+        },
+        "totalShares": {
+          "type": "string"
+        }
+      }
+    },
     "typesQueryPositionResponse": {
       "type": "object",
       "properties": {
@@ -493,9 +767,6 @@
           "type": "string"
         },
         "expectedPrc20": {
-          "type": "string"
-        },
-        "profitLp": {
           "type": "string"
         }
       }
@@ -579,6 +850,52 @@
       },
       "description": "Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto."
     },
+    "v1beta1PageRequest": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "format": "byte",
+          "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set."
+        },
+        "offset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set."
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64",
+          "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app."
+        },
+        "countTotal": {
+          "type": "boolean",
+          "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set."
+        },
+        "reverse": {
+          "type": "boolean",
+          "description": "reverse is set to true if results are to be returned in the descending order."
+        }
+      },
+      "description": "message SomeRequest {\n         Foo some_parameter = 1;\n         PageRequest pagination = 2;\n }",
+      "title": "PageRequest is to be embedded in gRPC request messages for efficient\npagination. Ex:"
+    },
+    "v1beta1PageResponse": {
+      "type": "object",
+      "properties": {
+        "nextKey": {
+          "type": "string",
+          "format": "byte",
+          "description": "next_key is the key to be passed to PageRequest.key to\nquery the next page most efficiently. It will be empty if\nthere are no more results."
+        },
+        "total": {
+          "type": "string",
+          "format": "uint64",
+          "title": "total is total number of results available if PageRequest.count_total\nwas set, its value is undefined otherwise"
+        }
+      },
+      "description": "PageResponse is to be embedded in gRPC response messages where the\ncorresponding request message has used PageRequest.\n\n message SomeResponse {\n         repeated Bar results = 1;\n         PageResponse page = 2;\n }"
+    },
     "xcustomminttypesQueryParamsResponse": {
       "type": "object",
       "properties": {
@@ -624,10 +941,42 @@
         }
       }
     },
+    "xpaxitypesMsgUpdateParamsResponse": {
+      "type": "object"
+    },
+    "xpaxitypesParamsInput": {
+      "type": "object",
+      "properties": {
+        "extraGasPerNewAccount": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "xpaxitypesQueryParamsResponse": {
       "type": "object",
       "properties": {
         "extraGasPerNewAccount": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "xswaptypesMsgUpdateParamsResponse": {
+      "type": "object"
+    },
+    "xswaptypesParamsInput": {
+      "type": "object",
+      "properties": {
+        "codeId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "swapFeeBps": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "minLiquidity": {
           "type": "string",
           "format": "uint64"
         }

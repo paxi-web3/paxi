@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	storetypes "cosmossdk.io/core/store"
+	store "cosmossdk.io/core/store"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,7 +21,7 @@ type Keeper struct {
 	bankKeeper        bankkeeper.Keeper
 	accountKeeper     authkeeper.AccountKeeper
 	blockStatusKeeper BlockStatsKeeper
-	storeService      storetypes.KVStoreService
+	storeService      store.KVStoreService
 	authority         string
 }
 
@@ -33,7 +33,7 @@ type BlockStatsKeeper interface {
 	WriteBlockStatusToFile() error
 }
 
-func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, accountKeeper authkeeper.AccountKeeper, storeService storetypes.KVStoreService, blockStatusKeeper BlockStatsKeeper, authority string) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, accountKeeper authkeeper.AccountKeeper, storeService store.KVStoreService, blockStatusKeeper BlockStatsKeeper, authority string) Keeper {
 	return Keeper{
 		cdc:               cdc,
 		bankKeeper:        bankKeeper,

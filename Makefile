@@ -94,7 +94,8 @@ proto:
 	./proto/x/custommint/types/query.proto \
 	./proto/x/paxi/types/tx.proto \
 	./proto/x/customwasm/types/query.proto \
-	./proto/x/swap/types/query.proto 
+	./proto/x/swap/types/query.proto \
+	./proto/x/swap/types/tx.proto 
 
 	protoc \
 	-I=proto \

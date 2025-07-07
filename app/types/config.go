@@ -20,6 +20,7 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibctypes "github.com/cosmos/ibc-go/v10/modules/core/types"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
+	swaptypes "github.com/paxi-web3/paxi/x/swap/types"
 )
 
 const (
@@ -233,6 +234,27 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 		panic(err)
 	}
 	authGenesis.Accounts = append(authGenesis.Accounts, anyBurnToken)
+
+	// Add swap module account
+	swapAcc := &authtypes.ModuleAccount{
+		BaseAccount: authtypes.NewBaseAccount(
+			authtypes.NewModuleAddress(swaptypes.ModuleName),
+			nil, 0, 0,
+		),
+		Name:        swaptypes.ModuleName,
+		Permissions: []string{authtypes.Burner, authtypes.Minter},
+	}
+	anySwapAcc, err := codectypes.NewAnyWithValue(swapAcc)
+	if err != nil {
+		panic(err)
+	}
+	authGenesis.Accounts = append(authGenesis.Accounts, anySwapAcc)
+
+	// Optionally give swap module account some initial balance
+	bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{
+		Address: swapAcc.GetAddress().String(),
+		Coins:   sdk.Coins{},
+	})
 
 	// custom slasing
 	slasingGenesis := slashingtypes.DefaultGenesisState()

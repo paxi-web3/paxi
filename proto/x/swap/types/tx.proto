@@ -24,21 +24,34 @@ message MsgUpdateParams {
 message MsgUpdateParamsResponse {}
 
 message MsgProvideLiquidity {
+  option (cosmos.msg.v1.signer) = "creator"; 
   string creator = 1;
   string prc20 = 2;
-  cosmos.base.v1beta1.Coin paxi_amount = 3;
+  string paxi_amount = 3;
   string prc20_amount = 4;
 }
 
 message MsgProvideLiquidityResponse {}
 
 message MsgWithdrawLiquidity {
+  option (cosmos.msg.v1.signer) = "creator"; 
   string creator = 1;     
   string prc20 = 2;        
   string lp_amount = 3;  
 }
 
 message MsgWithdrawLiquidityResponse {}
+
+message MsgSwap {
+  option (cosmos.msg.v1.signer) = "creator"; 
+  string creator = 1; 
+  string prc20 = 2;
+  string offer_denom = 3; // "upaxi" or PRC20 contract address
+  string offer_amount = 4; // string to support big.Int
+  string min_receive = 5; // slippage protection
+}
+
+message MsgSwapResponse {}
 
 service Msg {
   option (cosmos.msg.v1.service) = true;
@@ -54,6 +67,13 @@ service Msg {
   rpc WithdrawLiquidity(MsgWithdrawLiquidity) returns (MsgWithdrawLiquidityResponse) {
     option (google.api.http) = {
         post: "/tx/swap/withdraw_liquidity"
+        body: "*"
+    };
+  }
+
+  rpc Swap(MsgSwap) returns (MsgSwapResponse) {
+    option (google.api.http) = {
+        post: "/tx/swap/swap"
         body: "*"
     };
   }

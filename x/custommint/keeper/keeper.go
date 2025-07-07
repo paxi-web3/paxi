@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
-	storetypes "cosmossdk.io/core/store"
+	store "cosmossdk.io/core/store"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,12 +17,12 @@ import (
 type Keeper struct {
 	cdc          codec.BinaryCodec
 	bankKeeper   bankkeeper.Keeper
-	storeService storetypes.KVStoreService
+	storeService store.KVStoreService
 	authority    string
 	mintDenom    string
 }
 
-func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, storeService storetypes.KVStoreService, authority string, denom string) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, storeService store.KVStoreService, authority string, denom string) Keeper {
 	return Keeper{
 		cdc:          cdc,
 		bankKeeper:   bankKeeper,

@@ -18,6 +18,9 @@ func NewQueryServer(k Keeper) types.QueryServer {
 }
 
 func (q *queryServer) LockedVesting(ctx context.Context, req *types.QueryLockedVestingRequest) (*types.QueryLockedVestingResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	lockedVesting := q.k.GetLockedVesting(sdkCtx)
 	coin := sdk.NewCoin(types.DefaultDenom, lockedVesting.TruncateInt())
@@ -28,6 +31,9 @@ func (q *queryServer) LockedVesting(ctx context.Context, req *types.QueryLockedV
 }
 
 func (q *queryServer) CirculatingSupply(ctx context.Context, req *types.QueryCirculatingSupplyRequest) (*types.QueryCirculatingSupplyResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	cirSupply := q.k.bankKeeper.GetSupply(ctx, types.DefaultDenom).Amount.Int64() - q.k.GetLockedVesting(sdkCtx).TruncateInt64()
 	coin := sdk.NewCoin(types.DefaultDenom, sdkmath.NewInt(cirSupply))
@@ -38,6 +44,9 @@ func (q *queryServer) CirculatingSupply(ctx context.Context, req *types.QueryCir
 }
 
 func (q *queryServer) TotalSupply(ctx context.Context, req *types.QueryTotalSupplyRequest) (*types.QueryTotalSupplyResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
 	cirSupply := q.k.bankKeeper.GetSupply(ctx, types.DefaultDenom).Amount.Int64()
 	coin := sdk.NewCoin(types.DefaultDenom, sdkmath.NewInt(cirSupply))
 
@@ -47,6 +56,9 @@ func (q *queryServer) TotalSupply(ctx context.Context, req *types.QueryTotalSupp
 }
 
 func (q *queryServer) EstimatedGasPrice(ctx context.Context, req *types.QueryEstimatedGasPriceRequest) (*types.QueryEstimatedGasPriceResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
 	gasPrice := q.k.blockStatusKeeper.GetEstimatedGasPrice()
 	gasPriceStr := fmt.Sprintf("%f", gasPrice)
 	return &types.QueryEstimatedGasPriceResponse{
@@ -55,6 +67,9 @@ func (q *queryServer) EstimatedGasPrice(ctx context.Context, req *types.QueryEst
 }
 
 func (q *queryServer) LastBlockGasUsed(ctx context.Context, req *types.QueryLastBlockGasUsedRequest) (*types.QueryLastBlockGasUsedResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
 	gasUsed := q.k.blockStatusKeeper.GetLastBlockGasUsed()
 	return &types.QueryLastBlockGasUsedResponse{
 		GasUsed: gasUsed,
@@ -62,6 +77,9 @@ func (q *queryServer) LastBlockGasUsed(ctx context.Context, req *types.QueryLast
 }
 
 func (q *queryServer) TotalTxs(ctx context.Context, req *types.QueryTotalTxsRequest) (*types.QueryTotalTxsResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
 	totalTxs := q.k.blockStatusKeeper.GetTotalTxs()
 	return &types.QueryTotalTxsResponse{
 		TotalTxs: totalTxs,
@@ -69,6 +87,9 @@ func (q *queryServer) TotalTxs(ctx context.Context, req *types.QueryTotalTxsRequ
 }
 
 func (q *queryServer) UnlockSchedules(ctx context.Context, req *types.QueryUnlockSchedulesRequest) (*types.QueryUnlockSchedulesResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	unlockSchedules := q.k.GetUnlockSchedules(sdkCtx)
 	return &types.QueryUnlockSchedulesResponse{
@@ -77,6 +98,9 @@ func (q *queryServer) UnlockSchedules(ctx context.Context, req *types.QueryUnloc
 }
 
 func (q *queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	params := q.k.GetParams(sdkCtx)
 

@@ -11,7 +11,7 @@ import (
 	"sort"
 
 	addresscodec "cosmossdk.io/core/address"
-	storetypes "cosmossdk.io/core/store"
+	store "cosmossdk.io/core/store"
 	sdkmath "cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -27,12 +27,12 @@ type CustomStakingKeeper struct {
 	*stakingkeeper.Keeper
 	authKeeper            types.AccountKeeper
 	bankKeeper            types.BankKeeper
-	storeService          storetypes.KVStoreService
+	storeService          store.KVStoreService
 	cdc                   codec.BinaryCodec
 	validatorAddressCodec addresscodec.Codec
 }
 
-func NewCustomKeeper(baseKeeper *stakingkeeper.Keeper, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, storeService storetypes.KVStoreService, cdc codec.BinaryCodec, validatorAddressCodec addresscodec.Codec) *CustomStakingKeeper {
+func NewCustomKeeper(baseKeeper *stakingkeeper.Keeper, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, storeService store.KVStoreService, cdc codec.BinaryCodec, validatorAddressCodec addresscodec.Codec) *CustomStakingKeeper {
 	return &CustomStakingKeeper{
 		Keeper:                baseKeeper,
 		authKeeper:            authKeeper,

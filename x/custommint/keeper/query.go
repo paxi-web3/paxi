@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/paxi-web3/paxi/x/custommint/types"
@@ -17,6 +18,10 @@ func NewQueryServer(k Keeper) types.QueryServer {
 }
 
 func (q *queryServer) TotalMinted(ctx context.Context, req *types.QueryTotalMintedRequest) (*types.QueryTotalMintedResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	total := q.k.GetTotalMinted(sdkCtx)
 	coin := sdk.NewCoin(types.DefaultDenom, total)
@@ -27,6 +32,10 @@ func (q *queryServer) TotalMinted(ctx context.Context, req *types.QueryTotalMint
 }
 
 func (q *queryServer) TotalBurned(ctx context.Context, req *types.QueryTotalBurnedRequest) (*types.QueryTotalBurnedResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	total := q.k.GetTotalBurned(sdkCtx)
 	coin := sdk.NewCoin(types.DefaultDenom, total)
@@ -37,6 +46,10 @@ func (q *queryServer) TotalBurned(ctx context.Context, req *types.QueryTotalBurn
 }
 
 func (q *queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	params := q.k.GetParams(sdkCtx)
 

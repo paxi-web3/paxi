@@ -10,6 +10,12 @@ import (
 )
 
 func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidity) error {
+	defer func() {
+		if r := recover(); r != nil {
+			ctx.Logger().Error("swap panic recovered", "err", r)
+		}
+	}()
+
 	// Parse and validate the creator address
 	creator, err := sdk.AccAddressFromBech32(msg.Creator)
 	if err != nil {
@@ -49,36 +55,30 @@ func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidi
 	pool.TotalShares = pool.TotalShares.Sub(lpAmount)
 	k.SetPool(ctx, pool)
 
-	// Burn LP tokens: transfer from user to module, then burn
+	// Burn LP tokens
 	lpDenom := types.LPTokenDenom(msg.Prc20)
 	lpCoin := sdk.NewCoin(lpDenom, lpAmount)
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName, sdk.NewCoins(lpCoin))
-	if err != nil {
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName, sdk.NewCoins(lpCoin)); err != nil {
 		return fmt.Errorf("failed to collect LP token: %w", err)
 	}
-	err = k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(lpCoin))
-	if err != nil {
+	if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(lpCoin)); err != nil {
 		return fmt.Errorf("burn failed: %w", err)
 	}
 
-	// Send PAXI back to the user
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, creator,
-		sdk.NewCoins(sdk.NewCoin(types.DefaultDenom, paxiOut)))
-	if err != nil {
+	// Send PAXI and PRC20 back to user
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, creator, sdk.NewCoins(sdk.NewCoin(types.DefaultDenom, paxiOut))); err != nil {
 		return fmt.Errorf("failed to send PAXI: %w", err)
 	}
-
-	// Send PRC20 back to the user (via wasm execute)
-	err = k.transferPRC20FromModule(ctx, msg.Prc20, creator, prc20Out)
-	if err != nil {
+	if err := k.transferPRC20FromModule(ctx, msg.Prc20, creator, prc20Out); err != nil {
 		return fmt.Errorf("failed to send PRC20: %w", err)
 	}
 
-	// Update or delete user's position record
-	if iCurrentLpAmount.Equal(lpAmount) {
+	// Update or delete user's position
+	newLpAmount := iCurrentLpAmount.Sub(lpAmount)
+	if newLpAmount.IsZero() {
 		k.DeletePosition(ctx, msg.Prc20, creator)
 	} else {
-		position.LpAmount = iCurrentLpAmount.Sub(lpAmount).String()
+		position.LpAmount = newLpAmount.String()
 		k.SetPosition(ctx, position)
 	}
 

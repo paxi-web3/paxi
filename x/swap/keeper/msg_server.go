@@ -62,3 +62,12 @@ func (m msgServer) WithdrawLiquidity(goCtx context.Context, msg *types.MsgWithdr
 	}
 	return &types.MsgWithdrawLiquidityResponse{}, nil
 }
+
+func (m msgServer) Swap(goCtx context.Context, msg *types.MsgSwap) (*types.MsgSwapResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	err := m.Keeper.Swap(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgSwapResponse{}, nil
+}

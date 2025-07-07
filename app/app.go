@@ -136,6 +136,7 @@ var (
 		govtypes.ModuleName:            {authtypes.Burner},
 		paxitypes.BurnTokenAccountName: {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
+		swaptypes.ModuleName:           {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -530,6 +531,7 @@ func NewPaxiApp(
 		app.AccountKeeper,
 		wasmkeeper.NewDefaultPermissionKeeper(app.WasmKeeper),
 		app.WasmKeeper,
+		keys[swaptypes.StoreKey],
 		cosmosruntime.NewKVStoreService(keys[swaptypes.StoreKey]),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)

@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	storetypes "cosmossdk.io/core/store"
+	store "cosmossdk.io/core/store"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/paxi-web3/paxi/x/customwasm/types"
@@ -9,11 +9,11 @@ import (
 
 type Keeper struct {
 	cdc          codec.BinaryCodec
-	storeService storetypes.KVStoreService
+	storeService store.KVStoreService
 	authority    string
 }
 
-func NewKeeper(cdc codec.BinaryCodec, storeService storetypes.KVStoreService, authority string) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeService store.KVStoreService, authority string) Keeper {
 	return Keeper{
 		cdc:          cdc,
 		storeService: storeService,

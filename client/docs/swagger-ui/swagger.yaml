@@ -4,6 +4,98 @@ info:
   description: A REST interface for state queries.
   version: 1.0.0
 paths:
+  /paxi/swap/params:
+    get:
+      operationId: Query_Params
+      tags:
+        - Query
+      responses:
+        200:
+          description: A successful response.
+          schema:
+            $ref: "#/definitions/xswaptypesQueryParamsResponse"
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: "#/definitions/rpcStatus"
+
+  /paxi/swap/pool/{prc20}:
+    get:
+      operationId: Query_Pool
+      tags:
+        - Query
+      parameters:
+        - name: prc20
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: A successful response.
+          schema:
+            $ref: "#/definitions/typesQueryPoolResponse"
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: "#/definitions/rpcStatus"
+
+  /paxi/swap/position/{creator}/{prc20}:
+    get:
+      operationId: Query_Position
+      tags:
+        - Query
+      parameters:
+        - name: creator
+          in: path
+          required: true
+          type: string
+        - name: prc20
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: A successful response.
+          schema:
+            $ref: "#/definitions/typesQueryPositionResponse"
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: "#/definitions/rpcStatus"
+
+  /paxi/swap/all_pools:
+    get:
+      operationId: Query_AllPools
+      tags:
+        - Query
+      parameters:
+        - name: pagination.key
+          in: query
+          type: string
+          format: byte
+        - name: pagination.offset
+          in: query
+          type: string
+          format: uint64
+        - name: pagination.limit
+          in: query
+          type: string
+          format: uint64
+        - name: pagination.countTotal
+          in: query
+          type: boolean
+        - name: pagination.reverse
+          in: query
+          type: boolean
+      responses:
+        200:
+          description: A successful response.
+          schema:
+            $ref: "#/definitions/typesQueryAllPoolsResponse"
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: "#/definitions/rpcStatus"
   /paxi/paxi/params:
     get:
       operationId: Query_Paxi_Params
@@ -172,6 +264,68 @@ paths:
             $ref: "#/definitions/rpcStatus"
       tags:
         - Query
+  /tx/swap/provide_liquidity:
+    post:
+      operationId: Msg_ProvideLiquidity
+      tags:
+        - Msg
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/typesMsgProvideLiquidity'
+      responses:
+        200:
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgProvideLiquidityResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+
+  /tx/swap/swap:
+    post:
+      operationId: Msg_Swap
+      tags:
+        - Msg
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/typesMsgSwap'
+      responses:
+        200:
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgSwapResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+
+  /tx/swap/withdraw_liquidity:
+    post:
+      operationId: Msg_WithdrawLiquidity
+      tags:
+        - Msg
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/typesMsgWithdrawLiquidity'
+      responses:
+        200:
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgWithdrawLiquidityResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
   /tx/paxi/burn_token:
     post:
       operationId: Msg_BurnToken
@@ -36189,6 +36343,120 @@ definitions:
         items:
           type: object
           $ref: '#/definitions/protobufAny'
+  definitions:
+  typesMsgProvideLiquidity:
+    type: object
+    properties:
+      creator:
+        type: string
+      prc20:
+        type: string
+      paxiAmount:
+        type: string
+      prc20Amount:
+        type: string
+
+  typesMsgProvideLiquidityResponse:
+    type: object
+
+  typesMsgSwap:
+    type: object
+    properties:
+      creator:
+        type: string
+      prc20:
+        type: string
+      offerDenom:
+        type: string
+        title: '"upaxi" or PRC20 contract address'
+      offerAmount:
+        type: string
+        title: string to support big.Int
+      minReceive:
+        type: string
+        title: slippage protection
+
+  typesMsgSwapResponse:
+    type: object
+
+  typesMsgWithdrawLiquidity:
+    type: object
+    properties:
+      creator:
+        type: string
+      prc20:
+        type: string
+      lpAmount:
+        type: string
+
+  typesMsgWithdrawLiquidityResponse:
+    type: object
+
+  typesProviderPosition:
+    type: object
+    properties:
+      creator:
+        type: string
+      prc20:
+        type: string
+      lpAmount:
+        type: string
+
+  typesQueryPoolResponse:
+    type: object
+    properties:
+      prc20:
+        type: string
+      reservePaxi:
+        type: string
+      reservePrc20:
+        type: string
+      pricePaxiPerPrc20:
+        type: string
+      pricePrc20PerPaxi:
+        type: string
+      totalShares:
+        type: string
+        
+  typesQueryPositionResponse:
+    type: object
+    properties:
+      position:
+        $ref: "#/definitions/typesProviderPosition"
+      expectedPaxi:
+        type: string
+      expectedPrc20:
+        type: string
+  typesQueryAllPoolsResponse:
+    type: object
+    properties:
+      pools:
+        type: array
+        items:
+          $ref: "#/definitions/typesQueryPoolResponse"
+      pagination:
+        $ref: "#/definitions/v1beta1PageResponse"
+  v1beta1PageResponse:
+    type: object
+    properties:
+      nextKey:
+        type: string
+        format: byte
+      total:
+        type: string
+        format: uint64
+  xswaptypesQueryParamsResponse:
+    type: object
+    properties:
+      codeId:
+        type: string
+        format: uint64
+      swapFeeBps:
+        type: string
+        format: uint64
+      minLiquidity:
+        type: string
+        format: uint64
   typesMsgBurnToken:
     type: object
     properties:

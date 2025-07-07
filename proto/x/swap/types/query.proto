@@ -1,6 +1,7 @@
 syntax = "proto3";
 package x.swap.types;
 
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "google/api/annotations.proto";
 
@@ -15,6 +16,14 @@ service Query {
 
     rpc Position(QueryPositionRequest) returns (QueryPositionResponse) {
         option (google.api.http).get = "/paxi/swap/position/{creator}/{prc20}";
+    }
+
+    rpc Pool(QueryPoolRequest) returns (QueryPoolResponse) {
+        option (google.api.http).get = "/paxi/swap/pool/{prc20}";
+    }
+
+    rpc AllPools(QueryAllPoolsRequest) returns (QueryAllPoolsResponse) {
+        option (google.api.http).get = "/paxi/swap/all_pools";
     }
 }
 
@@ -31,7 +40,6 @@ message ProviderPosition {
   string creator = 1;
   string prc20 = 2;
   string lp_amount = 3;
-  string deposited_lp = 4;
 }
 
 message QueryPositionRequest {
@@ -43,5 +51,33 @@ message QueryPositionResponse {
   ProviderPosition position = 1;
   string expected_paxi = 2;
   string expected_prc20 = 3;
-  string profit_lp = 4;
+}
+
+message QueryPoolRequest {
+  string prc20 = 1;
+}
+
+message QueryPoolResponse {
+  string prc20 = 1;
+  string reserve_paxi = 2;
+  string reserve_prc20 = 3;
+  string price_paxi_per_prc20 = 4;
+  string price_prc20_per_paxi = 5;
+  string total_shares = 6;
+}
+
+message QueryAllPoolsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllPoolsResponse {
+  repeated QueryPoolResponse pools = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message PoolProto {
+  string prc20 = 1;          // PRC20 contract address (Bech32)
+  string reserve_paxi = 2;   // PAXI reserve amount
+  string reserve_prc20 = 3;  // PRC20 reserve amount
+  string total_shares = 4;   // Total LP shares issued (as stringified integer)
 }

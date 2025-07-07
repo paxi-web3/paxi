@@ -122,8 +122,8 @@ func txCommand() *cobra.Command {
 		authcmd.GetDecodeCommand(),
 		authcmd.GetSimulateCmd(),
 		paxicli.GetTxCmd(),
-		wasmcli.GetTxCmd(),
 		swapcli.GetTxCmd(),
+		wasmcli.GetTxCmd(),
 	)
 
 	return cmd

@@ -21,6 +21,8 @@ func GetTxCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		CmdProvideLiquidity(),
+		CmdWithdrawLiquidity(),
+		CmdSwap(),
 	)
 
 	return cmd
@@ -38,7 +40,7 @@ func CmdProvideLiquidity() *cobra.Command {
 			paxiAmountStr := args[1]
 			prc20Amount := args[2]
 
-			paxiAmount, err := sdk.ParseCoinNormalized(paxiAmountStr)
+			_, err := sdk.ParseCoinNormalized(paxiAmountStr)
 			if err != nil {
 				return fmt.Errorf("invalid paxi amount: %w", err)
 			}
@@ -46,7 +48,7 @@ func CmdProvideLiquidity() *cobra.Command {
 			msg := &types.MsgProvideLiquidity{
 				Creator:     clientCtx.GetFromAddress().String(),
 				Prc20:       prc20,
-				PaxiAmount:  &paxiAmount,
+				PaxiAmount:  paxiAmountStr,
 				Prc20Amount: prc20Amount,
 			}
 
@@ -84,6 +86,35 @@ func CmdWithdrawLiquidity() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func CmdSwap() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "swap [prc20] [offer_denom] [offer_amount] [min_receive]",
+		Short: "Swap tokens in the swap pool",
+		Args:  cobra.ExactArgs(4),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			from := clientCtx.GetFromAddress().String()
+
+			msg := &types.MsgSwap{
+				Creator:     from,
+				Prc20:       args[0],
+				OfferDenom:  args[1],
+				OfferAmount: args[2],
+				MinReceive:  args[3],
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
