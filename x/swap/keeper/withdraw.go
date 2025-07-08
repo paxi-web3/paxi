@@ -10,9 +10,11 @@ import (
 )
 
 func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidity) error {
+	var recoveredErr error
 	defer func() {
 		if r := recover(); r != nil {
 			ctx.Logger().Error("swap panic recovered", "err", r)
+			recoveredErr = fmt.Errorf("panic: %v", r)
 		}
 	}()
 
@@ -49,20 +51,8 @@ func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidi
 	paxiOut := sdkmath.LegacyNewDecFromInt(pool.ReservePaxi).Mul(shareRatio).TruncateInt()
 	prc20Out := sdkmath.LegacyNewDecFromInt(pool.ReservePRC20).Mul(shareRatio).TruncateInt()
 
-	// Update pool reserves and total shares
-	pool.ReservePaxi = pool.ReservePaxi.Sub(paxiOut)
-	pool.ReservePRC20 = pool.ReservePRC20.Sub(prc20Out)
-	pool.TotalShares = pool.TotalShares.Sub(lpAmount)
-	k.SetPool(ctx, pool)
-
-	// Burn LP tokens
-	lpDenom := types.LPTokenDenom(msg.Prc20)
-	lpCoin := sdk.NewCoin(lpDenom, lpAmount)
-	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName, sdk.NewCoins(lpCoin)); err != nil {
-		return fmt.Errorf("failed to collect LP token: %w", err)
-	}
-	if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(lpCoin)); err != nil {
-		return fmt.Errorf("burn failed: %w", err)
+	if paxiOut.IsZero() && prc20Out.IsZero() {
+		return fmt.Errorf("withdrawal too small, results in zero output")
 	}
 
 	// Send PAXI and PRC20 back to user
@@ -73,6 +63,14 @@ func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidi
 		return fmt.Errorf("failed to send PRC20: %w", err)
 	}
 
+	// Update pool reserves and total shares
+	if pool.ReservePaxi.LT(paxiOut) || pool.ReservePRC20.LT(prc20Out) || pool.TotalShares.LT(lpAmount) {
+		return fmt.Errorf("pool reserve insufficient for withdrawal")
+	}
+	pool.ReservePaxi = pool.ReservePaxi.Sub(paxiOut)
+	pool.ReservePRC20 = pool.ReservePRC20.Sub(prc20Out)
+	pool.TotalShares = pool.TotalShares.Sub(lpAmount)
+
 	// Update or delete user's position
 	newLpAmount := iCurrentLpAmount.Sub(lpAmount)
 	if newLpAmount.IsZero() {
@@ -82,7 +80,14 @@ func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidi
 		k.SetPosition(ctx, position)
 	}
 
-	return nil
+	// If pool is empty after withdrawal, delete it
+	if pool.TotalShares.IsZero() {
+		k.DeletePool(ctx, pool.Prc20)
+	} else {
+		k.SetPool(ctx, pool)
+	}
+
+	return recoveredErr
 }
 
 func (k Keeper) transferPRC20FromModule(ctx sdk.Context, contract string, to sdk.AccAddress, amount sdkmath.Int) error {

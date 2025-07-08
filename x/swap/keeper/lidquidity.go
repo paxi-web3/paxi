@@ -11,9 +11,11 @@ import (
 
 // ProvideLiquidity processes a liquidity provision message. If the pool does not exist, it is created.
 func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity) error {
+	var recoveredErr error
 	defer func() {
 		if r := recover(); r != nil {
 			ctx.Logger().Error("swap panic recovered", "err", r)
+			recoveredErr = fmt.Errorf("panic: %v", r)
 		}
 	}()
 
@@ -66,7 +68,6 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 
 	// Load or init pool
 	pool, found := k.GetPool(ctx, msg.Prc20)
-	lpDenom := types.LPTokenDenom(msg.Prc20)
 
 	var lpToMint sdkmath.Int
 	if !found {
@@ -79,25 +80,25 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 			TotalShares:  lpToMint,
 		}
 	} else {
+		if pool.ReservePaxi.IsZero() || pool.ReservePRC20.IsZero() || pool.TotalShares.IsZero() {
+			return fmt.Errorf("corrupted pool state, cannot join")
+		}
+
 		// Subsequent liquidity providers will mint LP tokens in proportion
 		share1 := paxiAmt.Mul(pool.TotalShares).Quo(pool.ReservePaxi)
 		share2 := prc20Amt.Mul(pool.TotalShares).Quo(pool.ReservePRC20)
 		lpToMint = sdkmath.MinInt(share1, share2)
+
+		if lpToMint.IsZero() {
+			return fmt.Errorf("provided liquidity too small to mint LP token")
+		}
 
 		pool.ReservePaxi = pool.ReservePaxi.Add(paxiAmt)
 		pool.ReservePRC20 = pool.ReservePRC20.Add(prc20Amt)
 		pool.TotalShares = pool.TotalShares.Add(lpToMint)
 	}
 
-	// Mint LP token to user
-	lpCoin := sdk.NewCoin(lpDenom, lpToMint)
-	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(lpCoin)); err != nil {
-		return fmt.Errorf("failed to mint LP token: %w", err)
-	}
-	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, creator, sdk.NewCoins(lpCoin)); err != nil {
-		return fmt.Errorf("failed to send LP token: %w", err)
-	}
-
+	// Update pool in KVStore
 	k.SetPool(ctx, pool)
 
 	// Update LP token ownership
@@ -114,7 +115,7 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 	}
 	k.SetPosition(ctx, pos)
 
-	return nil
+	return recoveredErr
 }
 
 // transferPRC20 performs a transfer_from call on a PRC20 contract
@@ -177,4 +178,12 @@ func (k Keeper) GetPool(ctx sdk.Context, prc20 string) (types.Pool, bool) {
 	}
 
 	return pool, true
+}
+
+// DeletePool removes a pool from KVStore by PRC20 contract address
+func (k Keeper) DeletePool(ctx sdk.Context, prc20 string) {
+	store := k.storeService.OpenKVStore(ctx)
+	if err := store.Delete(types.PoolStoreKey(prc20)); err != nil {
+		panic(err)
+	}
 }
