@@ -54,7 +54,7 @@ func (q *queryServer) Params(ctx context.Context, req *types.QueryParamsRequest)
 	params := q.k.GetParams(sdkCtx)
 
 	return &types.QueryParamsResponse{
-		BurnThreshold:       params.BurnRatio.String(),
+		BurnThreshold:       params.BurnThreshold.String(),
 		BurnRatio:           params.BurnRatio.String(),
 		BlocksPerYear:       params.BlocksPerYear,
 		FirstYearInflation:  params.FirstYearInflation.String(),
