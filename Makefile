@@ -130,4 +130,26 @@ proto-ts:
 	proto/x/custommint/types/tx.proto \
 	proto/x/customwasm/types/query.proto \
 	proto/x/paxi/types/query.proto \
-	proto/x/paxi/types/tx.proto
+	proto/x/paxi/types/tx.proto \
+	proto/x/swap/types/query.proto \
+	proto/x/swap/types/tx.proto 
+
+proto-dart:
+	@echo "Generating ts-proto files for frontend..."
+
+	protoc \
+	--plugin=protoc-gen-dart=$(HOME)/.pub-cache/bin/protoc-gen-dart \
+	--dart_out=./dart_proto \
+	-I=proto \
+	-I=proto/third_party \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/grpc-ecosystem/grpc-gateway)/third_party/googleapis \
+	proto/x/custommint/types/query.proto \
+	proto/x/custommint/types/tx.proto \
+	proto/x/customwasm/types/query.proto \
+	proto/x/paxi/types/query.proto \
+	proto/x/paxi/types/tx.proto \
+	proto/x/swap/types/query.proto \
+	proto/x/swap/types/tx.proto
