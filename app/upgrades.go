@@ -34,5 +34,8 @@ func (app *PaxiApp) RegisterUpgradeHandlers() {
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+
+		// Display upgrade information
+		app.Logger().Info("Registering upgrade handler for", "upgrade", UpgradeName)
 	}
 }
