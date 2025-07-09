@@ -5,17 +5,17 @@ import (
 	"fmt"
 
 	sdkmath "cosmossdk.io/math"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/paxi-web3/paxi/x/swap/types"
 )
 
 // ProvideLiquidity processes a liquidity provision message. If the pool does not exist, it is created.
 func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity) error {
-	var recoveredErr error
 	defer func() {
 		if r := recover(); r != nil {
 			ctx.Logger().Error("swap panic recovered", "err", r)
-			recoveredErr = fmt.Errorf("panic: %v", r)
+			panic(fmt.Errorf("swap module panic recovered: %v", r))
 		}
 	}()
 
@@ -115,7 +115,7 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 	}
 	k.SetPosition(ctx, pos)
 
-	return recoveredErr
+	return nil
 }
 
 // transferPRC20 performs a transfer_from call on a PRC20 contract
@@ -133,7 +133,22 @@ func (k Keeper) transferPRC20(ctx sdk.Context, from string, contract string, amo
 		return err
 	}
 
-	_, err = k.wasmKeeper.Execute(ctx,
+	// Set safty boundary to prevent infinite loop
+	maxGas := ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumed()
+	fmt.Println("maxGas: ", maxGas)
+	safeGas := uint64(500_000)
+
+	// Detect if this is a real tx or simulation
+	isSimulate := ctx.IsCheckTx() || ctx.IsReCheckTx()
+
+	// Set safe gas only when it's not simulating
+	execCtx := ctx
+	if !isSimulate {
+		execCtx = ctx.WithGasMeter(storetypes.NewGasMeter(safeGas)) // only limit in DeliverTx
+	}
+
+	_, err = k.wasmKeeper.Execute(
+		execCtx,
 		sdk.MustAccAddressFromBech32(contract),
 		k.accountKeeper.GetModuleAddress(types.ModuleName),
 		bz,

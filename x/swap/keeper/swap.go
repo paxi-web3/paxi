@@ -9,11 +9,10 @@ import (
 )
 
 func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
-	var recoveredErr error
 	defer func() {
 		if r := recover(); r != nil {
 			ctx.Logger().Error("swap panic recovered", "err", r)
-			recoveredErr = fmt.Errorf("panic: %v", r)
+			panic(fmt.Errorf("swap module panic recovered: %v", r))
 		}
 	}()
 
@@ -111,7 +110,7 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 
 	// Swap fee stays in pool, benefits LPs via higher reserve ratios
 	k.SetPool(ctx, pool)
-	return recoveredErr
+	return nil
 }
 
 // getAmountOut calculates the output token amount after applying swap fee and AMM formula
