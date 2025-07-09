@@ -134,8 +134,6 @@ func (k Keeper) transferPRC20(ctx sdk.Context, from string, contract string, amo
 	}
 
 	// Set safty boundary to prevent infinite loop
-	maxGas := ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumed()
-	fmt.Println("maxGas: ", maxGas)
 	safeGas := uint64(500_000)
 
 	// Detect if this is a real tx or simulation
