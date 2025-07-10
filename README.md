@@ -41,6 +41,7 @@ Powered by **Go**, Paxi delivers high performance, fast development cycles, and 
 - **On-chain Governance & DAO Ready** – Built-in support for decentralized proposals, voting, and community coordination
 - **Truly Decentralized** – Designed to maximize validator distribution and community sovereignty
 - **Ideal for DeFi & GameFi** – High performance and developer freedom make Paxi a perfect foundation for next-gen apps
+* **Built-in AMM System** – A native automated market maker enables users to freely swap between PAXI and PRC20 tokens with low fees and high composability
 
 Paxi is not just a Cosmos-based chain — it's an **evolution** of the Cosmos model, bringing deeper performance optimizations and a smoother path to sovereignty for any project.
 

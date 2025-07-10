@@ -135,6 +135,61 @@ Paxi is designed to support a wide range of real-world applications:
 
 ---
 
+## AMM System: Seamless Swaps Between PAXI and PRC20
+
+Paxi features a high-performance, built-in AMM (Automated Market Maker) module that enables users to freely swap between PAXI and PRC20 tokens without relying on centralized exchanges. Inspired by the Uniswap V2 model, the system is optimized for on-chain efficiency and minimal fees, making it ideal for real-time decentralized trading.
+
+### Key Features
+
+* **Native Module Integration**
+  Unlike smart contract–based AMMs, Paxi's AMM is implemented as a native Cosmos SDK module for maximum performance and minimal gas consumption.
+
+* **Stable Pricing Curve**
+  Uses the constant product formula (*x \* y = k*) to determine swap prices dynamically based on pool reserves, ensuring fair, transparent pricing.
+
+* **Permissionless Liquidity Pools**
+  Anyone can create a swap pool between PAXI and any PRC20 token by supplying initial liquidity.
+
+* **Real-Time Pricing**
+  Prices adjust instantly based on asset ratios, without the need for external oracles.
+
+* **Low Slippage and Swap Fees**
+  Swap fees are set to a default of **0.3%**, which can be adjusted via DAO governance. The system is optimized for minimal slippage in small- to medium-sized trades.
+
+---
+
+### User Capabilities
+
+* **Swap**
+  Instantly trade between PAXI and PRC20 tokens through an intuitive interface with predictable pricing.
+
+* **Provide Liquidity**
+  Deposit equal values of PAXI and a PRC20 token to mint LP tokens and start earning trading fee rewards.
+
+* **Claim Rewards**
+  Liquidity Providers can claim accumulated swap fee rewards at any time, proportionate to their pool share.
+
+* **Withdraw Liquidity**
+  LPs can redeem their principal plus accrued fees without any lockup period.
+
+---
+
+### Design Goals
+
+* Lower the barrier for DeFi participation
+* Empower developers to build trustless financial applications like DEXs, yield farms, and stablecoins
+* Serve as a liquidity foundation for DAO, GameFi, and NFT ecosystems
+
+---
+
+### Example Use Cases
+
+* Projects launching a PRC20 token can create an instant liquidity pool with PAXI for public trading
+* DAO treasuries can use AMM pools for token conversion and funding management
+* In-game economies can enable token trading and price discovery using Paxi’s AMM module
+
+---
+
 ## Developer Experience
 
 Paxi is committed to lowering the barrier to entry for blockchain application development. To achieve this, it will include:
