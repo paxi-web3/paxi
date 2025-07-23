@@ -64,7 +64,7 @@ graph TD
   D --> H[Other Contracts]
   ```
 
-## Paxi-cli Install
+## PAXI-CLI Install
 ```bash
 curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/cli_install.sh | bash
 ```
