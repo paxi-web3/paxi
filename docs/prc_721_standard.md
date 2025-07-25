@@ -1,7 +1,3 @@
-Here’s a concise English summary of the PRC‑721 standard, which is identical to CW721:
-
----
-
 ## PRC‑721 Token Standard (Code ID: 2)
 
 **Source code**: [https://github.com/paxi-web3/cw-plus](https://github.com/paxi-web3/cw-plus)
