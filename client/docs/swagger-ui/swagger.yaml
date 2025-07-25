@@ -180,20 +180,6 @@ paths:
             $ref: '#/definitions/rpcStatus'
       tags:
       - Query
-  /paxi/paxi/estimated_gas_price:
-    get:
-      operationId: Query_EstimatedGasPrice
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            $ref: '#/definitions/typesQueryEstimatedGasPriceResponse'
-        default:
-          description: An unexpected error response.
-          schema:
-            $ref: '#/definitions/rpcStatus'
-      tags:
-      - Query
   /paxi/paxi/last_block_gas_used:
     get:
       operationId: Query_LastBlockGasUsed
@@ -36474,11 +36460,6 @@ definitions:
     properties:
       amount:
         $ref: '#/definitions/v1beta1Coin'
-  typesQueryEstimatedGasPriceResponse:
-    type: object
-    properties:
-      gasPrice:
-        type: string
   typesQueryLastBlockGasUsedResponse:
     type: object
     properties:

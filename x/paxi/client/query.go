@@ -74,28 +74,6 @@ func CmdQueryTotalSupply() *cobra.Command {
 	return cmd
 }
 
-func CmdQueryEstimatedGasPrice() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "estimated-gas-price",
-		Short: "Query estimated gas price",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx := client.GetClientContextFromCmd(cmd)
-
-			queryClient := types.NewQueryClient(clientCtx)
-
-			res, err := queryClient.EstimatedGasPrice(context.Background(), &types.QueryEstimatedGasPriceRequest{})
-			if err != nil {
-				return err
-			}
-
-			return clientCtx.PrintProto(res)
-		},
-	}
-
-	return cmd
-}
-
 func CmdQueryLastBlockGasUsed() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "last-block-gas-used",
@@ -193,7 +171,6 @@ func GetQueryCmd() *cobra.Command {
 	cmd.AddCommand(
 		CmdQueryLockedVesting(),
 		CmdQueryLastBlockGasUsed(),
-		CmdQueryEstimatedGasPrice(),
 		CmdQueryTotalSupply(),
 		CmdQueryCirculatingSupply(),
 		CmdQueryTotalTxs(),

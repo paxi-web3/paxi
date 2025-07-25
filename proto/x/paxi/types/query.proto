@@ -22,11 +22,6 @@ service Query {
             get: "/paxi/paxi/total_supply"
         };
     }
-    rpc EstimatedGasPrice(QueryEstimatedGasPriceRequest) returns (QueryEstimatedGasPriceResponse) {
-        option (google.api.http) = {
-            get: "/paxi/paxi/estimated_gas_price"
-        };
-    }
     rpc LastBlockGasUsed(QueryLastBlockGasUsedRequest) returns (QueryLastBlockGasUsedResponse) {
         option (google.api.http) = {
             get: "/paxi/paxi/last_block_gas_used"
@@ -66,12 +61,6 @@ message QueryTotalSupplyRequest {}
 
 message QueryTotalSupplyResponse {
     cosmos.base.v1beta1.Coin amount = 1;
-}
-
-message QueryEstimatedGasPriceRequest {}
-
-message QueryEstimatedGasPriceResponse {
-    string gas_price = 1;
 }
 
 message QueryLastBlockGasUsedRequest {}

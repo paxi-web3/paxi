@@ -55,17 +55,6 @@ func (q *queryServer) TotalSupply(ctx context.Context, req *types.QueryTotalSupp
 	}, nil
 }
 
-func (q *queryServer) EstimatedGasPrice(ctx context.Context, req *types.QueryEstimatedGasPriceRequest) (*types.QueryEstimatedGasPriceResponse, error) {
-	if req == nil {
-		return nil, fmt.Errorf("request cannot be nil")
-	}
-	gasPrice := q.k.blockStatusKeeper.GetEstimatedGasPrice()
-	gasPriceStr := fmt.Sprintf("%f", gasPrice)
-	return &types.QueryEstimatedGasPriceResponse{
-		GasPrice: gasPriceStr,
-	}, nil
-}
-
 func (q *queryServer) LastBlockGasUsed(ctx context.Context, req *types.QueryLastBlockGasUsedRequest) (*types.QueryLastBlockGasUsedResponse, error) {
 	if req == nil {
 		return nil, fmt.Errorf("request cannot be nil")

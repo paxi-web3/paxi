@@ -28,7 +28,6 @@ type Keeper struct {
 type BlockStatsKeeper interface {
 	GetLastBlockGasUsed() uint64
 	SetLastBlockGasUsed()
-	GetEstimatedGasPrice() float32
 	GetTotalTxs() uint64
 	WriteBlockStatusToFile() error
 }
