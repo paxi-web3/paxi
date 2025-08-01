@@ -66,12 +66,12 @@ graph TD
 
 ## PAXI-CLI Install
 ```bash
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/cli_install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/cli_install.sh | bash
 ```
 
 ## Linux Native Install for Developers
 ```bash
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/developer_install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/developer_install.sh | bash
 ```
 
 ## Launch Your Own PAXI Mainnet Node in Minutes
@@ -79,21 +79,21 @@ curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/developer_inst
 ### 🐧 Linux Native Install for Mainnet
 ```bash
 # Install paxid
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/install.sh | bash
 
 # After starting the Paxi node (paxid start), make sure to run the WASM contract synchronization script again.
 # Failing to do so may cause consensus failures due to missing WASM files, which can result in your validator being slashed (i.e., a portion of your stake may be deducted)
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/sync_wasm.sh | bash
 ```
 
 ### 🐳 Docker Install for Mainnet
 ```bash
 # Install paxid
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/docker_install.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/docker_install.sh | bash
 
 # After starting the Paxi node (paxid start), make sure to run the WASM contract synchronization script again.
 # Failing to do so may cause consensus failures due to missing WASM files, which can result in your validator being slashed (i.e., a portion of your stake may be deducted)
-curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm.sh | bash
+curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/sync_wasm.sh | bash
 ```
 
 ## Whitepaper
