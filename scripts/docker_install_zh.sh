@@ -90,8 +90,7 @@ PAXI_REPO="https://github.com/paxi-web3/paxi"
 PAXI_TAG="latest-main"
 CHAIN_ID="paxi-mainnet"
 BINARY_NAME="./paxid"
-SEEDS="key@mainnet-seed.paxinet.io:26656"
-PERSISTENT_PEERS="key@mainnet-node-1.paxinet.io:26656"
+PERSISTENT_PEERS="25aa07b1073c49e298cabe00fcc5ccb0904fb840@51.79.176.58:26656,d411fc096e0d946bbd2bdea34f0f9da928c1a714@139.99.68.32:26656,a15ff764aa634bbbca93b352d559f1b74e78af31@139.99.68.235:26656,4f26d3ecfb1aa81f2304850af20e74462ed1d341@66.70.181.55:26656,57b44498315f013558e342827f352db790d5d90c@142.44.142.121:26656,3f348c056aadccef0a5c6ea254b0a5a0096c1c7a@51.75.54.185:26656"
 RPC_URL="http://mainnet-rpc.paxinet.io"
 SNAPSHOT_URL="http://mainnet-rpc.paxinet.io"
 SNAPSHOT_DOWNLOAD_HOST="http://mainnet-snapshot.paxinet.io"
@@ -130,9 +129,11 @@ if ! command -v docker &> /dev/null; then
   sudo systemctl enable docker
   sudo systemctl start docker
   sudo usermod -aG docker $USER
-  newgrp docker
 
-  echo "⚠️ 你可能需要重新登入，讓 docker 權限生效（或執行 newgrp docker）"
+  if [ "$EUID" -ne 0 ]; then
+    echo "⚠️ 你可能需要重新登入，讓 docker 權限生效（或執行 newgrp docker）"
+    exit 0
+  fi
 else
   echo "✅ Docker 已安裝"
 fi
@@ -222,7 +223,6 @@ COUNTRY_CODE=$(echo "$IP_DATA" | jq -r .countryCode)
 IP_ADDRESS=$(echo "$IP_DATA" | jq -r .query)
 
 ### === 設定種子與peers ===
-$SED "s/^seeds *=.*/seeds = \"$SEEDS\"/" $CONFIG
 $SED "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFIG
 $SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26656\"|" $CONFIG
 
