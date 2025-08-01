@@ -136,6 +136,7 @@ if ! command -v docker &> /dev/null; then
   sudo systemctl enable docker
   sudo systemctl start docker
   sudo usermod -aG docker $USER
+  newgrp docker
 
   echo "⚠️ You may need to log out and back in (or run 'newgrp docker') to apply Docker permissions."
 else
@@ -271,8 +272,8 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "website": "$WEBSITE",
   "security-contact": "$SECURITY_CONTACT",
   "details": "PAXI validator node [$COUNTRY_CODE]",
-  "commission-rate": "0.2",
-  "commission-max-rate": "0.3",
+  "commission-rate": "0.25",
+  "commission-max-rate": "0.5",
   "commission-max-change-rate": "0.01",
   "min-self-delegation": "1"
 }

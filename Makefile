@@ -1,7 +1,7 @@
 # Makefile for building and managing the Paxi blockchain (Cosmos SDK + CometBFT)
 
 APP_NAME = paxid
-VERSION ?= v1.0.1
+VERSION ?= v1.0.3
 DOCKER_IMAGE = paxi-node
 BUILD_TAGS = "cosmwasm pebbledb"
 CGO_ENABLED=1
