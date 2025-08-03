@@ -146,7 +146,7 @@ fi
 
 ### === Initialize node ===
 if ! [ -f ./paxi/config/genesis.json ]; then
-$BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
+$BINARY_NAME init "$NODE_MONIKER" --chain-id $CHAIN_ID
 fi 
 
 curl -s $GENESIS_URL | jq -r .result.genesis > ./paxi/config/genesis.json
@@ -277,5 +277,5 @@ echo "============================================================"
 echo "❗After starting the Paxi node (paxid start), make sure to run the WASM contract synchronization script again."
 echo "❗Failing to do so may cause consensus failures due to missing WASM files, which can result in your validator being slashed (i.e., a portion of your stake may be deducted)."
 echo ""
-echo "curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm.sh | bash"
+echo "curl -sL https://raw.githubusercontent.com/paxi-web3/main/paxi/scripts/sync_wasm.sh | bash"
 echo ""

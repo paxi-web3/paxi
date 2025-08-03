@@ -8,7 +8,7 @@ set -e
 sudo apt-get update && sudo apt-get install -y \
     curl unzip jq
 
-SNAPSHOT_DOWNLOAD_HOST="http://mainnet-snapshot.paxinet.io"
+SNAPSHOT_DOWNLOAD_HOST="http://snapshot.paxi.info"
 PAXI_DATA_PATH="$HOME/paxid/paxi"
 
 ### === Download wasm snapshot ===

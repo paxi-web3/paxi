@@ -166,7 +166,7 @@ if ! [ -f ./paxi/config/genesis.json ]; then
 docker run --rm \
   -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
   $DOCKER_IMAGE \
-  $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
+  $BINARY_NAME init "$NODE_MONIKER" --chain-id $CHAIN_ID
 sudo chown -R $(whoami) $HOME/paxid
 fi 
 
@@ -318,5 +318,5 @@ echo "============================================================"
 echo "❗After starting the Paxi node (paxid start), make sure to run the WASM contract synchronization script again."
 echo "❗Failing to do so may cause consensus failures due to missing WASM files, which can result in your validator being slashed (i.e., a portion of your stake may be deducted)."
 echo ""
-echo "curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm.sh | bash"
+echo "curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/sync_wasm.sh | bash"
 echo ""

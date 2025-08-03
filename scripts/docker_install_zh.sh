@@ -162,7 +162,7 @@ if ! [ -f ./paxi/keyring-file/$KEY_NAME.info ] && ! [ -f ./paxi/$KEY_NAME.info ]
 docker run --rm \
   -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \
   $DOCKER_IMAGE \
-  $BINARY_NAME init $NODE_MONIKER --chain-id $CHAIN_ID
+  $BINARY_NAME init "$NODE_MONIKER" --chain-id $CHAIN_ID
 sudo chown -R $(whoami) $HOME/paxid
 fi 
 
@@ -315,5 +315,5 @@ echo "============================================================"
 echo "❗當你啟動完 Paxi 節點（執行 paxid start）後，務必要再次執行一次 WASM 智能合約同步指令（bash sync_wasm_zh.sh）。"
 echo "❗否則若缺失了某些 WASM 文件，將會導致共識錯誤，進而使你的驗證人節點被系統懲罰（例如被扣除一部分質押資產）。"
 echo ""
-echo "curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/scripts/sync_wasm_zh.sh | bash"
+echo "curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/sync_wasm_zh.sh | bash"
 echo ""
