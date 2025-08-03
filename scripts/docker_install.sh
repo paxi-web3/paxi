@@ -138,7 +138,7 @@ if ! command -v docker &> /dev/null; then
 
   if [ "$EUID" -ne 0 ]; then
     echo "⚠️ You may need to log out and back in (or run 'newgrp docker') to apply Docker permissions, then run this script again."
-    exit 0
+    exit 1
   fi
 else
   echo "✅ Docker is already installed."

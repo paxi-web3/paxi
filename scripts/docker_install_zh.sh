@@ -132,7 +132,7 @@ if ! command -v docker &> /dev/null; then
 
   if [ "$EUID" -ne 0 ]; then
     echo "⚠️ 你可能需要重新登入，讓 docker 權限生效（或執行 newgrp docker）,之後再執行此腳本。"
-    exit 0
+    exit 1
   fi
 else
   echo "✅ Docker 已安裝"
