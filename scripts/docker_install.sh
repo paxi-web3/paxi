@@ -137,7 +137,7 @@ if ! command -v docker &> /dev/null; then
   sudo usermod -aG docker $USER
 
   if [ "$EUID" -ne 0 ]; then
-    echo "⚠️ You may need to log out and back in (or run 'newgrp docker') to apply Docker permissions."
+    echo "⚠️ You may need to log out and back in (or run 'newgrp docker') to apply Docker permissions, then run this script again."
     exit 0
   fi
 else

@@ -131,7 +131,7 @@ if ! command -v docker &> /dev/null; then
   sudo usermod -aG docker $USER
 
   if [ "$EUID" -ne 0 ]; then
-    echo "⚠️ 你可能需要重新登入，讓 docker 權限生效（或執行 newgrp docker）"
+    echo "⚠️ 你可能需要重新登入，讓 docker 權限生效（或執行 newgrp docker）,之後再執行此腳本。"
     exit 0
   fi
 else
