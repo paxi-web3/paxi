@@ -230,7 +230,7 @@ echo "正在產生 validator.json..."
 cat <<EOF > $PAXI_DATA_PATH/validator.json
 {
   "pubkey": $VAL_PUBKEY,
-  "amount": "1000000000$DENOM",
+  "amount": "2000000000$DENOM",
   "moniker": "$NODE_MONIKER",
   "identity": "",
   "website": "$WEBSITE",
