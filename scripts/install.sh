@@ -4,7 +4,7 @@ set -e
 ### === Required parameters ===
 REQUIRED_CPU=8
 REQUIRED_RAM_GB=30
-REQUIRED_DISK_GB=1000
+REQUIRED_DISK_GB=500
 
 ### === Get CPU cores ===
 CPU_CORES=$(nproc)
