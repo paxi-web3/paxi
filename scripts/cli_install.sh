@@ -4,12 +4,9 @@ set -euo pipefail
 ############################################
 # PAXI CLI installer – paxid only
 # - Build & install paxid
-# - Ask (or accept arg) for mainnet/testnet
+# - Let user manually choose mainnet/testnet
 # - Write chain-id & node RPC into client.toml
 ############################################
-
-# Optional arg: ./install_paxid_cli.sh mainnet  OR  ./install_paxid_cli.sh testnet
-NETWORK_ARG="${1:-}"
 
 GO_VERSION="1.24.2"
 REPO="https://github.com/paxi-web3/paxi"
@@ -54,7 +51,6 @@ set_client_config () {
   if "$BIN_NAME" config home >/dev/null 2>&1; then
     config_home=$("$BIN_NAME" config home)
   else
-    # Fallback guesses
     [[ -d "$HOME/.paxi" ]]  && config_home="$HOME/.paxi"
     [[ -d "$HOME/.paxid" ]] && config_home="$HOME/.paxid"
     [[ -z "${config_home:-}" ]] && config_home="$default_home"
@@ -108,14 +104,7 @@ build_paxid () {
 install_deps
 install_go
 build_paxid
-
-case "$NETWORK_ARG" in
-  mainnet|MAINNET) SELECTED_NET="mainnet" ;;
-  testnet|TESTNET) SELECTED_NET="testnet" ;;
-  *)
-    choose_network
-    ;;
-esac
+choose_network
 
 if [[ "$SELECTED_NET" == "mainnet" ]]; then
   set_client_config "$MAINNET_CHAIN_ID" "$MAINNET_RPC"
