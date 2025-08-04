@@ -39,7 +39,7 @@ echo "============================================================"
 echo ""
 echo "🛑 CRITICAL WARNING:"
 echo "❗ If more than 1/3 of validator nodes go offline, the entire blockchain will halt."
-echo "❗ You must back up the entire paxi folder, especially your node's private keys (node_key.json, priv_validator_key.json, keyring)."
+echo "❗ You must back up the entire paxi folder, especially your node's private keys (node_key.json, priv_validator_key.json, mnemonic phrase)."
 echo "   If your machine fails, this is the only way to restore your validator and reclaim your staking rewards."
 echo ""
 echo "⚠️ Please note:"
@@ -190,7 +190,7 @@ if [ $? -ne 0 ]; then
   echo "❌ Failed to download wasm snapshot. Please download it and unzip it to $PAXI_DATA_PATH/wasm/wasm/state/wasm."
 else
   mkdir -p "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
-  unzip wasm_snapshot.zip -d "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
+  unzip -o wasm_snapshot.zip -d "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
   rm wasm_snapshot.zip
   echo "✅ Wasm snapshot downloaded and extracted to $PAXI_DATA_PATH/wasm/wasm/state/wasm."
 fi
@@ -265,23 +265,22 @@ echo "Please add your country code at the end of the 'details' parameter, e.g., 
 echo "Generating validator.json..."
 cat <<EOF > $PAXI_DATA_PATH/validator.json
 {
-  "pubkey": $VAL_PUBKEY,
-  "amount": "2000000000$DENOM",
+  "security": "$SECURITY_CONTACT",
   "moniker": "$NODE_MONIKER",
   "identity": "",
   "website": "$WEBSITE",
-  "security-contact": "$SECURITY_CONTACT",
   "details": "PAXI validator node [$COUNTRY_CODE]",
+  "pubkey": $VAL_PUBKEY,
+  "amount": "2000000000$DENOM",
   "commission-rate": "0.25",
   "commission-max-rate": "0.5",
-  "commission-max-change-rate": "0.01",
+  "commission-max-change-rate": "0.1",
   "min-self-delegation": "1"
 }
 EOF
 
 ### === Common commands ===
 echo ""
-echo "Before starting the node, remember to set 'your public IP:26656' to the 'external_address' parameter of paxi/config/config.toml, otherwise others will not be able to connect to your node"
 echo "Start the node (this node runs in the background and auto-starts on system reboot unless stopped manually):"
 echo "docker run -d --name paxi-node-1 --restart unless-stopped -v $PAXI_DATA_PATH:$DOCKER_PAXI_DATA_PATH \\"
 echo "--network=host \\"

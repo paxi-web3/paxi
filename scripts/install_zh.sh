@@ -39,7 +39,7 @@ echo "============================================================"
 echo ""
 echo "🛑 最強烈警告："
 echo "❗ 若超過 1/3 驗證人節點掉線，整個區塊鏈將會停擺。"
-echo "❗ 請務必備份整個 paxi 資料夾，尤其是節點私鑰（node_key.json、priv_validator_key.json、keyring），"
+echo "❗ 請務必備份整個 paxi 資料夾，尤其是節點私鑰（node_key.json、priv_validator_key.json、助記詞），"
 echo "   一旦電腦故障，才能及時修復並取回質押收益與驗證人身份。"
 echo ""
 echo "⚠️ 請注意:"
@@ -166,7 +166,7 @@ if [ $? -ne 0 ]; then
   echo "❌ 無法下載 wasm snapshot。請手動下載並解壓到 $PAXI_DATA_PATH/wasm/wasm/state/wasm。"
 else
   mkdir -p "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
-  unzip wasm_snapshot.zip -d "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
+  unzip -o wasm_snapshot.zip -d "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
   rm wasm_snapshot.zip
   echo "✅ Wasm snapshot 已下載並解壓到 $PAXI_DATA_PATH/wasm/wasm/state/wasm。"
 fi
@@ -234,11 +234,11 @@ cat <<EOF > $PAXI_DATA_PATH/validator.json
   "moniker": "$NODE_MONIKER",
   "identity": "",
   "website": "$WEBSITE",
-  "security-contact": "$SECURITY_CONTACT",
+  "security": "$SECURITY_CONTACT",
   "details": "PAXI validator node [$COUNTRY_CODE]",
   "commission-rate": "0.25",
   "commission-max-rate": "0.5",
-  "commission-max-change-rate": "0.01",
+  "commission-max-change-rate": "0.1",
   "min-self-delegation": "1"
 }
 EOF
@@ -250,7 +250,6 @@ echo "  --fees 10000$DENOM"
 
 ### === 常用指令 ===
 echo ""
-echo "啓動節點前記得設置'你的公網IP:26656'到 paxi/config/config.toml 的 'external_address' 參數，不然其他人無法連接到你的節點"
 echo "啓動節點:"
 echo "$BINARY_NAME start"
 echo ""
