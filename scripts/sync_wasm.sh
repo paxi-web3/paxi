@@ -19,7 +19,7 @@ if [ $? -ne 0 ]; then
 else
   mkdir -p "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
   sudo chmod 777 "$PAXI_DATA_PATH/wasm/wasm/state/wasm"	
-  unzip wasm_snapshot.zip -d "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
+  unzip -o wasm_snapshot.zip -d "$PAXI_DATA_PATH/wasm/wasm/state/wasm"
   rm wasm_snapshot.zip
   echo "✅ Wasm snapshot downloaded and extracted to $PAXI_DATA_PATH/wasm/wasm/state/wasm."
 fi
