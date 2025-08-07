@@ -11,7 +11,7 @@ import (
 
 // UpgradeName is the name of the upgrade.
 // It is used to identify the upgrade in the upgrade handler and
-const UpgradeName = "v1.0.3"
+const UpgradeName = "v1.0.4"
 
 func (app *PaxiApp) RegisterUpgradeHandlers() {
 	app.UpgradeKeeper.SetUpgradeHandler(
@@ -28,7 +28,7 @@ func (app *PaxiApp) RegisterUpgradeHandlers() {
 
 	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := storetypes.StoreUpgrades{
-			Added: []string{"swap"},
+			// Added: []string{"swap"},
 			// Deleted: []string{"oldmodule"},
 		}
 

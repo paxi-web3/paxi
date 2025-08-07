@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"math"
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,24 +17,51 @@ type Pool struct {
 
 var _ sdk.Msg = &MsgProvideLiquidity{}
 
+// ValidateBasic performs stateless checks on MsgProvideLiquidity fields.
+// It uses fmt.Errorf exclusively for error reporting.
 func (msg *MsgProvideLiquidity) ValidateBasic() error {
+	// Validate the creator address is a valid Bech32 address
 	if _, err := sdk.AccAddressFromBech32(msg.Creator); err != nil {
 		return fmt.Errorf("invalid creator address: %w", err)
 	}
 
+	// Parse and validate the Paxi coin string
 	paxiAmount, err := sdk.ParseCoinNormalized(msg.PaxiAmount)
 	if err != nil {
 		return fmt.Errorf("invalid paxi amount: %w", err)
 	}
+	// Ensure the denom matches the default Paxi denom
 	if paxiAmount.Denom != DefaultDenom {
-		return fmt.Errorf("invalid denom: expected %s", DefaultDenom)
+		return fmt.Errorf("invalid denom: expected %s, got %s", DefaultDenom, paxiAmount.Denom)
 	}
+	// Amount must be strictly positive
 	if !paxiAmount.Amount.IsPositive() {
-		return fmt.Errorf("paxi amount must be positive")
+		return fmt.Errorf("paxi amount must be positive, got %s", paxiAmount.Amount.String())
 	}
 
-	if amt, ok := sdkmath.NewIntFromString(msg.Prc20Amount); !ok || !amt.IsPositive() {
-		return fmt.Errorf("invalid prc20 amount: must be positive integer string")
+	// Parse and validate the PRC20 amount string
+	prc20Amt, ok := sdkmath.NewIntFromString(msg.Prc20Amount)
+	if !ok {
+		return fmt.Errorf("invalid prc20 amount: must be an integer string")
+	}
+	// Amount must be strictly positive
+	if !prc20Amt.IsPositive() {
+		return fmt.Errorf("prc20 amount must be positive, got %s", prc20Amt.String())
+	}
+
+	// Prevent panic when converting to uint64
+	if paxiAmount.Amount.GT(sdkmath.NewIntFromUint64(math.MaxUint64)) {
+		return fmt.Errorf("paxi amount too large: must fit in uint64")
+	}
+	// Prevent exceeding the maximum total supply
+	maxSupply := sdkmath.NewInt(1_000_000_000_000_000) // e.g., 1e15 units
+	if paxiAmount.Amount.GT(maxSupply) {
+		return fmt.Errorf("paxi amount exceeds maximum supply (%s)", maxSupply.String())
+	}
+
+	// Similarly, enforce upper bound check for prc20Amt
+	if prc20Amt.GT(sdkmath.NewIntFromUint64(math.MaxUint64)) {
+		return fmt.Errorf("prc20 amount too large: must fit in uint64")
 	}
 
 	return nil

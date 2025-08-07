@@ -1,7 +1,7 @@
 ## 🌌 Paxi Blockchain
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/paxi-web3/paxi)](https://goreportcard.com/report/github.com/paxi-web3/paxi)
-[![Version](https://img.shields.io/badge/version-v1.0.3-blue?style=flat-square)](https://github.com/paxi-web3/paxi/releases/tag/v1.0.3)
+[![Version](https://img.shields.io/badge/version-v1.0.4-blue?style=flat-square)](https://github.com/paxi-web3/paxi/releases/tag/v1.0.4)
 [![Cosmos SDK](https://img.shields.io/badge/Cosmos%20SDK-v0.53.0-blue?style=flat-square)](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.53.0)
 [![CometBFT](https://img.shields.io/badge/CometBFT-v0.38.0-blue?style=flat-square)](https://github.com/cometbft/cometbft/releases/tag/v0.38.17)
 [![CosmWasm](https://img.shields.io/badge/CosmWasm-v0.55.0-blue?style=flat-square)](https://github.com/CosmWasm/wasmd/releases/tag/v0.55.0)

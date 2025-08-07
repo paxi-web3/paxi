@@ -38,6 +38,11 @@ func (gs GenesisState) Validate() error {
 	return gs.Params.Validate()
 }
 
+const (
+	// The maximum allowed MinLiquidity can be adjusted according to business needs to prevent overflow or logical anomalies.
+	MaxMinLiquidity = ^uint64(0) / 2
+)
+
 func DefaultParams() Params {
 	return Params{
 		CodeID:       1,         // Default code ID for prc-20 contracts
@@ -46,16 +51,29 @@ func DefaultParams() Params {
 	}
 }
 
+// Validate checks all Params fields for acceptable values.
+// Returns an error if any parameter is out-of-bounds, using fmt.Errorf.
 func (p Params) Validate() error {
-	if p.SwapFeeBPS <= 0 || p.SwapFeeBPS > 10000 {
-		return fmt.Errorf("commission rate must be between 0 and 10000")
+	// Ensure swap fee is within [1, 10000] BPS
+	if p.SwapFeeBPS < 1 || p.SwapFeeBPS > 10_000 {
+		return fmt.Errorf("swap fee BPS must be between 1 and 10000 (got %d)", p.SwapFeeBPS)
 	}
+
+	// Ensure CodeID is non-zero
 	if p.CodeID == 0 {
-		return fmt.Errorf("code ID must be greater than 0")
+		return fmt.Errorf("wasm CodeID must be greater than 0")
 	}
-	if p.MinLiquidity <= 0 {
+
+	// Ensure MinLiquidity is positive
+	if p.MinLiquidity == 0 {
 		return fmt.Errorf("min liquidity must be greater than 0")
 	}
+
+	// Prevent unreasonably large MinLiquidity values
+	if p.MinLiquidity > MaxMinLiquidity {
+		return fmt.Errorf("min liquidity too large (got %d, max %d)", p.MinLiquidity, MaxMinLiquidity)
+	}
+
 	return nil
 }
 
