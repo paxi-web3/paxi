@@ -27,8 +27,9 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 	}
 
 	parsedParams := types.Params{
-		CodeID:     msg.Params.CodeId,
-		SwapFeeBPS: msg.Params.SwapFeeBps,
+		CodeID:       msg.Params.CodeId,
+		SwapFeeBPS:   msg.Params.SwapFeeBps,
+		MinLiquidity: msg.Params.MinLiquidity,
 	}
 
 	if err := parsedParams.Validate(); err != nil {

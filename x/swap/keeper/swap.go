@@ -39,7 +39,7 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 	}
 
 	feeBps := sdkmath.NewInt(int64(params.SwapFeeBPS))
-	if feeBps.GTE(sdkmath.NewInt(1000)) {
+	if feeBps.GTE(sdkmath.NewInt(types.BPSUnit)) {
 		return fmt.Errorf("invalid swap fee BPS: %d", feeBps.Int64())
 	}
 
@@ -62,10 +62,10 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 			return fmt.Errorf("insufficient PRC20 liquidity")
 		}
 
-		// enforce module‐level max‐swap ratio
+		// Enforce module‐level max‐swap ratio
 		maxOut := outputReserve.
 			MulRaw(int64(types.MaxSwapRatioBPS)).
-			QuoRaw(10000)
+			QuoRaw(types.BPSUnit)
 		if recvAmount.GT(maxOut) {
 			return fmt.Errorf(
 				"requested output %s exceeds module max %d BPS of reserve (%s)",
@@ -94,6 +94,9 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 		outputReserve = pool.ReservePaxi
 
 		recvAmount = getAmountOut(offerAmt, inputReserve, outputReserve, feeBps)
+		if recvAmount.IsZero() {
+			return fmt.Errorf("swap too small: results in zero output")
+		}
 		if recvAmount.LT(minReceive) {
 			return fmt.Errorf("slippage too high")
 		}
@@ -101,10 +104,10 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 			return fmt.Errorf("insufficient PAXI liquidity")
 		}
 
-		// enforce module‐level max‐swap ratio
+		// Enforce module‐level max‐swap ratio
 		maxOut := outputReserve.
 			MulRaw(int64(types.MaxSwapRatioBPS)).
-			QuoRaw(10000)
+			QuoRaw(types.BPSUnit)
 		if recvAmount.GT(maxOut) {
 			return fmt.Errorf(
 				"requested output %s exceeds module max %d BPS of reserve (%s)",
@@ -137,7 +140,7 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 
 // getAmountOut calculates the output token amount after applying swap fee and AMM formula
 func getAmountOut(amountIn, reserveIn, reserveOut, feeBps sdkmath.Int) sdkmath.Int {
-	feeDenom := sdkmath.NewInt(1000)
+	feeDenom := sdkmath.NewInt(types.BPSUnit)
 	inputWithFee := amountIn.Mul(feeDenom.Sub(feeBps)).Quo(feeDenom)
 	numerator := inputWithFee.Mul(reserveOut)
 	denominator := reserveIn.Add(inputWithFee)

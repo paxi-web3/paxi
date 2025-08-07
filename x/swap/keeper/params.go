@@ -32,4 +32,5 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	}
 
 	return params
+
 }

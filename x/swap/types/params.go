@@ -46,7 +46,7 @@ const (
 func DefaultParams() Params {
 	return Params{
 		CodeID:       1,         // Default code ID for prc-20 contracts
-		SwapFeeBPS:   4,         // 0.4% note: 1000 BPS = 100%
+		SwapFeeBPS:   40,        // 0.4% note: 10000 BPS = 100%
 		MinLiquidity: 1_000_000, // 1 Paxi
 	}
 }
@@ -54,12 +54,13 @@ func DefaultParams() Params {
 // MaxSwapRatioBPS is the maximum fraction of the pool that any swap can consume,
 // in basis points (0–10000).
 const MaxSwapRatioBPS = 5000 // 50%
+const BPSUnit = 10000        // 100% in basis points
 
 // Validate checks all Params fields for acceptable values.
 // Returns an error if any parameter is out-of-bounds, using fmt.Errorf.
 func (p Params) Validate() error {
 	// Ensure swap fee is within [1, 10000] BPS
-	if p.SwapFeeBPS < 1 || p.SwapFeeBPS > 10_000 {
+	if p.SwapFeeBPS < 1 || p.SwapFeeBPS > 10000 {
 		return fmt.Errorf("swap fee BPS must be between 1 and 10000 (got %d)", p.SwapFeeBPS)
 	}
 
