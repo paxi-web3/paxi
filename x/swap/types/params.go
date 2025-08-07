@@ -51,6 +51,10 @@ func DefaultParams() Params {
 	}
 }
 
+// MaxSwapRatioBPS is the maximum fraction of the pool that any swap can consume,
+// in basis points (0–10000).
+const MaxSwapRatioBPS = 5000 // 50%
+
 // Validate checks all Params fields for acceptable values.
 // Returns an error if any parameter is out-of-bounds, using fmt.Errorf.
 func (p Params) Validate() error {

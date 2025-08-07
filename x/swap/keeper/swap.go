@@ -62,6 +62,17 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 			return fmt.Errorf("insufficient PRC20 liquidity")
 		}
 
+		// enforce module‐level max‐swap ratio
+		maxOut := outputReserve.
+			MulRaw(int64(types.MaxSwapRatioBPS)).
+			QuoRaw(10000)
+		if recvAmount.GT(maxOut) {
+			return fmt.Errorf(
+				"requested output %s exceeds module max %d BPS of reserve (%s)",
+				recvAmount.String(), types.MaxSwapRatioBPS, maxOut.String(),
+			)
+		}
+
 		// Transfer PAXI in, PRC20 out
 		err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName,
 			sdk.NewCoins(sdk.NewCoin(types.DefaultDenom, offerAmt)))
@@ -88,6 +99,17 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 		}
 		if pool.ReservePaxi.LT(recvAmount) {
 			return fmt.Errorf("insufficient PAXI liquidity")
+		}
+
+		// enforce module‐level max‐swap ratio
+		maxOut := outputReserve.
+			MulRaw(int64(types.MaxSwapRatioBPS)).
+			QuoRaw(10000)
+		if recvAmount.GT(maxOut) {
+			return fmt.Errorf(
+				"requested output %s exceeds module max %d BPS of reserve (%s)",
+				recvAmount.String(), types.MaxSwapRatioBPS, maxOut.String(),
+			)
 		}
 
 		// Transfer PRC20 in, PAXI out
