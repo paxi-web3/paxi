@@ -1,6 +1,10 @@
 package cli
 
 import (
+	"fmt"
+	"math"
+
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -22,9 +26,20 @@ func CmdBurnToken() *cobra.Command {
 
 			sender := clientCtx.GetFromAddress()
 
+			// Parse the coin string (e.g. "1000000upaxi")
 			amount, err := sdk.ParseCoinNormalized(args[0])
 			if err != nil {
 				return err
+			}
+
+			// Prevent panic when converting to uint64
+			if amount.Amount.GT(sdkmath.NewIntFromUint64(math.MaxUint64)) {
+				return fmt.Errorf("amount too large: must fit in uint64")
+			}
+			// Prevent exceeding the maximum total token supply
+			maxSupply := sdkmath.NewInt(1_000_000_000_000_000) // example cap: 1e15 units
+			if amount.Amount.GT(maxSupply) {
+				return fmt.Errorf("amount exceeds maximum supply (%s)", maxSupply.String())
 			}
 
 			msg := &types.MsgBurnToken{

@@ -38,9 +38,18 @@ func DefaultParams() Params {
 	}
 }
 
+// MaxExtraGasPerNewAccount defines an upper bound to prevent unreasonable values.
+const MaxExtraGasPerNewAccount = 1_000_000
+
 func (p Params) Validate() error {
 	if p.ExtraGasPerNewAccount <= 0 {
 		return fmt.Errorf("all params from paxi can't be less or equal than 0")
+	}
+	if p.ExtraGasPerNewAccount > MaxExtraGasPerNewAccount {
+		return fmt.Errorf(
+			"extra gas per new account too large: maximum allowed is %d",
+			MaxExtraGasPerNewAccount,
+		)
 	}
 	return nil
 }

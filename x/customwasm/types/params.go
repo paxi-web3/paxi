@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 const (
 	ModuleName = "customwasm"
@@ -41,8 +44,25 @@ func DefaultParams() Params {
 }
 
 func (p Params) Validate() error {
+	// All values must be > 0
 	if p.StoreCodeBaseGas <= 0 || p.StoreCodeMultiplier <= 0 || p.InstBaseGas <= 0 || p.InstMultiplier <= 0 {
 		return fmt.Errorf("all params from customwasm can't be less or equal than 0")
+	}
+
+	// Prevent overflow when computing store code gas: base * multiplier
+	if p.StoreCodeBaseGas > math.MaxUint64/p.StoreCodeMultiplier {
+		return fmt.Errorf(
+			"store code gas calculation would overflow: base %d * multiplier %d exceeds uint64",
+			p.StoreCodeBaseGas, p.StoreCodeMultiplier,
+		)
+	}
+
+	// Prevent overflow when computing instantiate gas: base * multiplier
+	if p.InstBaseGas > math.MaxUint64/p.InstMultiplier {
+		return fmt.Errorf(
+			"instantiate gas calculation would overflow: base %d * multiplier %d exceeds uint64",
+			p.InstBaseGas, p.InstMultiplier,
+		)
 	}
 	return nil
 }

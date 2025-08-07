@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"math"
 
 	sdkmath "cosmossdk.io/math"
 )
@@ -51,15 +52,29 @@ func DefaultParams() Params {
 }
 
 func (p Params) Validate() error {
+	// burn threshold must not be negative
 	if p.BurnThreshold.IsNegative() {
-		return fmt.Errorf("burn threshold cannot be negative")
+		return fmt.Errorf("burn threshold cannot be negative or ze")
 	}
-	if p.BurnRatio.IsNegative() || p.BurnRatio.GT(sdkmath.LegacyOneDec()) {
-		return fmt.Errorf("burn ratio must be between 0 and 1")
+	// prevent panic when converting to uint64
+	if p.BurnThreshold.GT(sdkmath.NewIntFromUint64(math.MaxUint64)) {
+		return fmt.Errorf("burn threshold too large: must fit in uint64")
 	}
+
+	// burn ratio must be > 0 and ≤ 1
+	zero := sdkmath.LegacyZeroDec()
+	one := sdkmath.LegacyOneDec()
+
+	if !(p.BurnRatio.GT(zero) && p.BurnRatio.LTE(one)) {
+		return fmt.Errorf("burn ratio must be > 0 and ≤ 1")
+	}
+
+	// blocks per year must be positive
 	if p.BlocksPerYear <= 0 {
 		return fmt.Errorf("blocks per year must be positive")
 	}
+
+	// all inflation rates must be non-negative
 	if p.FirstYearInflation.IsNegative() || p.SecondYearInflation.IsNegative() || p.OtherYearInflation.IsNegative() {
 		return fmt.Errorf("inflation values must be non-negative")
 	}
