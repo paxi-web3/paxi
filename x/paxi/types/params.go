@@ -34,7 +34,7 @@ func (gs GenesisState) Validate() error {
 
 func DefaultParams() Params {
 	return Params{
-		ExtraGasPerNewAccount: uint64(500_000),
+		ExtraGasPerNewAccount: uint64(400_000),
 	}
 }
 
