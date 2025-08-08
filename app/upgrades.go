@@ -11,31 +11,52 @@ import (
 
 // UpgradeName is the name of the upgrade.
 // It is used to identify the upgrade in the upgrade handler and
-const UpgradeName = "v1.0.4"
+const (
+	UpgradeV103 = "v1.0.3"
+	UpgradeV104 = "v1.0.4"
+)
 
 func (app *PaxiApp) RegisterUpgradeHandlers() {
-	app.UpgradeKeeper.SetUpgradeHandler(
-		UpgradeName,
-		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			return app.ModuleManager.RunMigrations(ctx, app.Configurator(), fromVM)
-		},
-	)
+	// Common migration handler for both upgrades
+	// This will execute all registered module migrations
+	migrate := func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		return app.ModuleManager.RunMigrations(ctx, app.Configurator(), fromVM)
+	}
 
+	// Register both upgrade handlers so nodes can replay past upgrades
+	// NOTE: The upgrade name must match exactly the one on-chain
+	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV103, migrate)
+	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV104, migrate)
+
+	// Read upgrade plan information from disk (upgrade-info.json)
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
 		panic(err)
 	}
 
-	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := storetypes.StoreUpgrades{
-			// Added: []string{"swap"},
-			// Deleted: []string{"oldmodule"},
+	// Only apply StoreLoader when we are at the upgrade height and not skipping it
+	if !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		switch upgradeInfo.Name {
+
+		case UpgradeV103:
+			// Store upgrades for v1.0.3
+			// Fill in Added/Deleted stores if this upgrade changed the store layout
+			v103Stores := &storetypes.StoreUpgrades{
+				Added: []string{"swap"},
+				// Deleted: []string{"oldmodule"},
+			}
+			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, v103Stores))
+			app.Logger().Info("Registering upgrade handler for", "upgrade", UpgradeV103)
+
+		case UpgradeV104:
+			// Store upgrades for v1.0.4
+			// If there are no store changes, this can be nil
+			var v104Stores *storetypes.StoreUpgrades = &storetypes.StoreUpgrades{
+				// Added: []string{"newmodule"},
+				// Deleted: []string{"oldmodule"},
+			}
+			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, v104Stores))
+			app.Logger().Info("Registering upgrade handler for", "upgrade", UpgradeV104)
 		}
-
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-
-		// Display upgrade information
-		app.Logger().Info("Registering upgrade handler for", "upgrade", UpgradeName)
 	}
 }
