@@ -204,7 +204,7 @@ IP_ADDRESS=$(echo "$IP_DATA" | jq -r .query)
 
 ### === 設定種子與peers ===
 $SED "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFIG
-$SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26656\"|" $CONFIG
+# $SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26656\"|" $CONFIG
 
 ### === 關閉不必要端口，強化安全性 ===
 $SED 's|^prometheus *=.*|prometheus = false|' $CONFIG

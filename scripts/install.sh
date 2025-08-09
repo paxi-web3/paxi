@@ -207,7 +207,7 @@ IP_ADDRESS=$(echo "$IP_DATA" | jq -r .query)
 
 ### === Configure seeds and peers ===
 $SED "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $CONFIG
-$SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26656\"|" $CONFIG
+# $SED "s|^[[:space:]]*external_address = \".*\"|external_address = \"${IP_ADDRESS}:26656\"|" $CONFIG
 
 ### === Disable unnecessary ports for security ===
 $SED 's|^prometheus *=.*|prometheus = false|' $CONFIG
