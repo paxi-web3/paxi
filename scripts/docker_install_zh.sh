@@ -210,6 +210,7 @@ if [ "$LATEST_HEIGHT" -gt "$BLOCK_OFFSET" ]; then
     s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g; \
     s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g; \
     s|^trust_period *=.*|trust_period = \"168h\"|g; \
+    s|^discovery_time *=.*|discovery_time = \"60s\"|g; \
   }" "$CONFIG"
 fi
 
