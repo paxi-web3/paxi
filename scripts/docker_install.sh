@@ -173,7 +173,7 @@ fi
 curl -s $GENESIS_URL | jq -r .result.genesis > ./paxi/config/genesis.json
 
 ### === Set state sync ===
-BLOCK_OFFSET=1000
+BLOCK_OFFSET=100
 LATEST_HEIGHT=$(curl -s "$RPC_URL/block" | jq -r .result.block.header.height)
 TRUST_HEIGHT=$(( ( (LATEST_HEIGHT - BLOCK_OFFSET) / BLOCK_OFFSET ) * BLOCK_OFFSET ))
 TRUST_HASH=$(curl -s "$RPC_URL/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
@@ -214,7 +214,7 @@ if [ "$LATEST_HEIGHT" -gt "$BLOCK_OFFSET" ]; then
     s|^trust_height *=.*|trust_height = $TRUST_HEIGHT|g; \
     s|^trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|g; \
     s|^trust_period *=.*|trust_period = \"168h\"|g; \
-    s|^discovery_time *=.*|discovery_time = \"60s\"|g; \
+    s|^discovery_time *=.*|discovery_time = \"30s\"|g; \
   }" "$CONFIG"
 fi 
 
