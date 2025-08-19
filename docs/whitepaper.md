@@ -95,8 +95,8 @@ For example, in Year 1:
 | **Paxi Foundation**           | 10%        | 4% released at launch, remaining 6% released over 6 phases (every 4 months) | Funds core maintenance, legal compliance, branding, and global strategic initiatives. |
 | **Paxi DAO**                  | 5%         | Fully unlocked at launch                                | Managed by community through DAO. Funds ecosystem development, tooling, and decentralized governance. |
 | **Private & Strategic Investors** | 15%    | 3% released at launch, remaining 12% released over 6 phases (every 4 months) | Supports partnerships in infrastructure, tech, marketing, and exchange listings. Encourages strategic collaboration. |
-| **Public Sale**               | 45%        | Fully released or unlocked in strategic phases          | Provides liquidity, enables wide user participation, and funds exchange listings, marketing, and ecosystem support. |
-| **User Incentives & Promotions** | 10%     | Dynamically released via tasks, referrals, and campaigns | Fuels user acquisition, community growth, and viral engagement through incentivized activities. |
+| **Public Sale**               | 35%        | Fully released or unlocked in strategic phases          | Provides liquidity, enables wide user participation, and funds exchange listings, marketing, and ecosystem support. |
+| **User Incentives & Promotions** | 20%     | Dynamically released via tasks, referrals, and campaigns | Fuels user acquisition, community growth, and viral engagement through incentivized activities. |
 
 ---
 
