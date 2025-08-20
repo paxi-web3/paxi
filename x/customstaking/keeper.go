@@ -268,40 +268,67 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			totalPower = totalPower.AddRaw(newPower)
 		}
 	} else {
-		// Kick who is jailed or unbonded
+		// Handle bonded & non-jailed validators, kick out unbonded or jailed ones
 		addresses := make([]string, 0, len(last))
 		for k := range last {
 			addresses = append(addresses, k)
 		}
-		for idx := range addresses {
-			addr := addresses[idx]
-			valAddr := sdk.ValAddress([]byte(addr))
+		// Important: sort addresses to avoid nondeterministic map iteration order
+		sort.Strings(addresses)
+
+		type pending struct {
+			addr sdk.ValAddress
+			pow  int64
+		}
+		pendingUpdates := make([]pending, 0, len(addresses))
+		toDelete := make([]string, 0, len(addresses))
+
+		for _, addrStr := range addresses {
+			valAddr := sdk.ValAddress([]byte(addrStr))
 			val, err := k.GetValidator(ctx, valAddr)
 			if err != nil {
 				return nil, fmt.Errorf("validator record not found for address: %X", valAddr)
 			}
 
-			// Add to updates
 			if val.IsBonded() && !val.Jailed {
-				oldPower, found := last[addr]
+				oldPower, found := last[addrStr]
 				newPower := val.ConsensusPower(powerReduction)
 
-				// update the validator set if power has changed
+				// Collect validator if its power has changed or was not tracked before
 				if !found || oldPower != newPower {
-					update := val.ABCIValidatorUpdate(powerReduction)
-					updates = append(updates, update)
-
-					if err = k.SetLastValidatorPower(ctx, valAddr, newPower); err != nil {
-						return nil, err
-					}
+					pendingUpdates = append(pendingUpdates, pending{addr: valAddr, pow: newPower})
 				}
 
-				// Delete from the old list
-				delete(last, addr)
+				// Mark this address for deletion from `last` after processing
+				toDelete = append(toDelete, addrStr)
 
-				// Add total power
+				// Add total voting power in deterministic order
 				totalPower = totalPower.AddRaw(newPower)
 			}
+			// If validator is jailed/unbonded → keep in `last`, will be removed elsewhere
+		}
+
+		// Sort pending updates by address bytes to ensure deterministic order
+		sort.Slice(pendingUpdates, func(i, j int) bool {
+			return bytes.Compare(pendingUpdates[i].addr, pendingUpdates[j].addr) < 0
+		})
+
+		// Apply updates in fixed order: first update LastValidatorPower, then ABCI update
+		for _, u := range pendingUpdates {
+			if err := k.SetLastValidatorPower(ctx, u.addr, u.pow); err != nil {
+				return nil, err
+			}
+			v, err := k.GetValidator(ctx, u.addr)
+			if err != nil {
+				return nil, err
+			}
+			updates = append(updates, v.ABCIValidatorUpdate(powerReduction))
+		}
+
+		// ★ Delete processed addresses in sorted order for determinism
+		sort.Strings(toDelete)
+		for _, addrStr := range toDelete {
+			delete(last, addrStr)
 		}
 	}
 
@@ -408,15 +435,24 @@ func (k CustomStakingKeeper) getValidatorsAboveThreshold(ctx sdk.Context, minTok
 func pickWeightedRandomSubsetBinarySearch(r *rand.Rand, candidates []types.Validator, count int) []types.Validator {
 	// Build prefix sum
 	n := len(candidates)
-	prefixSums := make([]int64, n)
-	var total int64 = 0
+	prefixSums := make([]uint64, n)
+	var total uint64 = 0
 	for i, val := range candidates {
-		w := int64(math.Sqrt(float64(val.Tokens.Int64())))
-		if w < 0 {
-			w = 0 // safeguard
-		}
+		w := utils.IntSqrt((val.Tokens.Uint64()))
 		total += w
 		prefixSums[i] = total
+	}
+
+	if total == 0 {
+		panic("cannot pick from empty or zero-weight candidate set")
+	}
+
+	if total > math.MaxInt64 {
+		panic("total weight exceeds int64 capacity")
+	}
+
+	if count > len(candidates) {
+		panic(fmt.Sprintf("cannot select %d validators from only %d candidates", count, len(candidates)))
 	}
 
 	// Result
@@ -424,9 +460,9 @@ func pickWeightedRandomSubsetBinarySearch(r *rand.Rand, candidates []types.Valid
 	result := make([]types.Validator, 0, count)
 
 	for len(result) < count {
-		randWeight := r.Int63n(total)
+		randWeight := r.Int63n(int64(total))
 		// Binary search
-		i := sort.Search(n, func(i int) bool { return prefixSums[i] > randWeight })
+		i := sort.Search(n, func(i int) bool { return prefixSums[i] > uint64(randWeight) })
 
 		// Skip if already selected
 		if selected[i] {

@@ -595,23 +595,23 @@ func NewPaxiApp(
 		slashingtypes.ModuleName,
 		evidencetypes.ModuleName,
 		stakingtypes.ModuleName,
-		genutiltypes.ModuleName,
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
 		ibcexported.ModuleName,
 		swaptypes.ModuleName,
+		genutiltypes.ModuleName,
 	)
 	app.ModuleManager.SetOrderEndBlockers(
 		govtypes.ModuleName,
-		stakingtypes.ModuleName,
-		genutiltypes.ModuleName,
 		circuittypes.ModuleName,
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
 		ibcexported.ModuleName,
 		swaptypes.ModuleName,
+		stakingtypes.ModuleName,
+		genutiltypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are

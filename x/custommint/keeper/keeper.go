@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math/big"
 
@@ -134,9 +133,7 @@ func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
 	}
 
 	// There is 50% chance to burn all balance from the fee pool
-	blockHash := ctx.BlockHeader().AppHash
-	seed := binary.BigEndian.Uint64(blockHash[:8]) ^ uint64(ctx.BlockHeight())
-	if seed%2 == 0 {
+	if ctx.BlockHeight()%2 == 0 {
 		fees.Amount = fees.Amount.ToLegacyDec().Mul(params.BurnRatio).RoundInt()
 		err := k.bankKeeper.BurnCoins(ctx, authtypes.FeeCollectorName, sdk.NewCoins(fees))
 		if err != nil {
