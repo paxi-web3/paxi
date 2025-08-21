@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # ====== Config ======
-SNAP_RPC="${SNAP_RPC:-https://mainnet-rpc.paxinet.io/}"
-SNAP_RPC2="${SNAP_RPC2:-https://mainnet-rpc.paxinet.io/}"
+SNAP_RPC="${SNAP_RPC:-http://mainnet-rpc.paxinet.io/}"
+SNAP_RPC2="${SNAP_RPC2:-http://mainnet-rpc.paxinet.io/}"
 CONFIG_FILE="${CONFIG_FILE:-$HOME/paxid/paxi/config/config.toml}"
 
 # ====== Preflight checks ======
