@@ -214,7 +214,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			if len(appHash) < 8 {
 				panic("AppHash too short for seed")
 			}
-			seed := binary.BigEndian.Uint64(appHash) ^ uint64(ctx.BlockHeader().Time.UnixNano())
+			seed := binary.BigEndian.Uint64(appHash)
 			r := rand.New(rand.NewSource(int64(seed)))
 			newValidators = append(newValidators, pickWeightedRandomSubsetBinarySearch(r, remainingCandidates, int(maxValidators)-len(newValidators))...)
 		}
