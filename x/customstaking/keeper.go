@@ -325,7 +325,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			updates = append(updates, v.ABCIValidatorUpdate(powerReduction))
 		}
 
-		// ★ Delete processed addresses in sorted order for determinism
+		// Delete processed addresses in sorted order for determinism
 		sort.Strings(toDelete)
 		for _, addrStr := range toDelete {
 			delete(last, addrStr)
