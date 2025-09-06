@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+
+# Node.js
+node_modules/
+dist/
+
+# Go
+bin/
+*.out
+
+# Editor / IDE
+.idea/
+.vscode/
