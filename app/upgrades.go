@@ -15,6 +15,7 @@ const (
 	UpgradeV103 = "v1.0.3"
 	UpgradeV104 = "v1.0.4"
 	UpgradeV105 = "v1.0.5"
+	UpgradeV106 = "v1.0.6"
 )
 
 func (app *PaxiApp) RegisterUpgradeHandlers() {
@@ -29,6 +30,7 @@ func (app *PaxiApp) RegisterUpgradeHandlers() {
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV103, migrate)
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV104, migrate)
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV105, migrate)
+	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV106, migrate)
 
 	// Read upgrade plan information from disk (upgrade-info.json)
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
@@ -69,6 +71,16 @@ func (app *PaxiApp) RegisterUpgradeHandlers() {
 			}
 			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, v105Stores))
 			app.Logger().Info("Registering upgrade handler for", "upgrade", UpgradeV105)
+
+		case UpgradeV106:
+			// Store upgrades for v1.0.6
+			// If there are no store changes, this can be nil
+			var v106Stores *storetypes.StoreUpgrades = &storetypes.StoreUpgrades{
+				// Added: []string{"newmodule"},
+				// Deleted: []string{"oldmodule"},
+			}
+			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, v106Stores))
+			app.Logger().Info("Registering upgrade handler for", "upgrade", UpgradeV106)
 		}
 	}
 }

@@ -38,11 +38,14 @@ func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidi
 
 	// Retrieve user's position
 	position, found := k.GetPosition(ctx, msg.Prc20, creator)
+	if !found {
+		return fmt.Errorf("no LP position for this pool")
+	}
 	iCurrentLpAmount, ok := sdkmath.NewIntFromString(position.LpAmount)
 	if !ok {
 		return fmt.Errorf("invalid LP amount in position")
 	}
-	if !found || iCurrentLpAmount.LT(lpAmount) {
+	if iCurrentLpAmount.LT(lpAmount) {
 		return fmt.Errorf("insufficient LP token balance")
 	}
 
@@ -53,6 +56,11 @@ func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidi
 
 	if paxiOut.IsZero() && prc20Out.IsZero() {
 		return fmt.Errorf("withdrawal too small, results in zero output")
+	}
+
+	// Safety checks
+	if pool.ReservePaxi.LT(paxiOut) || pool.ReservePRC20.LT(prc20Out) || pool.TotalShares.LT(lpAmount) {
+		return fmt.Errorf("pool reserve insufficient for withdrawal")
 	}
 
 	// Send PAXI and PRC20 back to user
@@ -91,34 +99,41 @@ func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidi
 }
 
 func (k Keeper) transferPRC20FromModule(ctx sdk.Context, contract string, to sdk.AccAddress, amount sdkmath.Int) error {
-	msg := map[string]interface{}{
-		"transfer": map[string]interface{}{
-			"recipient": to.String(),
-			"amount":    amount.String(),
-		},
+	if !amount.IsPositive() {
+		return fmt.Errorf("transfer amount must be positive")
 	}
-	bz, err := json.Marshal(msg)
+
+	type transfer struct {
+		Recipient string `json:"recipient"`
+		Amount    string `json:"amount"`
+	}
+	type msgWrapper struct {
+		Transfer transfer `json:"transfer"`
+	}
+
+	contractAddr, err := sdk.AccAddressFromBech32(contract)
 	if err != nil {
+		return fmt.Errorf("invalid contract addr: %w", err)
+	}
+	moduleAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
+
+	bz, err := json.Marshal(msgWrapper{
+		Transfer: transfer{Recipient: to.String(), Amount: amount.String()},
+	})
+	if err != nil {
+		return fmt.Errorf("marshal transfer: %w", err)
+	}
+
+	const safeGas uint64 = 2_000_000
+	if ctx.IsCheckTx() || ctx.IsReCheckTx() {
+		_, err = k.wasmKeeper.Execute(ctx, contractAddr, moduleAddr, bz, nil)
 		return err
 	}
+	parent := ctx.GasMeter()
+	child := storetypes.NewGasMeter(safeGas)
+	execCtx := ctx.WithGasMeter(child)
 
-	// Set safty boundary to prevent infinite loop
-	safeGas := uint64(500_000)
-
-	// Detect if this is a real tx or simulation
-	isSimulate := ctx.IsCheckTx() || ctx.IsReCheckTx()
-
-	// Set safe gas only when it's not simulating
-	execCtx := ctx
-	if !isSimulate {
-		execCtx = ctx.WithGasMeter(storetypes.NewGasMeter(safeGas)) // only limit in DeliverTx
-	}
-
-	_, err = k.wasmKeeper.Execute(
-		execCtx,
-		sdk.MustAccAddressFromBech32(contract),
-		k.accountKeeper.GetModuleAddress(types.ModuleName),
-		bz,
-		nil)
+	_, err = k.wasmKeeper.Execute(execCtx, contractAddr, moduleAddr, bz, nil)
+	parent.ConsumeGas(child.GasConsumed(), "prc20 transfer")
 	return err
 }

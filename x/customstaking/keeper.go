@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"math/rand"
 	"sort"
 
 	addresscodec "cosmossdk.io/core/address"
@@ -215,8 +214,8 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 				panic("AppHash too short for seed")
 			}
 			seed := binary.BigEndian.Uint64(appHash)
-			r := rand.New(rand.NewSource(int64(seed)))
-			newValidators = append(newValidators, pickWeightedRandomSubsetBinarySearch(r, remainingCandidates, int(maxValidators)-len(newValidators))...)
+			r := utils.Rng64(seed)
+			newValidators = append(newValidators, pickWeightedRandomSubsetBinarySearch(&r, remainingCandidates, int(maxValidators)-len(newValidators))...)
 		}
 
 		// Add to updates
@@ -432,13 +431,13 @@ func (k CustomStakingKeeper) getValidatorsAboveThreshold(ctx sdk.Context, minTok
 	return validators, nil
 }
 
-func pickWeightedRandomSubsetBinarySearch(r *rand.Rand, candidates []types.Validator, count int) []types.Validator {
+func pickWeightedRandomSubsetBinarySearch(r *utils.Rng64, candidates []types.Validator, count int) []types.Validator {
 	// Build prefix sum
 	n := len(candidates)
 	prefixSums := make([]uint64, n)
 	var total uint64 = 0
 	for i, val := range candidates {
-		w := utils.IntSqrt((val.Tokens.Uint64()))
+		w := utils.UintSqrt((val.Tokens.Uint64()))
 		total += w
 		prefixSums[i] = total
 	}

@@ -24,12 +24,12 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 	}
 
 	offerAmt, ok := sdkmath.NewIntFromString(msg.OfferAmount)
-	if !ok || offerAmt.IsZero() {
+	if !ok || !offerAmt.IsPositive() {
 		return fmt.Errorf("invalid offer amount")
 	}
 
 	minReceive, ok := sdkmath.NewIntFromString(msg.MinReceive)
-	if !ok {
+	if !ok || minReceive.IsNegative() {
 		return fmt.Errorf("invalid min_receive")
 	}
 

@@ -7,6 +7,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/paxi-web3/paxi/utils"
 	"github.com/paxi-web3/paxi/x/swap/types"
 )
 
@@ -56,23 +57,28 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 		return fmt.Errorf("invalid creator address: %w", err)
 	}
 
-	// Transfer tokens to module
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName, sdk.NewCoins(sdk.NewCoin(types.DefaultDenom, paxiAmt)))
-	if err != nil {
-		return err
-	}
-	err = k.transferPRC20(ctx, msg.Creator, msg.Prc20, prc20Amt)
-	if err != nil {
-		return err
-	}
-
 	// Load or init pool
 	pool, found := k.GetPool(ctx, msg.Prc20)
 
 	var lpToMint sdkmath.Int
 	if !found {
+		// Transfer tokens to module
+		err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName, sdk.NewCoins(sdk.NewCoin(types.DefaultDenom, paxiAmt)))
+		if err != nil {
+			return err
+		}
+		err = k.transferPRC20(ctx, msg.Creator, msg.Prc20, prc20Amt)
+		if err != nil {
+			return err
+		}
+
 		// Initial liquidity provider, direct minting LP = paxiAmt
-		lpToMint = paxiAmt
+		lpToMint = utils.IntSqrt(paxiAmt.Mul(prc20Amt))
+		if lpToMint.IsZero() {
+			return fmt.Errorf("provided liquidity too small to mint LP token")
+		}
+
+		// Create new pool
 		pool = types.Pool{
 			Prc20:        msg.Prc20,
 			ReservePaxi:  paxiAmt,
@@ -84,17 +90,42 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 			return fmt.Errorf("corrupted pool state, cannot join")
 		}
 
+		// Calculate actual needed amounts
+		requiredPaxi := prc20Amt.Mul(pool.ReservePaxi).Quo(pool.ReservePRC20)
+		requiredPrc20 := paxiAmt.Mul(pool.ReservePRC20).Quo(pool.ReservePaxi)
+		usedPaxi := requiredPaxi
+		usedPrc20 := prc20Amt
+
+		if requiredPaxi.GT(paxiAmt) {
+			usedPrc20 = requiredPrc20
+			usedPaxi = paxiAmt
+		}
+
+		if usedPaxi.IsZero() || usedPrc20.IsZero() {
+			return fmt.Errorf("provided liquidity too small to mint LP token")
+		}
+
 		// Subsequent liquidity providers will mint LP tokens in proportion
-		share1 := paxiAmt.Mul(pool.TotalShares).Quo(pool.ReservePaxi)
-		share2 := prc20Amt.Mul(pool.TotalShares).Quo(pool.ReservePRC20)
+		share1 := usedPaxi.Mul(pool.TotalShares).Quo(pool.ReservePaxi)
+		share2 := usedPrc20.Mul(pool.TotalShares).Quo(pool.ReservePRC20)
 		lpToMint = sdkmath.MinInt(share1, share2)
+
+		// Transfer tokens to module
+		err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName, sdk.NewCoins(sdk.NewCoin(types.DefaultDenom, usedPaxi)))
+		if err != nil {
+			return err
+		}
+		err = k.transferPRC20(ctx, msg.Creator, msg.Prc20, usedPrc20)
+		if err != nil {
+			return err
+		}
 
 		if lpToMint.IsZero() {
 			return fmt.Errorf("provided liquidity too small to mint LP token")
 		}
 
-		pool.ReservePaxi = pool.ReservePaxi.Add(paxiAmt)
-		pool.ReservePRC20 = pool.ReservePRC20.Add(prc20Amt)
+		pool.ReservePaxi = pool.ReservePaxi.Add(usedPaxi)
+		pool.ReservePRC20 = pool.ReservePRC20.Add(usedPrc20)
 		pool.TotalShares = pool.TotalShares.Add(lpToMint)
 	}
 
@@ -110,7 +141,10 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 			LpAmount: lpToMint.String(),
 		}
 	} else {
-		lpAmount, _ := sdkmath.NewIntFromString(pos.LpAmount)
+		lpAmount, ok := sdkmath.NewIntFromString(pos.LpAmount)
+		if !ok {
+			return fmt.Errorf("invalid lp amount in position: %s", pos.LpAmount)
+		}
 		pos.LpAmount = lpAmount.Add(lpToMint).String()
 	}
 	k.SetPosition(ctx, pos)
@@ -121,37 +155,57 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 // transferPRC20 performs a transfer_from call on a PRC20 contract
 // to move tokens from the user to the swap module account.
 func (k Keeper) transferPRC20(ctx sdk.Context, from string, contract string, amount sdkmath.Int) error {
-	msg := map[string]interface{}{
-		"transfer_from": map[string]interface{}{
-			"owner":     from,
-			"recipient": k.accountKeeper.GetModuleAddress(types.ModuleName).String(),
-			"amount":    amount.String(),
+	if !amount.IsPositive() {
+		return fmt.Errorf("transferPRC20: amount must be positive")
+	}
+
+	type transferFrom struct {
+		Owner     string `json:"owner"`
+		Recipient string `json:"recipient"`
+		Amount    string `json:"amount"`
+	}
+	type msgWrapper struct {
+		TransferFrom transferFrom `json:"transfer_from"`
+	}
+
+	moduleAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
+	contractAddr, err := sdk.AccAddressFromBech32(contract)
+	if err != nil {
+		return fmt.Errorf("transferPRC20: invalid contract address: %w", err)
+	}
+
+	msg := msgWrapper{
+		TransferFrom: transferFrom{
+			Owner:     from,
+			Recipient: moduleAddr.String(),
+			Amount:    amount.String(),
 		},
 	}
 	bz, err := json.Marshal(msg)
 	if err != nil {
+		return fmt.Errorf("transferPRC20: marshal msg: %w", err)
+	}
+
+	// Gas handling strategy
+	const safeGas uint64 = 2_000_000
+	if ctx.IsCheckTx() || ctx.IsReCheckTx() {
+		// In mempool/simulation, do not cap; keep realistic gas accounting.
+		_, err = k.wasmKeeper.Execute(ctx, contractAddr, moduleAddr, bz, nil)
 		return err
 	}
 
-	// Set safty boundary to prevent infinite loop
-	safeGas := uint64(500_000)
+	parent := ctx.GasMeter()
+	child := storetypes.NewGasMeter(safeGas)
+	execCtx := ctx.WithGasMeter(child)
 
-	// Detect if this is a real tx or simulation
-	isSimulate := ctx.IsCheckTx() || ctx.IsReCheckTx()
+	// If child runs out of gas, it will panic → tx fails as expected.
+	_, err = k.wasmKeeper.Execute(execCtx, contractAddr, moduleAddr, bz, nil)
 
-	// Set safe gas only when it's not simulating
-	execCtx := ctx
-	if !isSimulate {
-		execCtx = ctx.WithGasMeter(storetypes.NewGasMeter(safeGas)) // only limit in DeliverTx
-	}
+	// Charge the actual gas consumed by child to the parent,
+	// so total tx gas remains accurate and limited by the outer meter.
+	// If the parent has insufficient remaining gas, this will panic → OOG, as expected.
+	parent.ConsumeGas(child.GasConsumed(), "prc20 transfer_from")
 
-	_, err = k.wasmKeeper.Execute(
-		execCtx,
-		sdk.MustAccAddressFromBech32(contract),
-		k.accountKeeper.GetModuleAddress(types.ModuleName),
-		bz,
-		nil, // no attached funds
-	)
 	return err
 }
 
