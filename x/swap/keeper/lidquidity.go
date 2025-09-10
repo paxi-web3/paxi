@@ -187,7 +187,7 @@ func (k Keeper) transferPRC20(ctx sdk.Context, from string, contract string, amo
 	}
 
 	// Gas handling strategy
-	const safeGas uint64 = 2_000_000
+	const safeGas uint64 = 5_000_000
 	if ctx.IsCheckTx() || ctx.IsReCheckTx() {
 		// In mempool/simulation, do not cap; keep realistic gas accounting.
 		_, err = k.wasmKeeper.Execute(ctx, contractAddr, moduleAddr, bz, nil)

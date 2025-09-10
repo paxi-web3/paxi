@@ -124,7 +124,7 @@ func (k Keeper) transferPRC20FromModule(ctx sdk.Context, contract string, to sdk
 		return fmt.Errorf("marshal transfer: %w", err)
 	}
 
-	const safeGas uint64 = 2_000_000
+	const safeGas uint64 = 5_000_000
 	if ctx.IsCheckTx() || ctx.IsReCheckTx() {
 		_, err = k.wasmKeeper.Execute(ctx, contractAddr, moduleAddr, bz, nil)
 		return err
