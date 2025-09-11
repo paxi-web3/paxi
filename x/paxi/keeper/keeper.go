@@ -105,8 +105,9 @@ func (k Keeper) SetLockedVestingToStore(ctx sdk.Context) {
 		panic(fmt.Errorf("failed to marshal locked vesting: %w", err))
 	}
 
-	store.Set([]byte(paxitypes.LockedVestingKey), lvBz)
-
+	if erro := store.Set([]byte(paxitypes.LockedVestingKey), lvBz); erro != nil {
+		panic(fmt.Errorf("failed to store locked vesting: %w", erro))
+	}
 }
 
 func (k Keeper) GetLockedVesting(ctx sdk.Context) sdkmath.LegacyDec {
@@ -132,7 +133,9 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data paxitypes.GenesisState) {
 			*vestingtypes.PeriodicVestingAccount:
 			// Store the vesting account
 			addrKey := []byte(paxitypes.VestingAccountPrefix + va.GetAddress().String())
-			store.Set(addrKey, []byte{1})
+			if err := store.Set(addrKey, []byte{1}); err != nil {
+				panic(fmt.Errorf("failed to store vesting account: %w", err))
+			}
 		}
 	}
 }

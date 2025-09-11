@@ -13,7 +13,9 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	if err != nil {
 		panic(err)
 	}
-	store.Set(types.KeyParams, bz)
+	if err := store.Set(types.KeyParams, bz); err != nil {
+		panic(err)
+	}
 }
 
 // GetParams retrieves the current params from store
