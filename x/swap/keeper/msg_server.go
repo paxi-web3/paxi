@@ -41,7 +41,9 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 	if err != nil {
 		return nil, err
 	}
-	store.Set(types.KeyParams, bz)
+	if err := store.Set(types.KeyParams, bz); err != nil {
+		return nil, err
+	}
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }
