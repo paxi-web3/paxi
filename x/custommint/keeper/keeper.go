@@ -94,7 +94,9 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *customminttypes.GenesisState {
 func (k Keeper) SetTotalMinted(ctx sdk.Context, amount sdkmath.Int) {
 	store := k.storeService.OpenKVStore(ctx)
 	bz := amount.BigInt().Bytes()
-	store.Set([]byte(customminttypes.TotalMinted), bz)
+	if err := store.Set([]byte(customminttypes.TotalMinted), bz); err != nil {
+		panic(err)
+	}
 }
 
 func (k Keeper) GetTotalMinted(ctx sdk.Context) sdkmath.Int {
@@ -109,7 +111,9 @@ func (k Keeper) GetTotalMinted(ctx sdk.Context) sdkmath.Int {
 func (k Keeper) SetTotalBurned(ctx sdk.Context, amount sdkmath.Int) {
 	store := k.storeService.OpenKVStore(ctx)
 	bz := amount.BigInt().Bytes()
-	store.Set([]byte(customminttypes.TotalBurned), bz)
+	if err := store.Set([]byte(customminttypes.TotalBurned), bz); err != nil {
+		panic(err)
+	}
 }
 
 func (k Keeper) GetTotalBurned(ctx sdk.Context) sdkmath.Int {

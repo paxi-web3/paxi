@@ -117,7 +117,9 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
 	var genesisState types.GenesisState
-	json.Unmarshal(data, &genesisState)
+	if err := json.Unmarshal(data, &genesisState); err != nil {
+		panic(fmt.Sprintf("failed to unmarshal %s genesis state: %v", types.ModuleName, err))
+	}
 	am.keeper.InitGenesis(ctx, genesisState)
 }
 

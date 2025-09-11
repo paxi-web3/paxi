@@ -728,7 +728,9 @@ func NewPaxiApp(
 	}
 
 	// Read local block status like TotalTxs
-	app.ReadBlockStatusFromFile()
+	if err := app.ReadBlockStatusFromFile(); err != nil {
+		panic(fmt.Errorf("error reading block status: %w", err))
+	}
 
 	return app
 }
@@ -815,7 +817,9 @@ func (app *PaxiApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*a
 	if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
-	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
+	if err := app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap()); err != nil {
+		panic(fmt.Sprintf("failed to set module version map: %v", err))
+	}
 	return app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
