@@ -72,7 +72,7 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 			return err
 		}
 
-		// Initial liquidity provider, direct minting LP = paxiAmt
+		// Initial liquidity provider
 		lpToMint = utils.IntSqrt(paxiAmt.Mul(prc20Amt))
 		if lpToMint.IsZero() {
 			return fmt.Errorf("provided liquidity too small to mint LP token")
