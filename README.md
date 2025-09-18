@@ -1,4 +1,4 @@
-## 🌌 Paxi Blockchain
+## 🌌 Paxi Network
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/paxi-web3/paxi)](https://goreportcard.com/report/github.com/paxi-web3/paxi)
 [![Version](https://img.shields.io/badge/version-v1.0.6-blue?style=flat-square)](https://github.com/paxi-web3/paxi/releases/tag/v1.0.6)
