@@ -106,7 +106,7 @@ curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/sync_wasm
 
 - 👉 [https://x.com/paxiweb3](https://x.com/paxiweb3)
 - 👉 [https://discord.gg/rA9Xzs69tx](https://discord.gg/rA9Xzs69tx)
-- 🔎 [https://explorer.paxinet.io](https://explorer.paxinet.io)
+- 🔎 [https://ping.pub/paxi](https://ping.pub/paxi)
 
 ## License
 
