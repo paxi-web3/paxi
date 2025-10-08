@@ -3,6 +3,7 @@ package types
 import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
 
 func RegisterMsg(cdc codectypes.InterfaceRegistry) {
@@ -13,4 +14,6 @@ func RegisterMsg(cdc codectypes.InterfaceRegistry) {
 		&MsgWithdrawLiquidity{},
 		&MsgSwap{},
 	)
+
+	msgservice.RegisterMsgServiceDesc(cdc, &_Msg_serviceDesc)
 }
