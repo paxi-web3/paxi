@@ -455,20 +455,41 @@ func pickWeightedRandomSubsetBinarySearch(r *utils.Rng64, candidates []types.Val
 	}
 
 	// Result
-	selected := make(map[int]bool)
 	result := make([]types.Validator, 0, count)
 
 	for len(result) < count {
+		if total == 0 {
+			panic("not enough positive-weight candidates to fill count")
+		}
+
+		// total has already been ensured to be <= math.MaxInt64
 		randWeight := r.Int63n(int64(total))
-		// Binary search
+
+		// Binary search: find index i where the random weight falls
 		i := sort.Search(n, func(i int) bool { return prefixSums[i] > uint64(randWeight) })
 
-		// Skip if already selected
-		if selected[i] {
-			continue
+		// Compute the current weight at index i: wi = prefix[i] - prefix[i-1]
+		var wi uint64
+		if i == 0 {
+			wi = prefixSums[0]
+		} else {
+			wi = prefixSums[i] - prefixSums[i-1]
 		}
-		selected[i] = true
+		if wi == 0 {
+			// Ideally should not happen
+			panic("current weight is zero during selection")
+		}
+
+		// Select candidates[i]
 		result = append(result, candidates[i])
+
+		// "Remove" this index's weight from the prefix sums:
+		// subtract wi from all entries in [i..n-1]
+		for j := i; j < n; j++ {
+			prefixSums[j] -= wi
+		}
+		// Also decrease the total weight accordingly
+		total -= wi
 	}
 
 	return result
