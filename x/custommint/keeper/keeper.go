@@ -68,7 +68,7 @@ func (k Keeper) BlockProvision(ctx sdk.Context) {
 
 	// Send the remaining minted coins to the distribution module for staking rewards
 	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, customminttypes.ModuleName, authtypes.FeeCollectorName, sdk.NewCoins(mintCoin)); err != nil {
-		ctx.Logger().Error("BlockProvision: send to distribution failed", "amount", mintAmount.String(), "err", err)
+		ctx.Logger().Error("BlockProvision: send to fee collector failed", "amount", mintAmount.String(), "err", err)
 		return
 	}
 }
