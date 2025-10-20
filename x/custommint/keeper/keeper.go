@@ -51,6 +51,11 @@ func (k Keeper) BlockProvision(ctx sdk.Context) {
 
 	// Mint
 	mintAmount := provision.TruncateInt()
+	if !mintAmount.IsPositive() {
+		// Nothing to mint, skip unnecessary operations
+		return
+	}
+
 	mintCoin := sdk.NewCoin(k.mintDenom, mintAmount)
 	if err := k.bankKeeper.MintCoins(ctx, customminttypes.ModuleName, sdk.NewCoins(mintCoin)); err != nil {
 		ctx.Logger().Error("BlockProvision: mint failed", "amount", mintAmount.String(), "err", err)
