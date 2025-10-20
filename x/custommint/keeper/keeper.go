@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	"math/big"
 
 	store "cosmossdk.io/core/store"
@@ -31,7 +30,7 @@ func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, storeService
 	}
 }
 
-func (k Keeper) BlockProvision(ctx sdk.Context) error {
+func (k Keeper) BlockProvision(ctx sdk.Context) {
 	// Get params
 	params := k.GetParams(ctx)
 
@@ -40,7 +39,7 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 	const mintThreshold int64 = 1 // 1 blocks per mint
 
 	if blockHeight%mintThreshold != 0 {
-		return nil
+		return
 	}
 
 	// Calculate provision for this block: (total_supply * inflation_rate) / (blocks_per_year / mint_threshold)
@@ -54,7 +53,8 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 	mintAmount := provision.TruncateInt()
 	mintCoin := sdk.NewCoin(k.mintDenom, mintAmount)
 	if err := k.bankKeeper.MintCoins(ctx, customminttypes.ModuleName, sdk.NewCoins(mintCoin)); err != nil {
-		return fmt.Errorf("mint failed: %w", err)
+		ctx.Logger().Error("BlockProvision: mint failed", "amount", mintAmount.String(), "err", err)
+		return
 	}
 
 	// Get total minted amount from store
@@ -63,10 +63,9 @@ func (k Keeper) BlockProvision(ctx sdk.Context) error {
 
 	// Send the remaining minted coins to the distribution module for staking rewards
 	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, customminttypes.ModuleName, authtypes.FeeCollectorName, sdk.NewCoins(mintCoin)); err != nil {
-		return fmt.Errorf("send to distribution failed: %w", err)
+		ctx.Logger().Error("BlockProvision: send to distribution failed", "amount", mintAmount.String(), "err", err)
+		return
 	}
-
-	return nil
 }
 
 func (k Keeper) GetInflationRateByHeight(params customminttypes.Params, height int64) sdkmath.LegacyDec {
@@ -132,16 +131,18 @@ func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
 	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
 	fees := k.bankKeeper.GetBalance(ctx, feeCollectorAddr, k.mintDenom)
 
-	if fees.Amount.LTE(threshold) {
+	// Nothing to do
+	if !fees.Amount.IsPositive() || fees.Amount.LTE(threshold) {
 		return
 	}
 
-	// There is 50% chance to burn all balance from the fee pool
+	// There is 50% chance to burn certain ratio of fees each block
 	if ctx.BlockHeight()%2 == 0 {
 		fees.Amount = fees.Amount.ToLegacyDec().Mul(params.BurnRatio).RoundInt()
 		err := k.bankKeeper.BurnCoins(ctx, authtypes.FeeCollectorName, sdk.NewCoins(fees))
 		if err != nil {
-			panic(err)
+			ctx.Logger().Error("BurnExcessTokens: burn failed", "amount", fees.Amount.String(), "err", err)
+			return
 		}
 		totalBurned := k.GetTotalBurned(ctx).Add(fees.Amount)
 		k.SetTotalBurned(ctx, totalBurned)

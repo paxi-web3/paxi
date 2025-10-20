@@ -125,5 +125,6 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 func (am AppModule) BeginBlock(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	am.keeper.BurnExcessTokens(sdkCtx)
-	return am.keeper.BlockProvision(sdkCtx)
+	am.keeper.BlockProvision(sdkCtx)
+	return nil
 }
