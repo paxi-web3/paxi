@@ -54,7 +54,7 @@ func DefaultParams() Params {
 func (p Params) Validate() error {
 	// burn threshold must not be negative
 	if p.BurnThreshold.IsNegative() {
-		return fmt.Errorf("burn threshold cannot be negative or zero")
+		return fmt.Errorf("burn threshold cannot be negative")
 	}
 	// prevent panic when converting to uint64
 	if p.BurnThreshold.GT(sdkmath.NewIntFromUint64(math.MaxUint64)) {
