@@ -51,5 +51,9 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 
 	k.SetParams(ctx, parsedParams)
 
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent("custommint_params_updated"),
+	)
+
 	return &types.MsgUpdateParamsResponse{}, nil
 }
