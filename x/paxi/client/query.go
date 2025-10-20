@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"context"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/paxi-web3/paxi/x/paxi/types"
 	"github.com/spf13/cobra"
@@ -18,7 +16,7 @@ func CmdQueryLockedVesting() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.LockedVesting(context.Background(), &types.QueryLockedVestingRequest{})
+			res, err := queryClient.LockedVesting(cmd.Context(), &types.QueryLockedVestingRequest{})
 			if err != nil {
 				return err
 			}
@@ -40,7 +38,7 @@ func CmdQueryCirculatingSupply() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.CirculatingSupply(context.Background(), &types.QueryCirculatingSupplyRequest{})
+			res, err := queryClient.CirculatingSupply(cmd.Context(), &types.QueryCirculatingSupplyRequest{})
 			if err != nil {
 				return err
 			}
@@ -62,7 +60,7 @@ func CmdQueryTotalSupply() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.TotalSupply(context.Background(), &types.QueryTotalSupplyRequest{})
+			res, err := queryClient.TotalSupply(cmd.Context(), &types.QueryTotalSupplyRequest{})
 			if err != nil {
 				return err
 			}
@@ -84,7 +82,7 @@ func CmdQueryLastBlockGasUsed() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.LastBlockGasUsed(context.Background(), &types.QueryLastBlockGasUsedRequest{})
+			res, err := queryClient.LastBlockGasUsed(cmd.Context(), &types.QueryLastBlockGasUsedRequest{})
 			if err != nil {
 				return err
 			}
@@ -106,7 +104,7 @@ func CmdQueryTotalTxs() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.TotalTxs(context.Background(), &types.QueryTotalTxsRequest{})
+			res, err := queryClient.TotalTxs(cmd.Context(), &types.QueryTotalTxsRequest{})
 			if err != nil {
 				return err
 			}
@@ -128,7 +126,7 @@ func CmdQueryUnlockSchedules() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.UnlockSchedules(context.Background(), &types.QueryUnlockSchedulesRequest{})
+			res, err := queryClient.UnlockSchedules(cmd.Context(), &types.QueryUnlockSchedulesRequest{})
 			if err != nil {
 				return err
 			}
@@ -150,7 +148,7 @@ func CmdQueryParams() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.Params(context.Background(), &types.QueryParamsRequest{})
+			res, err := queryClient.Params(cmd.Context(), &types.QueryParamsRequest{})
 			if err != nil {
 				return err
 			}

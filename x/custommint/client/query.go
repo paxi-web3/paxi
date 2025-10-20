@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"context"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/paxi-web3/paxi/x/custommint/types"
 	"github.com/spf13/cobra"
@@ -18,7 +16,7 @@ func CmdQueryTotalMinted() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.TotalMinted(context.Background(), &types.QueryTotalMintedRequest{})
+			res, err := queryClient.TotalMinted(cmd.Context(), &types.QueryTotalMintedRequest{})
 			if err != nil {
 				return err
 			}
@@ -40,7 +38,7 @@ func CmdQueryTotalBurned() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.TotalBurned(context.Background(), &types.QueryTotalBurnedRequest{})
+			res, err := queryClient.TotalBurned(cmd.Context(), &types.QueryTotalBurnedRequest{})
 			if err != nil {
 				return err
 			}
@@ -62,7 +60,7 @@ func CmdQueryParams() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.Params(context.Background(), &types.QueryParamsRequest{})
+			res, err := queryClient.Params(cmd.Context(), &types.QueryParamsRequest{})
 			if err != nil {
 				return err
 			}

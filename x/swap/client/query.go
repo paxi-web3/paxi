@@ -1,8 +1,6 @@
 package client
 
 import (
-	"context"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/paxi-web3/paxi/x/swap/types"
 	"github.com/spf13/cobra"
@@ -18,7 +16,7 @@ func CmdQueryParams() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.Params(context.Background(), &types.QueryParamsRequest{})
+			res, err := queryClient.Params(cmd.Context(), &types.QueryParamsRequest{})
 			if err != nil {
 				return err
 			}
@@ -42,7 +40,7 @@ func CmdQueryPosition() *cobra.Command {
 			clientCtx := client.GetClientContextFromCmd(cmd)
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.Position(context.Background(), &types.QueryPositionRequest{
+			res, err := queryClient.Position(cmd.Context(), &types.QueryPositionRequest{
 				Creator: creator,
 				Prc20:   prc20,
 			})
@@ -66,7 +64,7 @@ func CmdQueryPool() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.Pool(context.Background(), &types.QueryPoolRequest{
+			res, err := queryClient.Pool(cmd.Context(), &types.QueryPoolRequest{
 				Prc20: args[0],
 			})
 			if err != nil {
@@ -93,7 +91,7 @@ func CmdQueryAllPools() *cobra.Command {
 				return err
 			}
 
-			res, err := queryClient.AllPools(context.Background(), &types.QueryAllPoolsRequest{
+			res, err := queryClient.AllPools(cmd.Context(), &types.QueryAllPoolsRequest{
 				Pagination: pageReq,
 			})
 			if err != nil {
