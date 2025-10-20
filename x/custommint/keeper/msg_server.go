@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,7 +28,15 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 		return nil, sdkerrors.ErrUnauthorized
 	}
 
-	burnThreshold, _ := sdkmath.NewIntFromString(msg.Params.BurnThreshold)
+	// Parse and validate BurnThreshold
+	burnThreshold, ok := sdkmath.NewIntFromString(msg.Params.BurnThreshold)
+	if !ok {
+		return nil, fmt.Errorf("invalid BurnThreshold: %q", msg.Params.BurnThreshold)
+	}
+	if burnThreshold.IsNegative() {
+		return nil, fmt.Errorf("BurnThreshold must be non-negative")
+	}
+
 	parsedParams := types.Params{
 		BurnThreshold:       burnThreshold,
 		BurnRatio:           sdkmath.LegacyMustNewDecFromStr(msg.Params.BurnRatio),
