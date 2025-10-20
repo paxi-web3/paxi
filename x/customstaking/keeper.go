@@ -278,11 +278,6 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 		}
 		sort.Strings(addresses)
 
-		type pending struct {
-			addr sdk.ValAddress
-			pow  int64
-		}
-
 		minBonded := sdkmath.NewInt(MinBondedTokens)
 		pendingMap := make(map[string]int64, len(addresses))
 		// Track addresses whose power hasn't changed but still need to sync `last`
