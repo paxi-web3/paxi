@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	sdkmath "cosmossdk.io/math"
@@ -50,14 +49,7 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 		return nil, err
 	}
 
-	store := k.storeService.OpenKVStore(ctx)
-	bz, err := json.Marshal(&parsedParams)
-	if err != nil {
-		return nil, err
-	}
-	if err := store.Set(types.KeyParams, bz); err != nil {
-		return nil, err
-	}
+	k.SetParams(ctx, parsedParams)
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }
