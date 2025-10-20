@@ -141,7 +141,7 @@ func (k Keeper) BurnExcessTokens(ctx sdk.Context) {
 		return
 	}
 
-	// There is 50% chance to burn certain ratio of fees each block
+	// Burn fees every even-numbered block (effectively 50% of the time on average)
 	if ctx.BlockHeight()%2 == 0 {
 		fees.Amount = fees.Amount.ToLegacyDec().Mul(params.BurnRatio).RoundInt()
 		err := k.bankKeeper.BurnCoins(ctx, authtypes.FeeCollectorName, sdk.NewCoins(fees))
