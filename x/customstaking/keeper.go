@@ -183,7 +183,10 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 	// Get all the validators
 	allValidators, err := k.getValidatorsAboveThreshold(ctx, sdkmath.NewInt(MinBondedTokens), MaxCandidates)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get last validator set: %w", err)
+		return nil, fmt.Errorf(
+			"failed to build candidate validator set (threshold=%s, max=%d, height=%d): %w",
+			sdkmath.NewInt(MinBondedTokens).String(), MaxCandidates, ctx.BlockHeight(), err,
+		)
 	}
 
 	// Retrieve the last validator set.

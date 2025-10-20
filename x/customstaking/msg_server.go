@@ -31,12 +31,15 @@ func (m *MsgServer) Undelegate(goCtx context.Context, msg *types.MsgUndelegate) 
 	}
 	return m.msgServer.Undelegate(goCtx, msg)
 }
+
 func (m *MsgServer) BeginRedelegate(goCtx context.Context, msg *types.MsgBeginRedelegate) (*types.MsgBeginRedelegateResponse, error) {
 	return m.msgServer.BeginRedelegate(goCtx, msg)
 }
+
 func (m *MsgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValidator) (*types.MsgEditValidatorResponse, error) {
 	return m.msgServer.EditValidator(goCtx, msg)
 }
+
 func (m *MsgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateValidator) (*types.MsgCreateValidatorResponse, error) {
 	return m.msgServer.CreateValidator(goCtx, msg)
 }
