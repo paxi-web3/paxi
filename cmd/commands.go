@@ -28,6 +28,7 @@ import (
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	version "github.com/paxi-web3/paxi"
 	"github.com/paxi-web3/paxi/utils"
+	custommintcli "github.com/paxi-web3/paxi/x/custommint/client"
 	paxicli "github.com/paxi-web3/paxi/x/paxi/client"
 	swapcli "github.com/paxi-web3/paxi/x/swap/client"
 )
@@ -97,6 +98,7 @@ func queryCommand() *cobra.Command {
 		wasmcli.GetQueryCmd(),
 		paxicli.GetQueryCmd(),
 		swapcli.GetQueryCmd(),
+		custommintcli.GetQueryCmd(),
 	)
 
 	return cmd
