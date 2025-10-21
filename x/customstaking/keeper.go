@@ -270,18 +270,21 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			totalPower = totalPower.AddRaw(newPower)
 		}
 	} else {
-		// Handle bonded & non-jailed validators, kick out unbonded/jailed/under-bonded
+		// Handle bonded & non-jailed validators, kick out unbonded / jailed ones / under min bonded
+		minBonded := sdkmath.NewInt(MinBondedTokens)
 		addresses := make([]string, 0, len(last))
 		for k := range last {
-
 			addresses = append(addresses, k)
 		}
+		// Sort addresses to ensure deterministic iteration order
 		sort.Strings(addresses)
 
-		minBonded := sdkmath.NewInt(MinBondedTokens)
-		pendingMap := make(map[string]int64, len(addresses))
-		// Track addresses whose power hasn't changed but still need to sync `last`
-		processedUnchanged := make([]string, 0, len(addresses))
+		type pending struct {
+			addr sdk.ValAddress
+			pow  int64
+		}
+		pendingUpdates := make([]pending, 0, len(addresses))
+		toDelete := make([]string, 0, len(addresses))
 
 		for _, addrStr := range addresses {
 			valAddr := sdk.ValAddress([]byte(addrStr))
@@ -290,72 +293,52 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 				return nil, fmt.Errorf("validator record not found for address: %X", valAddr)
 			}
 
+			// Retrieve previous voting power
 			oldPower, found := last[addrStr]
 
-			// If jailed or not Bonded → always evict
-			if val.Jailed || !val.IsBonded() {
-				// Write 0 regardless of oldPower to ensure `last` is cleaned later
-				pendingMap[addrStr] = 0
-				continue
+			// Check if the validator should remain in the active set
+			// (must be bonded, not jailed, and have tokens above the minimum threshold)
+			bondedEligible := val.IsBonded() &&
+				!val.Jailed &&
+				val.Tokens.GTE(minBonded) &&
+				val.Tokens.IsPositive()
+
+			if bondedEligible {
+				newPower := val.ConsensusPower(powerReduction)
+
+				// Add to update list if power changed or validator was not previously tracked
+				if !found || oldPower != newPower {
+					pendingUpdates = append(pendingUpdates, pending{addr: valAddr, pow: newPower})
+				}
+
+				// Mark this address for removal from `last` after processing
+				toDelete = append(toDelete, addrStr)
+
+				// Accumulate total voting power (for eligible validators only)
+				totalPower = totalPower.AddRaw(newPower)
 			}
-
-			newPower := val.ConsensusPower(powerReduction)
-
-			// Under-bonded → evict (removal; re-entry is deferred to the rotation branch)
-			if minBonded.IsPositive() && val.Tokens.LT(minBonded) {
-				pendingMap[addrStr] = 0
-				continue
-			}
-
-			// Still in the active set
-			if !found || oldPower != newPower {
-				// Power changed → needs an ABCI update
-				pendingMap[addrStr] = newPower
-			} else {
-				// Power unchanged → no ABCI update, but still sync `last` to avoid leftovers
-				processedUnchanged = append(processedUnchanged, addrStr)
-			}
-
-			totalPower = totalPower.AddRaw(newPower)
 		}
 
-		// Sort pendingMap keys
-		keys := make([]string, 0, len(pendingMap))
-		for k := range pendingMap {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
+		// Sort by address bytes to ensure deterministic order
+		sort.Slice(pendingUpdates, func(i, j int) bool {
+			return bytes.Compare(pendingUpdates[i].addr, pendingUpdates[j].addr) < 0
+		})
 
-		// First handle those needing ABCI update / removal
-		for _, addrStr := range keys {
-			valAddr := sdk.ValAddress([]byte(addrStr))
-			pow := pendingMap[addrStr]
-
-			val, err := k.GetValidator(ctx, valAddr)
+		// Apply updates in fixed order: first set LastValidatorPower, then create ABCI updates
+		for _, u := range pendingUpdates {
+			if err := k.SetLastValidatorPower(ctx, u.addr, u.pow); err != nil {
+				return nil, err
+			}
+			v, err := k.GetValidator(ctx, u.addr)
 			if err != nil {
 				return nil, err
 			}
-
-			vu := val.ABCIValidatorUpdate(powerReduction)
-			if pow == 0 {
-				vu.Power = 0 // removal
-			}
-			updates = append(updates, vu)
-
-			if err := k.SetLastValidatorPower(ctx, valAddr, pow); err != nil {
-				return nil, err
-			}
-			delete(last, addrStr)
+			updates = append(updates, v.ABCIValidatorUpdate(powerReduction))
 		}
 
-		// Then handle "power unchanged but still active" ones: only sync `last` and clean it up
-		sort.Strings(processedUnchanged) // deterministic
-		for _, addrStr := range processedUnchanged {
-			valAddr := sdk.ValAddress([]byte(addrStr))
-			oldPower := last[addrStr] // guaranteed to exist
-			if err := k.SetLastValidatorPower(ctx, valAddr, oldPower); err != nil {
-				return nil, err
-			}
+		// Delete processed addresses in sorted order to ensure determinism
+		sort.Strings(toDelete)
+		for _, addrStr := range toDelete {
 			delete(last, addrStr)
 		}
 	}
