@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/paxi-web3/paxi/x/custommint/types"
 )
@@ -60,5 +61,28 @@ func (q *queryServer) Params(ctx context.Context, req *types.QueryParamsRequest)
 		FirstYearInflation:  params.FirstYearInflation.String(),
 		SecondYearInflation: params.SecondYearInflation.String(),
 		OtherYearInflation:  params.OtherYearInflation.String(),
+	}, nil
+}
+
+func (q *queryServer) Inflation(ctx context.Context, req *types.QueryInflationRequest) (*types.QueryInflationResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	params := q.k.GetParams(sdkCtx)
+
+	inflation := 0.0
+	bh := sdkCtx.BlockHeight()
+	if bh < params.BlocksPerYear {
+		inflation = params.FirstYearInflation.MustFloat64()
+	} else if bh < 2*params.BlocksPerYear {
+		inflation = params.SecondYearInflation.MustFloat64()
+	} else {
+		inflation = params.OtherYearInflation.MustFloat64()
+	}
+
+	return &types.QueryInflationResponse{
+		Inflation: sdkmath.LegacyNewDecWithPrec(int64(inflation*1000000000000000000), 18).String(),
 	}, nil
 }

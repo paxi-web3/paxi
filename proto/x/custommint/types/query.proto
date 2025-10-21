@@ -25,6 +25,12 @@ service Query {
       get: "/paxi/custommint/params"
     };
   }
+
+  rpc Inflation(QueryInflationRequest) returns (QueryInflationResponse) {
+    option (google.api.http) = {
+      get: "/cosmos/mint/v1beta1/inflation"
+    };
+  }
 }
 
 message QueryTotalMintedRequest {
@@ -52,4 +58,9 @@ message QueryParamsResponse {
   string first_year_inflation = 4;
   string second_year_inflation = 5;
   string other_year_inflation = 6;
+}
+
+message QueryInflationRequest {}
+message QueryInflationResponse {
+  string inflation = 1;
 }
