@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+NODE_MONIKER="my-paxi-node"
 GOLANG_VERSION=1.24.2
 PAXI_REPO="https://github.com/paxi-web3/paxi"
 PAXI_TAG="latest-main"
