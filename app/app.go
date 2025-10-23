@@ -7,6 +7,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"strings"
 
 	version "github.com/paxi-web3/paxi"
 	apptypes "github.com/paxi-web3/paxi/app/types"
@@ -19,6 +20,7 @@ import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	"cosmossdk.io/client/v2/autocli"
+	clienthelpers "cosmossdk.io/client/v2/helpers"
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
@@ -145,24 +147,45 @@ func init() {
 	// and seal config
 	apptypes.InitAddressRules()
 
-	// Set wasm config
+	// Set the wasm config
 	wasmtypes.MaxWasmSize = int(1.5 * 1024 * 1024) // 1.5 MB
 
-	// DefaultNodeHome is set to the home directory of the application
-	DefaultNodeHome = (func() string {
-		// Get the directory of the executable (not working dir)
-		exePath, err := os.Executable()
+	// Set the default path for the node home directory
+	args := os.Args
+	hasHomeFlag := false
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--home" && i+1 < len(args) {
+			hasHomeFlag = true
+			break
+		} else if strings.HasPrefix(args[i], "--home=") {
+			hasHomeFlag = true
+			break
+		}
+	}
+
+	if !hasHomeFlag {
+		// DefaultNodeHome is set to the home directory of the application
+		DefaultNodeHome = (func() string {
+			// Get the directory of the executable (not working dir)
+			exePath, err := os.Executable()
+			if err != nil {
+				panic(err)
+			}
+			absPath, err := filepath.Abs(exePath)
+			dir := filepath.Dir(absPath)
+			if err != nil {
+				panic(err)
+			}
+			dir = filepath.Join(dir, "paxi")
+			return dir
+		})()
+	} else {
+		path, err := clienthelpers.GetNodeHomeDirectory("paxid")
 		if err != nil {
 			panic(err)
 		}
-		absPath, err := filepath.Abs(exePath)
-		dir := filepath.Dir(absPath)
-		if err != nil {
-			panic(err)
-		}
-		dir = filepath.Join(dir, "paxi")
-		return dir
-	})()
+		DefaultNodeHome = path
+	}
 }
 
 // PaxiApp extends an ABCI application, but with most of its parameters exported.
