@@ -294,7 +294,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			}
 
 			// Retrieve previous voting power
-			oldPower, found := last[addrStr]
+			oldPower, _ := last[addrStr]
 
 			// Check if the validator should remain in the active set
 			// (must be bonded, not jailed, and have tokens above the minimum threshold)
@@ -307,7 +307,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 				newPower := val.ConsensusPower(powerReduction)
 
 				// Add to update list if power changed or validator was not previously tracked
-				if !found || oldPower != newPower {
+				if oldPower != newPower {
 					pendingUpdates = append(pendingUpdates, pending{addr: valAddr, pow: newPower})
 				}
 
