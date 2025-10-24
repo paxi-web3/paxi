@@ -294,7 +294,7 @@ func (k CustomStakingKeeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) 
 			}
 
 			// Retrieve previous voting power
-			oldPower, _ := last[addrStr]
+			oldPower := last[addrStr]
 
 			// Check if the validator should remain in the active set
 			// (must be bonded, not jailed, and have tokens above the minimum threshold)
