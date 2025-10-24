@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -52,7 +53,15 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 	k.SetParams(ctx, parsedParams)
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent("custommint_params_updated"),
+		sdk.NewEvent(
+			"custommint_params_updated",
+			sdk.NewAttribute("burn_threshold", parsedParams.BurnThreshold.String()),
+			sdk.NewAttribute("burn_ratio", parsedParams.BurnRatio.String()),
+			sdk.NewAttribute("blocks_per_year", strconv.FormatInt(parsedParams.BlocksPerYear, 10)),
+			sdk.NewAttribute("first_year_inflation", parsedParams.FirstYearInflation.String()),
+			sdk.NewAttribute("second_year_inflation", parsedParams.SecondYearInflation.String()),
+			sdk.NewAttribute("other_year_inflation", parsedParams.OtherYearInflation.String()),
+		),
 	)
 
 	return &types.MsgUpdateParamsResponse{}, nil
