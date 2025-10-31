@@ -1,4 +1,4 @@
-# Whitepaper Paxi (Bahasa Indonesia)
+# Whitepaper Paxi Network (Bahasa Indonesia)
 
 > **Catatan:** Ini adalah terjemahan komunitas dari *Paxi Whitepaper*. Dokumen resmi tetap berbahasa Inggris. Versi ini dibuat untuk memudahkan pembaca Indonesia memahami visi dan teknologi Paxi.
 
@@ -22,6 +22,7 @@ Paxi membayangkan ekosistem blockchain yang **cepat, aman, dan sepenuhnya terdes
 
 Melalui staking, setiap orang bisa ikut konsensus. Melalui DAO, setiap orang bisa ikut mengambil keputusan. Melalui pengembangan aplikasi, setiap orang bisa berinovasi.  
 
+Pada akhirnya, tujuan Paxi adalah menjadi blockchain universal — yang menampung ekosistem besar dApps dan layanan terdesentralisasi yang terintegrasi secara mulus ke dalam kehidupan sehari-hari, memberdayakan individu dan komunitas untuk merasakan potensi penuh dari desentralisasi.
 ---
 
 ## Prinsip Inti

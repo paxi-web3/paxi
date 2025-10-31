@@ -1,4 +1,4 @@
-# Paxi Whitepaper
+# Paxi Network Whitepaper
 
 ## Introduction
 
@@ -19,6 +19,8 @@ Join us as we build a future where blockchain belongs to everyone.
 Paxi envisions building a **fast, secure, and truly decentralized** blockchain ecosystem—one that doesn't just belong to the whales or large institutions, but to **everyone**: users, developers, and participants alike. Here, anyone can take part in consensus through staking, contribute to innovation through development, and engage in decision-making through DAO governance proposals.
 
 We believe that only through the collective power of the community can we achieve a truly free and sustainable future. Paxi is committed to promoting a transparent, fair, and open governance system where every participant has a voice, a role, and the ability to help shape the future.
+
+Ultimately, Paxi aims to become a universal blockchain — hosting a vast ecosystem of dApps and services that integrate seamlessly into everyday life, empowering individuals and communities to experience the full potential of decentralization.
 
 ---
 
