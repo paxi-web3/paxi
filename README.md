@@ -103,8 +103,9 @@ curl -sL https://raw.githubusercontent.com/paxi-web3/paxi/main/scripts/sync_wasm
 
 
 ## Official Website
-
+- 👉 [https://paxinet.io](https://paxinet.io)
 - 👉 [https://x.com/paxiweb3](https://x.com/paxiweb3)
+- 👉 [https://t.me/paxi_network](https://t.me/paxi_network)
 - 👉 [https://discord.gg/rA9Xzs69tx](https://discord.gg/rA9Xzs69tx)
 - 🔎 [https://ping.pub/paxi](https://ping.pub/paxi)
 
