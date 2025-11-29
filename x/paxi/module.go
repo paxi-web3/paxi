@@ -136,11 +136,11 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 func (am AppModule) BeginBlock(ctx context.Context) error {
-	// Update vesting records every 5000 blocks
+	// Update vesting records every 1000 blocks
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	bh := sdkCtx.BlockHeight()
-	if bh%5000 == 0 || bh == 1 {
+	if bh%1000 == 0 || bh == 1 {
 		am.keeper.SetLockedVestingToStore(sdkCtx)
 	}
 	return nil
