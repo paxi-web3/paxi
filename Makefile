@@ -135,7 +135,7 @@ proto-ts:
 	proto/x/swap/types/tx.proto 
 
 proto-dart:
-	@echo "Generating ts-proto files for frontend..."
+	@echo "Generating dart-proto files for frontend..."
 
 	protoc \
 	--plugin=protoc-gen-dart=$(HOME)/.pub-cache/bin/protoc-gen-dart \
