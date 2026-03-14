@@ -30,6 +30,9 @@ import (
 	"cosmossdk.io/x/evidence"
 	evidencekeeper "cosmossdk.io/x/evidence/keeper"
 	evidencetypes "cosmossdk.io/x/evidence/types"
+	"cosmossdk.io/x/feegrant"
+	feegrantkeeper "cosmossdk.io/x/feegrant/keeper"
+	feegrantmodule "cosmossdk.io/x/feegrant/module"
 	"cosmossdk.io/x/tx/signing"
 	"cosmossdk.io/x/upgrade"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
@@ -207,6 +210,7 @@ type PaxiApp struct {
 	StakingKeeper         *customstaking.CustomStakingKeeper
 	SlashingKeeper        slashingkeeper.Keeper
 	MintKeeper            custommintkeeper.Keeper
+	FeeGrantKeeper        feegrantkeeper.Keeper
 	DistrKeeper           distrkeeper.Keeper
 	GovKeeper             govkeeper.Keeper
 	UpgradeKeeper         *upgradekeeper.Keeper
@@ -287,6 +291,7 @@ func NewPaxiApp(
 		customminttypes.StoreKey,
 		distrtypes.StoreKey,
 		slashingtypes.StoreKey,
+		feegrant.StoreKey,
 		govtypes.StoreKey,
 		consensusparamtypes.StoreKey,
 		upgradetypes.StoreKey,
@@ -376,6 +381,11 @@ func NewPaxiApp(
 		cosmosruntime.NewKVStoreService(keys[customminttypes.StoreKey]),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		customminttypes.DefaultDenom,
+	)
+	app.FeeGrantKeeper = feegrantkeeper.NewKeeper(
+		appCodec,
+		cosmosruntime.NewKVStoreService(keys[feegrant.StoreKey]),
+		app.AccountKeeper,
 	)
 
 	app.PaxiKeeper = paxikeeper.NewKeeper(
@@ -571,6 +581,7 @@ func NewPaxiApp(
 		auth.NewAppModule(appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, nil),
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
 		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, nil),
+		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
 		gov.NewAppModule(appCodec, &app.GovKeeper, app.AccountKeeper, app.BankKeeper, nil),
 		custommint.NewAppModule(appCodec, app.MintKeeper),
 		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, nil, app.interfaceRegistry),
@@ -627,6 +638,7 @@ func NewPaxiApp(
 	)
 	app.ModuleManager.SetOrderEndBlockers(
 		govtypes.ModuleName,
+		feegrant.ModuleName,
 		circuittypes.ModuleName,
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
@@ -646,6 +658,7 @@ func NewPaxiApp(
 		distrtypes.ModuleName,
 		stakingtypes.ModuleName,
 		slashingtypes.ModuleName,
+		feegrant.ModuleName,
 		govtypes.ModuleName,
 		customminttypes.ModuleName,
 		genutiltypes.ModuleName,
@@ -669,6 +682,7 @@ func NewPaxiApp(
 		distrtypes.ModuleName,
 		stakingtypes.ModuleName,
 		slashingtypes.ModuleName,
+		feegrant.ModuleName,
 		govtypes.ModuleName,
 		customminttypes.ModuleName,
 		genutiltypes.ModuleName,
@@ -764,6 +778,7 @@ func (app *PaxiApp) setAnteHandler(txConfig client.TxConfig) {
 			ante.HandlerOptions{
 				AccountKeeper:   app.AccountKeeper,
 				BankKeeper:      app.BankKeeper,
+				FeegrantKeeper:  app.FeeGrantKeeper,
 				SignModeHandler: txConfig.SignModeHandler(),
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},

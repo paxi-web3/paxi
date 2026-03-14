@@ -4,6 +4,7 @@ import (
 	"context"
 
 	storetypes "cosmossdk.io/store/types"
+	"cosmossdk.io/x/feegrant"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -16,6 +17,7 @@ const (
 	UpgradeV104 = "v1.0.4"
 	UpgradeV105 = "v1.0.5"
 	UpgradeV106 = "v1.0.6"
+	UpgradeV107 = "v1.0.7"
 )
 
 func (app *PaxiApp) RegisterUpgradeHandlers() {
@@ -31,6 +33,7 @@ func (app *PaxiApp) RegisterUpgradeHandlers() {
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV104, migrate)
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV105, migrate)
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV106, migrate)
+	app.UpgradeKeeper.SetUpgradeHandler(UpgradeV107, migrate)
 
 	// Read upgrade plan information from disk (upgrade-info.json)
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
@@ -81,6 +84,16 @@ func (app *PaxiApp) RegisterUpgradeHandlers() {
 			}
 			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, v106Stores))
 			app.Logger().Info("Registering upgrade handler for", "upgrade", UpgradeV106)
+
+		case UpgradeV107:
+			// Store upgrades for v1.0.7
+			// v1.0.7 adds x/feegrant module store
+			var v107Stores *storetypes.StoreUpgrades = &storetypes.StoreUpgrades{
+				Added: []string{feegrant.StoreKey},
+				// Deleted: []string{"oldmodule"},
+			}
+			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, v107Stores))
+			app.Logger().Info("Registering upgrade handler for", "upgrade", UpgradeV107)
 		}
 	}
 }

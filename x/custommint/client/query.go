@@ -31,7 +31,7 @@ func CmdQueryTotalMinted() *cobra.Command {
 func CmdQueryTotalBurned() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "total-burned",
-		Short: "Query total burned tokens",
+		Short: "Query total number of tokens burned by the system",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
