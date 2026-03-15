@@ -61,19 +61,24 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 	pool, found := k.GetPool(ctx, msg.Prc20)
 
 	var lpToMint sdkmath.Int
+	var usedPaxi sdkmath.Int
+	var usedPrc20 sdkmath.Int
 	if !found {
+		usedPaxi = paxiAmt
+		usedPrc20 = prc20Amt
+
 		// Transfer tokens to module
-		err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName, sdk.NewCoins(sdk.NewCoin(types.DefaultDenom, paxiAmt)))
+		err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, creator, types.ModuleName, sdk.NewCoins(sdk.NewCoin(types.DefaultDenom, usedPaxi)))
 		if err != nil {
 			return err
 		}
-		err = k.transferPRC20(ctx, msg.Creator, msg.Prc20, prc20Amt)
+		err = k.transferPRC20(ctx, msg.Creator, msg.Prc20, usedPrc20)
 		if err != nil {
 			return err
 		}
 
 		// Initial liquidity provider
-		lpToMint = utils.IntSqrt(paxiAmt.Mul(prc20Amt))
+		lpToMint = utils.IntSqrt(usedPaxi.Mul(usedPrc20))
 		if lpToMint.IsZero() {
 			return fmt.Errorf("provided liquidity too small to mint LP token")
 		}
@@ -81,8 +86,8 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 		// Create new pool
 		pool = types.Pool{
 			Prc20:        msg.Prc20,
-			ReservePaxi:  paxiAmt,
-			ReservePRC20: prc20Amt,
+			ReservePaxi:  usedPaxi,
+			ReservePRC20: usedPrc20,
 			TotalShares:  lpToMint,
 		}
 	} else {
@@ -93,8 +98,8 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 		// Calculate actual needed amounts
 		requiredPaxi := prc20Amt.Mul(pool.ReservePaxi).Quo(pool.ReservePRC20)
 		requiredPrc20 := paxiAmt.Mul(pool.ReservePRC20).Quo(pool.ReservePaxi)
-		usedPaxi := requiredPaxi
-		usedPrc20 := prc20Amt
+		usedPaxi = requiredPaxi
+		usedPrc20 = prc20Amt
 
 		if requiredPaxi.GT(paxiAmt) {
 			usedPrc20 = requiredPrc20
@@ -148,6 +153,20 @@ func (k Keeper) ProvideLiquidity(ctx sdk.Context, msg *types.MsgProvideLiquidity
 		pos.LpAmount = lpAmount.Add(lpToMint).String()
 	}
 	k.SetPosition(ctx, pos)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventLiquidityProvided,
+			sdk.NewAttribute(types.AttributeKeyCreator, msg.Creator),
+			sdk.NewAttribute(types.AttributeKeyPrc20, msg.Prc20),
+			sdk.NewAttribute(types.AttributeKeyPaxiAmount, usedPaxi.String()),
+			sdk.NewAttribute(types.AttributeKeyPrc20Amount, usedPrc20.String()),
+			sdk.NewAttribute(types.AttributeKeyLPMinted, lpToMint.String()),
+			sdk.NewAttribute(types.AttributeKeyReservePaxi, pool.ReservePaxi.String()),
+			sdk.NewAttribute(types.AttributeKeyReservePrc20, pool.ReservePRC20.String()),
+			sdk.NewAttribute(types.AttributeKeyTotalShares, pool.TotalShares.String()),
+		),
+	)
 
 	return nil
 }

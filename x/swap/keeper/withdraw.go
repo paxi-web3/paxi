@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	sdkmath "cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
@@ -89,11 +90,27 @@ func (k Keeper) WithdrawLiquidity(ctx sdk.Context, msg *types.MsgWithdrawLiquidi
 	}
 
 	// If pool is empty after withdrawal, delete it
+	poolDeleted := pool.TotalShares.IsZero()
 	if pool.TotalShares.IsZero() {
 		k.DeletePool(ctx, pool.Prc20)
 	} else {
 		k.SetPool(ctx, pool)
 	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventLiquidityWithdrawn,
+			sdk.NewAttribute(types.AttributeKeyCreator, msg.Creator),
+			sdk.NewAttribute(types.AttributeKeyPrc20, msg.Prc20),
+			sdk.NewAttribute(types.AttributeKeyLPAmount, lpAmount.String()),
+			sdk.NewAttribute(types.AttributeKeyPaxiAmount, paxiOut.String()),
+			sdk.NewAttribute(types.AttributeKeyPrc20Amount, prc20Out.String()),
+			sdk.NewAttribute(types.AttributeKeyReservePaxi, pool.ReservePaxi.String()),
+			sdk.NewAttribute(types.AttributeKeyReservePrc20, pool.ReservePRC20.String()),
+			sdk.NewAttribute(types.AttributeKeyTotalShares, pool.TotalShares.String()),
+			sdk.NewAttribute(types.AttributeKeyPoolDeleted, strconv.FormatBool(poolDeleted)),
+		),
+	)
 
 	return nil
 }

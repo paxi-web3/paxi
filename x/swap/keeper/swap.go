@@ -45,8 +45,10 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 
 	var inputReserve, outputReserve sdkmath.Int
 	var recvAmount sdkmath.Int
+	var swapSide string
 
 	if msg.OfferDenom == types.DefaultDenom {
+		swapSide = "paxi_to_prc20"
 		// Swap: PAXI -> PRC20
 		inputReserve = pool.ReservePaxi
 		outputReserve = pool.ReservePRC20
@@ -89,6 +91,7 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 		pool.ReservePRC20 = pool.ReservePRC20.Sub(recvAmount)
 
 	} else if msg.OfferDenom == msg.Prc20 {
+		swapSide = "prc20_to_paxi"
 		// Swap: PRC20 -> PAXI
 		inputReserve = pool.ReservePRC20
 		outputReserve = pool.ReservePaxi
@@ -135,6 +138,21 @@ func (k Keeper) Swap(ctx sdk.Context, msg *types.MsgSwap) error {
 
 	// Swap fee stays in pool, benefits LPs via higher reserve ratios
 	k.SetPool(ctx, pool)
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventSwapExecuted,
+			sdk.NewAttribute(types.AttributeKeyCreator, msg.Creator),
+			sdk.NewAttribute(types.AttributeKeyPrc20, msg.Prc20),
+			sdk.NewAttribute(types.AttributeKeySwapSide, swapSide),
+			sdk.NewAttribute(types.AttributeKeyOfferDenom, msg.OfferDenom),
+			sdk.NewAttribute(types.AttributeKeyOfferAmount, offerAmt.String()),
+			sdk.NewAttribute(types.AttributeKeyReceive, recvAmount.String()),
+			sdk.NewAttribute(types.AttributeKeyMinReceive, minReceive.String()),
+			sdk.NewAttribute(types.AttributeKeyReservePaxi, pool.ReservePaxi.String()),
+			sdk.NewAttribute(types.AttributeKeyReservePrc20, pool.ReservePRC20.String()),
+			sdk.NewAttribute(types.AttributeKeyTotalShares, pool.TotalShares.String()),
+		),
+	)
 	return nil
 }
 

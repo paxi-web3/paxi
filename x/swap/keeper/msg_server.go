@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -44,6 +45,15 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 	if err := store.Set(types.KeyParams, bz); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventParamsUpdated,
+			sdk.NewAttribute(types.AttributeKeyCodeID, strconv.FormatUint(parsedParams.CodeID, 10)),
+			sdk.NewAttribute(types.AttributeKeySwapFeeBps, strconv.FormatUint(parsedParams.SwapFeeBPS, 10)),
+			sdk.NewAttribute(types.AttributeKeyMinLiquidity, strconv.FormatUint(parsedParams.MinLiquidity, 10)),
+		),
+	)
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }
