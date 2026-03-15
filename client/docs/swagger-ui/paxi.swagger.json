@@ -283,6 +283,377 @@
         ]
       }
     },
+    "/paxi/prediction/market/{marketId}": {
+      "get": {
+        "operationId": "Query_Market",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryMarketResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/prediction/markets": {
+      "get": {
+        "operationId": "Query_Markets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryMarketsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "MARKET_STATUS_UNSPECIFIED",
+              "MARKET_STATUS_OPEN",
+              "MARKET_STATUS_CLOSED",
+              "MARKET_STATUS_RESOLVED",
+              "MARKET_STATUS_VOIDED"
+            ],
+            "default": "MARKET_STATUS_UNSPECIFIED"
+          },
+          {
+            "name": "pagination.key",
+            "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "pagination.offset",
+            "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.countTotal",
+            "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.reverse",
+            "description": "reverse is set to true if results are to be returned in the descending order.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/prediction/order/{marketId}/{orderId}": {
+      "get": {
+        "operationId": "Query_Order",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/prediction/order_by_id/{orderId}": {
+      "get": {
+        "operationId": "Query_OrderById",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryOrderByIdResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/prediction/orders/{address}": {
+      "get": {
+        "operationId": "Query_OrdersByAddress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryOrdersByAddressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pagination.key",
+            "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "pagination.offset",
+            "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.countTotal",
+            "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.reverse",
+            "description": "reverse is set to true if results are to be returned in the descending order.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/prediction/params": {
+      "get": {
+        "operationId": "Query_Params",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/xpredictiontypesQueryParamsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/prediction/position/{marketId}/{address}": {
+      "get": {
+        "operationId": "Query_Position",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/xpredictiontypesQueryPositionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/paxi/prediction/positions/{address}": {
+      "get": {
+        "operationId": "Query_PositionsByAddress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesQueryPositionsByAddressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pagination.key",
+            "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "pagination.offset",
+            "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.countTotal",
+            "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.reverse",
+            "description": "reverse is set to true if results are to be returned in the descending order.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/paxi/swap/all_pools": {
       "get": {
         "operationId": "Query_AllPools",
@@ -404,7 +775,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/typesQueryPositionResponse"
+              "$ref": "#/definitions/xswaptypesQueryPositionResponse"
             }
           },
           "default": {
@@ -457,6 +828,358 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/typesMsgBurnToken"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/apply_trade_batch": {
+      "post": {
+        "operationId": "Msg_ApplyTradeBatch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgApplyTradeBatchResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgApplyTradeBatch"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/cancel_order": {
+      "post": {
+        "operationId": "Msg_CancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgCancelOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgCancelOrder"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/claim_payout": {
+      "post": {
+        "operationId": "Msg_ClaimPayout",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgClaimPayoutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgClaimPayout"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/claim_void_refund": {
+      "post": {
+        "operationId": "Msg_ClaimVoidRefund",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgClaimVoidRefundResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgClaimVoidRefund"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/create_market": {
+      "post": {
+        "operationId": "Msg_CreateMarket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgCreateMarketResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgCreateMarket"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/merge_position": {
+      "post": {
+        "operationId": "Msg_MergePosition",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgMergePositionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgMergePosition"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/place_order": {
+      "post": {
+        "operationId": "Msg_PlaceOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgPlaceOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgPlaceOrder"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/resolve_market": {
+      "post": {
+        "operationId": "Msg_ResolveMarket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgResolveMarketResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgResolveMarket"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/split_position": {
+      "post": {
+        "operationId": "Msg_SplitPosition",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgSplitPositionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgSplitPosition"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/update_params": {
+      "post": {
+        "operationId": "Msg_UpdateParams",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/xpredictiontypesMsgUpdateParamsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/xpredictiontypesMsgUpdateParams"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "/tx/prediction/void_market": {
+      "post": {
+        "operationId": "Msg_VoidMarket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/typesMsgVoidMarketResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/typesMsgVoidMarket"
             }
           }
         ],
@@ -563,6 +1286,183 @@
     }
   },
   "definitions": {
+    "predictiontypesMarket": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "creator": {
+          "type": "string"
+        },
+        "resolver": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "rule": {
+          "type": "string"
+        },
+        "resolutionSource": {
+          "type": "string"
+        },
+        "outcomeType": {
+          "type": "string"
+        },
+        "outcomes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "collateralType": {
+          "$ref": "#/definitions/typesCollateralType"
+        },
+        "collateralDenom": {
+          "type": "string"
+        },
+        "collateralContractAddr": {
+          "type": "string"
+        },
+        "openTime": {
+          "type": "string",
+          "format": "int64"
+        },
+        "closeTime": {
+          "type": "string",
+          "format": "int64"
+        },
+        "resolveTime": {
+          "type": "string",
+          "format": "int64"
+        },
+        "feeBps": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "status": {
+          "$ref": "#/definitions/typesMarketStatus"
+        },
+        "winningOutcome": {
+          "$ref": "#/definitions/typesOutcome"
+        },
+        "totalYesShares": {
+          "type": "string"
+        },
+        "totalNoShares": {
+          "type": "string"
+        },
+        "createMarketBond": {
+          "type": "string"
+        },
+        "createMarketBondDenom": {
+          "type": "string"
+        },
+        "resolverFeeSharePercent": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "lastTradePrice": {
+          "type": "string"
+        },
+        "bestBidPrice": {
+          "type": "string"
+        },
+        "bestAskPrice": {
+          "type": "string"
+        },
+        "totalTradeVolume": {
+          "type": "string"
+        }
+      }
+    },
+    "predictiontypesOrder": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "trader": {
+          "type": "string"
+        },
+        "side": {
+          "$ref": "#/definitions/typesOrderSide"
+        },
+        "orderType": {
+          "$ref": "#/definitions/typesOrderType"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "filledAmount": {
+          "type": "string"
+        },
+        "remainingAmount": {
+          "type": "string"
+        },
+        "limitPrice": {
+          "type": "string"
+        },
+        "worstPrice": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/typesOrderStatus"
+        },
+        "createdBh": {
+          "type": "string",
+          "format": "int64"
+        },
+        "expireBh": {
+          "type": "string",
+          "format": "int64"
+        },
+        "closedBh": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "predictiontypesPosition": {
+      "type": "object",
+      "properties": {
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "address": {
+          "type": "string"
+        },
+        "yesShares": {
+          "type": "string"
+        },
+        "lockedYesShares": {
+          "type": "string"
+        },
+        "noShares": {
+          "type": "string"
+        },
+        "lockedNoShares": {
+          "type": "string"
+        },
+        "claimedPayout": {
+          "type": "boolean"
+        },
+        "claimedVoidRefund": {
+          "type": "boolean"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -591,6 +1491,60 @@
         }
       }
     },
+    "typesCollateralType": {
+      "type": "string",
+      "enum": [
+        "COLLATERAL_TYPE_UNSPECIFIED",
+        "COLLATERAL_TYPE_NATIVE",
+        "COLLATERAL_TYPE_PRC20"
+      ],
+      "default": "COLLATERAL_TYPE_UNSPECIFIED"
+    },
+    "typesMarketStatus": {
+      "type": "string",
+      "enum": [
+        "MARKET_STATUS_UNSPECIFIED",
+        "MARKET_STATUS_OPEN",
+        "MARKET_STATUS_CLOSED",
+        "MARKET_STATUS_RESOLVED",
+        "MARKET_STATUS_VOIDED"
+      ],
+      "default": "MARKET_STATUS_UNSPECIFIED"
+    },
+    "typesMsgApplyTradeBatch": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "batchId": {
+          "type": "string"
+        },
+        "trades": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/typesTradeMatch"
+          }
+        }
+      }
+    },
+    "typesMsgApplyTradeBatchResponse": {
+      "type": "object",
+      "properties": {
+        "settledCount": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "totalFees": {
+          "type": "string"
+        }
+      }
+    },
     "typesMsgBurnToken": {
       "type": "object",
       "properties": {
@@ -608,6 +1562,191 @@
     },
     "typesMsgBurnTokenResponse": {
       "type": "object"
+    },
+    "typesMsgCancelOrder": {
+      "type": "object",
+      "properties": {
+        "trader": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderId": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "typesMsgCancelOrderResponse": {
+      "type": "object"
+    },
+    "typesMsgClaimPayout": {
+      "type": "object",
+      "properties": {
+        "creator": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "typesMsgClaimPayoutResponse": {
+      "type": "object",
+      "properties": {
+        "payout": {
+          "type": "string"
+        }
+      }
+    },
+    "typesMsgClaimVoidRefund": {
+      "type": "object",
+      "properties": {
+        "creator": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "typesMsgClaimVoidRefundResponse": {
+      "type": "object",
+      "properties": {
+        "refund": {
+          "type": "string"
+        }
+      }
+    },
+    "typesMsgCreateMarket": {
+      "type": "object",
+      "properties": {
+        "creator": {
+          "type": "string"
+        },
+        "resolver": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "rule": {
+          "type": "string"
+        },
+        "resolutionSource": {
+          "type": "string"
+        },
+        "outcomeType": {
+          "type": "string"
+        },
+        "outcomes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "collateralType": {
+          "$ref": "#/definitions/typesCollateralType"
+        },
+        "collateralDenom": {
+          "type": "string"
+        },
+        "collateralContractAddr": {
+          "type": "string"
+        },
+        "openTime": {
+          "type": "string",
+          "format": "int64"
+        },
+        "closeTime": {
+          "type": "string",
+          "format": "int64"
+        },
+        "resolveTime": {
+          "type": "string",
+          "format": "int64"
+        },
+        "feeBps": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Deprecated: fee_bps is ignored. Market fee is loaded from params.market_fee_bps at creation time."
+        }
+      }
+    },
+    "typesMsgCreateMarketResponse": {
+      "type": "object",
+      "properties": {
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "typesMsgMergePosition": {
+      "type": "object",
+      "properties": {
+        "trader": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "amount": {
+          "type": "string"
+        }
+      }
+    },
+    "typesMsgMergePositionResponse": {
+      "type": "object"
+    },
+    "typesMsgPlaceOrder": {
+      "type": "object",
+      "properties": {
+        "trader": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "side": {
+          "$ref": "#/definitions/typesOrderSide"
+        },
+        "orderType": {
+          "$ref": "#/definitions/typesOrderType"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "limitPrice": {
+          "type": "string"
+        },
+        "worstPrice": {
+          "type": "string"
+        },
+        "expireBh": {
+          "type": "string",
+          "format": "int64",
+          "description": "Expire block height. Must be \u003e current block height and within params.max_order_lifetime_bh."
+        }
+      }
+    },
+    "typesMsgPlaceOrderResponse": {
+      "type": "object",
+      "properties": {
+        "orderId": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
     },
     "typesMsgProvideLiquidity": {
       "type": "object",
@@ -627,6 +1766,45 @@
       }
     },
     "typesMsgProvideLiquidityResponse": {
+      "type": "object"
+    },
+    "typesMsgResolveMarket": {
+      "type": "object",
+      "properties": {
+        "resolver": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "winningOutcome": {
+          "$ref": "#/definitions/typesOutcome"
+        },
+        "resolutionSource": {
+          "type": "string"
+        }
+      }
+    },
+    "typesMsgResolveMarketResponse": {
+      "type": "object"
+    },
+    "typesMsgSplitPosition": {
+      "type": "object",
+      "properties": {
+        "trader": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "amount": {
+          "type": "string"
+        }
+      }
+    },
+    "typesMsgSplitPositionResponse": {
       "type": "object"
     },
     "typesMsgSwap": {
@@ -655,6 +1833,24 @@
     "typesMsgSwapResponse": {
       "type": "object"
     },
+    "typesMsgVoidMarket": {
+      "type": "object",
+      "properties": {
+        "resolver": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "typesMsgVoidMarketResponse": {
+      "type": "object"
+    },
     "typesMsgWithdrawLiquidity": {
       "type": "object",
       "properties": {
@@ -671,6 +1867,47 @@
     },
     "typesMsgWithdrawLiquidityResponse": {
       "type": "object"
+    },
+    "typesOrderSide": {
+      "type": "string",
+      "enum": [
+        "ORDER_SIDE_UNSPECIFIED",
+        "ORDER_SIDE_BUY_YES",
+        "ORDER_SIDE_BUY_NO",
+        "ORDER_SIDE_SELL_YES",
+        "ORDER_SIDE_SELL_NO"
+      ],
+      "default": "ORDER_SIDE_UNSPECIFIED"
+    },
+    "typesOrderStatus": {
+      "type": "string",
+      "enum": [
+        "ORDER_STATUS_UNSPECIFIED",
+        "ORDER_STATUS_OPEN",
+        "ORDER_STATUS_PARTIALLY_FILLED",
+        "ORDER_STATUS_FILLED",
+        "ORDER_STATUS_CANCELLED",
+        "ORDER_STATUS_EXPIRED"
+      ],
+      "default": "ORDER_STATUS_UNSPECIFIED"
+    },
+    "typesOrderType": {
+      "type": "string",
+      "enum": [
+        "ORDER_TYPE_UNSPECIFIED",
+        "ORDER_TYPE_LIMIT",
+        "ORDER_TYPE_MARKET"
+      ],
+      "default": "ORDER_TYPE_UNSPECIFIED"
+    },
+    "typesOutcome": {
+      "type": "string",
+      "enum": [
+        "OUTCOME_UNSPECIFIED",
+        "OUTCOME_YES",
+        "OUTCOME_NO"
+      ],
+      "default": "OUTCOME_UNSPECIFIED"
     },
     "typesProviderPosition": {
       "type": "object",
@@ -734,6 +1971,60 @@
         }
       }
     },
+    "typesQueryMarketResponse": {
+      "type": "object",
+      "properties": {
+        "market": {
+          "$ref": "#/definitions/predictiontypesMarket"
+        }
+      }
+    },
+    "typesQueryMarketsResponse": {
+      "type": "object",
+      "properties": {
+        "markets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/predictiontypesMarket"
+          }
+        },
+        "pagination": {
+          "$ref": "#/definitions/v1beta1PageResponse"
+        }
+      }
+    },
+    "typesQueryOrderByIdResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/predictiontypesOrder"
+        }
+      }
+    },
+    "typesQueryOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/predictiontypesOrder"
+        }
+      }
+    },
+    "typesQueryOrdersByAddressResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/predictiontypesOrder"
+          }
+        },
+        "pagination": {
+          "$ref": "#/definitions/v1beta1PageResponse"
+        }
+      }
+    },
     "typesQueryPoolResponse": {
       "type": "object",
       "properties": {
@@ -757,17 +2048,18 @@
         }
       }
     },
-    "typesQueryPositionResponse": {
+    "typesQueryPositionsByAddressResponse": {
       "type": "object",
       "properties": {
-        "position": {
-          "$ref": "#/definitions/typesProviderPosition"
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/predictiontypesPosition"
+          }
         },
-        "expectedPaxi": {
-          "type": "string"
-        },
-        "expectedPrc20": {
-          "type": "string"
+        "pagination": {
+          "$ref": "#/definitions/v1beta1PageResponse"
         }
       }
     },
@@ -813,6 +2105,28 @@
             "type": "object",
             "$ref": "#/definitions/typesUnlockSchedule"
           }
+        }
+      }
+    },
+    "typesTradeMatch": {
+      "type": "object",
+      "properties": {
+        "tradeId": {
+          "type": "string"
+        },
+        "orderAId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderBId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "matchAmount": {
+          "type": "string"
+        },
+        "executionPrice": {
+          "type": "string"
         }
       }
     },
@@ -917,6 +2231,9 @@
         },
         "otherYearInflation": {
           "type": "string"
+        },
+        "uusdtAuthority": {
+          "type": "string"
         }
       }
     },
@@ -962,6 +2279,130 @@
         }
       }
     },
+    "xpredictiontypesMsgUpdateParams": {
+      "type": "object",
+      "properties": {
+        "authority": {
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/xpredictiontypesParamsInput"
+        }
+      }
+    },
+    "xpredictiontypesMsgUpdateParamsResponse": {
+      "type": "object"
+    },
+    "xpredictiontypesParamsInput": {
+      "type": "object",
+      "properties": {
+        "maxBatchSize": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "createMarketBond": {
+          "type": "string"
+        },
+        "createMarketBondDenom": {
+          "type": "string"
+        },
+        "marketFeeBps": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "resolverFeeSharePercent": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "maxOrderLifetimeBh": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "maxOpenOrdersPerUser": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "maxOpenOrdersPerMarket": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderPruneIntervalBh": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderPruneRetainBh": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderPruneScanLimit": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderPruneDeleteLimit": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "xpredictiontypesQueryParamsResponse": {
+      "type": "object",
+      "properties": {
+        "maxBatchSize": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "createMarketBond": {
+          "type": "string"
+        },
+        "createMarketBondDenom": {
+          "type": "string"
+        },
+        "marketFeeBps": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "resolverFeeSharePercent": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "maxOrderLifetimeBh": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "maxOpenOrdersPerUser": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "maxOpenOrdersPerMarket": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderPruneIntervalBh": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderPruneRetainBh": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderPruneScanLimit": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderPruneDeleteLimit": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "xpredictiontypesQueryPositionResponse": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/definitions/predictiontypesPosition"
+        }
+      }
+    },
     "xswaptypesMsgUpdateParamsResponse": {
       "type": "object"
     },
@@ -996,6 +2437,20 @@
         "minLiquidity": {
           "type": "string",
           "format": "uint64"
+        }
+      }
+    },
+    "xswaptypesQueryPositionResponse": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/definitions/typesProviderPosition"
+        },
+        "expectedPaxi": {
+          "type": "string"
+        },
+        "expectedPrc20": {
+          "type": "string"
         }
       }
     }

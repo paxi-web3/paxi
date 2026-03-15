@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	types "github.com/paxi-web3/paxi/x/custommint/types"
+	"github.com/paxi-web3/paxi/x/prediction/types"
 )
 
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	store := k.storeService.OpenKVStore(ctx)
-	bz, err := json.Marshal(params)
+	bz, err := json.Marshal(&params)
 	if err != nil {
 		panic(err)
 	}
@@ -18,25 +18,17 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	}
 }
 
-// GetParams retrieves the current params from store
 func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	params := types.DefaultParams()
-
 	store := k.storeService.OpenKVStore(ctx)
+
 	bz, err := store.Get(types.KeyParams)
-	if err != nil {
-		panic(err)
-	}
-	if bz == nil {
+	if err != nil || bz == nil {
 		return params
 	}
 
-	err = json.Unmarshal(bz, &params)
-	if err != nil {
-		panic(err)
-	}
-	if params.UUSDTAuthority == "" {
-		params.UUSDTAuthority = k.uusdtAuthority
+	if err := json.Unmarshal(bz, &params); err != nil {
+		return types.DefaultParams()
 	}
 
 	return params

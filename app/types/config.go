@@ -20,6 +20,7 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibctypes "github.com/cosmos/ibc-go/v10/modules/core/types"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
+	predictiontypes "github.com/paxi-web3/paxi/x/prediction/types"
 	swaptypes "github.com/paxi-web3/paxi/x/swap/types"
 )
 
@@ -253,6 +254,25 @@ func AddCustomGenesis(cdc codec.Codec, pGenesisData *map[string]json.RawMessage)
 	// Optionally give swap module account some initial balance
 	bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{
 		Address: swapAcc.GetAddress().String(),
+		Coins:   sdk.Coins{},
+	})
+
+	// Add prediction module account
+	predictionAcc := &authtypes.ModuleAccount{
+		BaseAccount: authtypes.NewBaseAccount(
+			authtypes.NewModuleAddress(predictiontypes.ModuleName),
+			nil, 0, 0,
+		),
+		Name:        predictiontypes.ModuleName,
+		Permissions: []string{},
+	}
+	anyPredictionAcc, err := codectypes.NewAnyWithValue(predictionAcc)
+	if err != nil {
+		panic(err)
+	}
+	authGenesis.Accounts = append(authGenesis.Accounts, anyPredictionAcc)
+	bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{
+		Address: predictionAcc.GetAddress().String(),
 		Coins:   sdk.Coins{},
 	})
 

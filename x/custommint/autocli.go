@@ -24,6 +24,26 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 					GovProposal: true,
 				},
+				{
+					RpcMethod: "MintUUSDT",
+					Use:       "mint-uusdt [to_address] [amount]",
+					Short:     "Mint uusdt to an account (authorized address only)",
+					Example:   "paxid tx custommint mint-uusdt paxi1... 1000000 --from operator",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "to_address"},
+						{ProtoField: "amount"},
+					},
+				},
+				{
+					RpcMethod: "BurnUUSDT",
+					Use:       "burn-uusdt [from_address] [amount]",
+					Short:     "Burn uusdt from an account (authorized address only)",
+					Example:   "paxid tx custommint burn-uusdt paxi1... 1000000 --from operator",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "from_address"},
+						{ProtoField: "amount"},
+					},
+				},
 			},
 		},
 	}

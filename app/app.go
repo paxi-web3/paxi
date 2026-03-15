@@ -109,6 +109,9 @@ import (
 	"github.com/paxi-web3/paxi/x/paxi"
 	paxikeeper "github.com/paxi-web3/paxi/x/paxi/keeper"
 	paxitypes "github.com/paxi-web3/paxi/x/paxi/types"
+	"github.com/paxi-web3/paxi/x/prediction"
+	predictionkeeper "github.com/paxi-web3/paxi/x/prediction/keeper"
+	predictiontypes "github.com/paxi-web3/paxi/x/prediction/types"
 	"github.com/paxi-web3/paxi/x/swap"
 	swapkeeper "github.com/paxi-web3/paxi/x/swap/keeper"
 	swaptypes "github.com/paxi-web3/paxi/x/swap/types"
@@ -135,12 +138,13 @@ var (
 	maccPerms = map[string][]string{
 		authtypes.FeeCollectorName:     {authtypes.Burner},
 		distrtypes.ModuleName:          nil,
-		customminttypes.ModuleName:     {authtypes.Minter},
+		customminttypes.ModuleName:     {authtypes.Minter, authtypes.Burner},
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
 		paxitypes.BurnTokenAccountName: {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
+		predictiontypes.ModuleName:     nil,
 		swaptypes.ModuleName:           {authtypes.Minter, authtypes.Burner},
 	}
 )
@@ -218,6 +222,7 @@ type PaxiApp struct {
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
 	CircuitKeeper         circuitkeeper.Keeper
 	PaxiKeeper            paxikeeper.Keeper
+	PredictionKeeper      predictionkeeper.Keeper
 	SwapKeeper            swapkeeper.Keeper
 
 	// ibc keepers
@@ -299,6 +304,7 @@ func NewPaxiApp(
 		circuittypes.StoreKey,
 		wasmtypes.StoreKey,
 		paxitypes.StoreKey,
+		predictiontypes.StoreKey,
 		swaptypes.StoreKey,
 		customwasmtypes.StoreKey,
 		ibcexported.StoreKey,
@@ -381,6 +387,7 @@ func NewPaxiApp(
 		cosmosruntime.NewKVStoreService(keys[customminttypes.StoreKey]),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		customminttypes.DefaultDenom,
+		customminttypes.DefaultUUSDTAuthority,
 	)
 	app.FeeGrantKeeper = feegrantkeeper.NewKeeper(
 		appCodec,
@@ -569,6 +576,17 @@ func NewPaxiApp(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
+	app.PredictionKeeper = predictionkeeper.NewKeeper(
+		appCodec,
+		app.BankKeeper,
+		app.AccountKeeper,
+		wasmkeeper.NewDefaultPermissionKeeper(app.WasmKeeper),
+		app.WasmKeeper,
+		keys[predictiontypes.StoreKey],
+		cosmosruntime.NewKVStoreService(keys[predictiontypes.StoreKey]),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
 	/****  Module Options ****/
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -593,6 +611,7 @@ func NewPaxiApp(
 		paxi.NewAppModule(appCodec, app.PaxiKeeper, app),
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper.Keeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 		customwasm.NewAppModule(appCodec, app.CustomWasmKeeper),
+		prediction.NewAppModule(appCodec, app.PredictionKeeper),
 		swap.NewAppModule(appCodec, app.SwapKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
 		ibctransfer.NewAppModule(app.IBCTransferKeeper),
@@ -632,6 +651,7 @@ func NewPaxiApp(
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
+		predictiontypes.ModuleName,
 		ibcexported.ModuleName,
 		swaptypes.ModuleName,
 		genutiltypes.ModuleName,
@@ -643,6 +663,7 @@ func NewPaxiApp(
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
+		predictiontypes.ModuleName,
 		ibcexported.ModuleName,
 		swaptypes.ModuleName,
 		stakingtypes.ModuleName,
@@ -670,6 +691,7 @@ func NewPaxiApp(
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
+		predictiontypes.ModuleName,
 		ibcexported.ModuleName,
 		ibctransfertypes.ModuleName,
 		swaptypes.ModuleName,
@@ -693,6 +715,7 @@ func NewPaxiApp(
 		customwasmtypes.ModuleName,
 		wasmtypes.ModuleName,
 		paxitypes.ModuleName,
+		predictiontypes.ModuleName,
 		ibcexported.ModuleName,
 		ibctransfertypes.ModuleName,
 		swaptypes.ModuleName,

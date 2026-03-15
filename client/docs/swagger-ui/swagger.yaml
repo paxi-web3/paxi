@@ -36323,6 +36323,535 @@ paths:
                       format: byte
       tags:
         - Query
+  /paxi/prediction/market/{marketId}:
+    get:
+      operationId: Query_Market
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryMarketResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: marketId
+        in: path
+        required: true
+        type: string
+        format: uint64
+      tags:
+      - Query
+  /paxi/prediction/markets:
+    get:
+      operationId: Query_Markets
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryMarketsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: status
+        in: query
+        required: false
+        type: string
+        enum:
+        - MARKET_STATUS_UNSPECIFIED
+        - MARKET_STATUS_OPEN
+        - MARKET_STATUS_CLOSED
+        - MARKET_STATUS_RESOLVED
+        - MARKET_STATUS_VOIDED
+        default: MARKET_STATUS_UNSPECIFIED
+      - name: pagination.key
+        description: 'key is a value returned in PageResponse.next_key to begin
+
+          querying the next page most efficiently. Only one of offset or key
+
+          should be set.'
+        in: query
+        required: false
+        type: string
+        format: byte
+      - name: pagination.offset
+        description: 'offset is a numeric offset that can be used when key is unavailable.
+
+          It is less efficient than using key. Only one of offset or key should
+
+          be set.'
+        in: query
+        required: false
+        type: string
+        format: uint64
+      - name: pagination.limit
+        description: 'limit is the total number of results to be returned in the result
+          page.
+
+          If left empty it will default to a value to be set by each app.'
+        in: query
+        required: false
+        type: string
+        format: uint64
+      - name: pagination.countTotal
+        description: 'count_total is set to true  to indicate that the result set should
+          include
+
+          a count of the total number of items available for pagination in UIs.
+
+          count_total is only respected when offset is used. It is ignored when key
+
+          is set.'
+        in: query
+        required: false
+        type: boolean
+      - name: pagination.reverse
+        description: reverse is set to true if results are to be returned in the descending
+          order.
+        in: query
+        required: false
+        type: boolean
+      tags:
+      - Query
+  /paxi/prediction/order/{marketId}/{orderId}:
+    get:
+      operationId: Query_Order
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryOrderResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: marketId
+        in: path
+        required: true
+        type: string
+        format: uint64
+      - name: orderId
+        in: path
+        required: true
+        type: string
+        format: uint64
+      tags:
+      - Query
+  /paxi/prediction/order_by_id/{orderId}:
+    get:
+      operationId: Query_OrderById
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryOrderByIdResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        type: string
+        format: uint64
+      tags:
+      - Query
+  /paxi/prediction/orders/{address}:
+    get:
+      operationId: Query_OrdersByAddress
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryOrdersByAddressResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: address
+        in: path
+        required: true
+        type: string
+      - name: pagination.key
+        description: 'key is a value returned in PageResponse.next_key to begin
+
+          querying the next page most efficiently. Only one of offset or key
+
+          should be set.'
+        in: query
+        required: false
+        type: string
+        format: byte
+      - name: pagination.offset
+        description: 'offset is a numeric offset that can be used when key is unavailable.
+
+          It is less efficient than using key. Only one of offset or key should
+
+          be set.'
+        in: query
+        required: false
+        type: string
+        format: uint64
+      - name: pagination.limit
+        description: 'limit is the total number of results to be returned in the result
+          page.
+
+          If left empty it will default to a value to be set by each app.'
+        in: query
+        required: false
+        type: string
+        format: uint64
+      - name: pagination.countTotal
+        description: 'count_total is set to true  to indicate that the result set should
+          include
+
+          a count of the total number of items available for pagination in UIs.
+
+          count_total is only respected when offset is used. It is ignored when key
+
+          is set.'
+        in: query
+        required: false
+        type: boolean
+      - name: pagination.reverse
+        description: reverse is set to true if results are to be returned in the descending
+          order.
+        in: query
+        required: false
+        type: boolean
+      tags:
+      - Query
+  /paxi/prediction/params:
+    get:
+      operationId: Query_Params
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/xpredictiontypesQueryParamsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      tags:
+      - Query
+  /paxi/prediction/position/{marketId}/{address}:
+    get:
+      operationId: Query_Position
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/xpredictiontypesQueryPositionResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: marketId
+        in: path
+        required: true
+        type: string
+        format: uint64
+      - name: address
+        in: path
+        required: true
+        type: string
+      tags:
+      - Query
+  /paxi/prediction/positions/{address}:
+    get:
+      operationId: Query_PositionsByAddress
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryPositionsByAddressResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: address
+        in: path
+        required: true
+        type: string
+      - name: pagination.key
+        description: 'key is a value returned in PageResponse.next_key to begin
+
+          querying the next page most efficiently. Only one of offset or key
+
+          should be set.'
+        in: query
+        required: false
+        type: string
+        format: byte
+      - name: pagination.offset
+        description: 'offset is a numeric offset that can be used when key is unavailable.
+
+          It is less efficient than using key. Only one of offset or key should
+
+          be set.'
+        in: query
+        required: false
+        type: string
+        format: uint64
+      - name: pagination.limit
+        description: 'limit is the total number of results to be returned in the result
+          page.
+
+          If left empty it will default to a value to be set by each app.'
+        in: query
+        required: false
+        type: string
+        format: uint64
+      - name: pagination.countTotal
+        description: 'count_total is set to true  to indicate that the result set should
+          include
+
+          a count of the total number of items available for pagination in UIs.
+
+          count_total is only respected when offset is used. It is ignored when key
+
+          is set.'
+        in: query
+        required: false
+        type: boolean
+      - name: pagination.reverse
+        description: reverse is set to true if results are to be returned in the descending
+          order.
+        in: query
+        required: false
+        type: boolean
+      tags:
+      - Query
+  /tx/prediction/apply_trade_batch:
+    post:
+      operationId: Msg_ApplyTradeBatch
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgApplyTradeBatchResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgApplyTradeBatch'
+      tags:
+      - Msg
+  /tx/prediction/cancel_order:
+    post:
+      operationId: Msg_CancelOrder
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgCancelOrderResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgCancelOrder'
+      tags:
+      - Msg
+  /tx/prediction/claim_payout:
+    post:
+      operationId: Msg_ClaimPayout
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgClaimPayoutResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgClaimPayout'
+      tags:
+      - Msg
+  /tx/prediction/claim_void_refund:
+    post:
+      operationId: Msg_ClaimVoidRefund
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgClaimVoidRefundResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgClaimVoidRefund'
+      tags:
+      - Msg
+  /tx/prediction/create_market:
+    post:
+      operationId: Msg_CreateMarket
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgCreateMarketResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgCreateMarket'
+      tags:
+      - Msg
+  /tx/prediction/merge_position:
+    post:
+      operationId: Msg_MergePosition
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgMergePositionResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgMergePosition'
+      tags:
+      - Msg
+  /tx/prediction/place_order:
+    post:
+      operationId: Msg_PlaceOrder
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgPlaceOrderResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgPlaceOrder'
+      tags:
+      - Msg
+  /tx/prediction/resolve_market:
+    post:
+      operationId: Msg_ResolveMarket
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgResolveMarketResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgResolveMarket'
+      tags:
+      - Msg
+  /tx/prediction/split_position:
+    post:
+      operationId: Msg_SplitPosition
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgSplitPositionResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgSplitPosition'
+      tags:
+      - Msg
+  /tx/prediction/update_params:
+    post:
+      operationId: Msg_UpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/xpredictiontypesMsgUpdateParamsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/xpredictiontypesMsgUpdateParams'
+      tags:
+      - Msg
+  /tx/prediction/void_market:
+    post:
+      operationId: Msg_VoidMarket
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgVoidMarketResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgVoidMarket'
+      tags:
+      - Msg
+
 definitions:
   protobufAny:
     type: object
@@ -62973,3 +63502,212 @@ definitions:
 
               field's configuration is global (not module specific).
     description: QueryConfigRequest is the Query/Config response type.
+  predictiontypesMarket:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uint64
+      creator:
+        type: string
+      resolver:
+        type: string
+      title:
+        type: string
+      description:
+        type: string
+      rule:
+        type: string
+      resolutionSource:
+        type: string
+      outcomeType:
+        type: string
+      outcomes:
+        type: array
+        items:
+          type: string
+      collateralType:
+        $ref: '#/definitions/typesCollateralType'
+      collateralDenom:
+        type: string
+      collateralContractAddr:
+        type: string
+      openTime:
+        type: string
+        format: int64
+      closeTime:
+        type: string
+        format: int64
+      resolveTime:
+        type: string
+        format: int64
+      feeBps:
+        type: string
+        format: uint64
+      status:
+        $ref: '#/definitions/typesMarketStatus'
+      winningOutcome:
+        $ref: '#/definitions/typesOutcome'
+      totalYesShares:
+        type: string
+      totalNoShares:
+        type: string
+      createMarketBond:
+        type: string
+      createMarketBondDenom:
+        type: string
+      resolverFeeSharePercent:
+        type: string
+        format: uint64
+      lastTradePrice:
+        type: string
+      bestBidPrice:
+        type: string
+      bestAskPrice:
+        type: string
+      totalTradeVolume:
+        type: string
+  predictiontypesOrder:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uint64
+      marketId:
+        type: string
+        format: uint64
+      trader:
+        type: string
+      side:
+        $ref: '#/definitions/typesOrderSide'
+      orderType:
+        $ref: '#/definitions/typesOrderType'
+      amount:
+        type: string
+      filledAmount:
+        type: string
+      remainingAmount:
+        type: string
+      limitPrice:
+        type: string
+      worstPrice:
+        type: string
+      status:
+        $ref: '#/definitions/typesOrderStatus'
+      createdBh:
+        type: string
+        format: int64
+      expireBh:
+        type: string
+        format: int64
+      closedBh:
+        type: string
+        format: int64
+  predictiontypesPosition:
+    type: object
+    properties:
+      marketId:
+        type: string
+        format: uint64
+      address:
+        type: string
+      yesShares:
+        type: string
+      lockedYesShares:
+        type: string
+      noShares:
+        type: string
+      lockedNoShares:
+        type: string
+      claimedPayout:
+        type: boolean
+      claimedVoidRefund:
+        type: boolean
+  xpredictiontypesMsgUpdateParams:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        $ref: '#/definitions/xpredictiontypesParamsInput'
+  xpredictiontypesMsgUpdateParamsResponse:
+    type: object
+  xpredictiontypesParamsInput:
+    type: object
+    properties:
+      maxBatchSize:
+        type: string
+        format: uint64
+      createMarketBond:
+        type: string
+      createMarketBondDenom:
+        type: string
+      marketFeeBps:
+        type: string
+        format: uint64
+      resolverFeeSharePercent:
+        type: string
+        format: uint64
+      maxOrderLifetimeBh:
+        type: string
+        format: uint64
+      maxOpenOrdersPerUser:
+        type: string
+        format: uint64
+      maxOpenOrdersPerMarket:
+        type: string
+        format: uint64
+      orderPruneIntervalBh:
+        type: string
+        format: uint64
+      orderPruneRetainBh:
+        type: string
+        format: uint64
+      orderPruneScanLimit:
+        type: string
+        format: uint64
+      orderPruneDeleteLimit:
+        type: string
+        format: uint64
+  xpredictiontypesQueryParamsResponse:
+    type: object
+    properties:
+      maxBatchSize:
+        type: string
+        format: uint64
+      createMarketBond:
+        type: string
+      createMarketBondDenom:
+        type: string
+      marketFeeBps:
+        type: string
+        format: uint64
+      resolverFeeSharePercent:
+        type: string
+        format: uint64
+      maxOrderLifetimeBh:
+        type: string
+        format: uint64
+      maxOpenOrdersPerUser:
+        type: string
+        format: uint64
+      maxOpenOrdersPerMarket:
+        type: string
+        format: uint64
+      orderPruneIntervalBh:
+        type: string
+        format: uint64
+      orderPruneRetainBh:
+        type: string
+        format: uint64
+      orderPruneScanLimit:
+        type: string
+        format: uint64
+      orderPruneDeleteLimit:
+        type: string
+        format: uint64
+  xpredictiontypesQueryPositionResponse:
+    type: object
+    properties:
+      position:
+        $ref: '#/definitions/predictiontypesPosition'

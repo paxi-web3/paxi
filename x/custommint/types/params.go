@@ -5,6 +5,7 @@ import (
 	"math"
 
 	sdkmath "cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
@@ -12,7 +13,10 @@ const (
 	StoreKey     = ModuleName
 	TotalMinted  = "total_minted"
 	DefaultDenom = "upaxi"
+	UUSDTDenom   = "uusdt"
 	TotalBurned  = "total_burned"
+
+	DefaultUUSDTAuthority = "paxi1q3kzxtuz8eua3nrtkee0qlqcwcyqlk6d48fkc3"
 )
 
 var KeyParams = []byte("custommint_params")
@@ -24,6 +28,7 @@ type Params struct {
 	FirstYearInflation  sdkmath.LegacyDec `json:"first_year_inflation" yaml:"first_year_inflation"`
 	SecondYearInflation sdkmath.LegacyDec `json:"second_year_inflation" yaml:"second_year_inflation"`
 	OtherYearInflation  sdkmath.LegacyDec `json:"other_year_inflation" yaml:"other_year_inflation"`
+	UUSDTAuthority      string            `json:"uusdt_authority" yaml:"uusdt_authority"`
 }
 
 type GenesisState struct {
@@ -48,6 +53,7 @@ func DefaultParams() Params {
 		FirstYearInflation:  sdkmath.LegacyMustNewDecFromStr("0.08"),
 		SecondYearInflation: sdkmath.LegacyMustNewDecFromStr("0.04"),
 		OtherYearInflation:  sdkmath.LegacyMustNewDecFromStr("0.02"),
+		UUSDTAuthority:      DefaultUUSDTAuthority,
 	}
 }
 
@@ -78,5 +84,10 @@ func (p Params) Validate() error {
 	if p.FirstYearInflation.IsNegative() || p.SecondYearInflation.IsNegative() || p.OtherYearInflation.IsNegative() {
 		return fmt.Errorf("inflation values must be non-negative")
 	}
+
+	if _, err := sdk.AccAddressFromBech32(p.UUSDTAuthority); err != nil {
+		return fmt.Errorf("invalid uusdt authority: %w", err)
+	}
+
 	return nil
 }

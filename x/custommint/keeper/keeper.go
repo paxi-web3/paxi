@@ -13,20 +13,22 @@ import (
 )
 
 type Keeper struct {
-	cdc          codec.BinaryCodec
-	bankKeeper   bankkeeper.Keeper
-	storeService store.KVStoreService
-	authority    string
-	mintDenom    string
+	cdc            codec.BinaryCodec
+	bankKeeper     bankkeeper.Keeper
+	storeService   store.KVStoreService
+	authority      string
+	mintDenom      string
+	uusdtAuthority string
 }
 
-func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, storeService store.KVStoreService, authority string, denom string) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, bankKeeper bankkeeper.Keeper, storeService store.KVStoreService, authority string, denom string, uusdtAuthority string) Keeper {
 	return Keeper{
-		cdc:          cdc,
-		bankKeeper:   bankKeeper,
-		storeService: storeService,
-		authority:    authority,
-		mintDenom:    denom,
+		cdc:            cdc,
+		bankKeeper:     bankKeeper,
+		storeService:   storeService,
+		authority:      authority,
+		mintDenom:      denom,
+		uusdtAuthority: uusdtAuthority,
 	}
 }
 

@@ -13,6 +13,7 @@ message ParamsInput {
   string first_year_inflation = 4;
   string second_year_inflation = 5;
   string other_year_inflation = 6;
+  string uusdt_authority = 7;
 }
 
 message MsgUpdateParams {
@@ -24,7 +25,29 @@ message MsgUpdateParams {
 
 message MsgUpdateParamsResponse {}
 
+message MsgMintUUSDT {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1;
+  string to_address = 2;
+  string amount = 3;
+}
+
+message MsgMintUUSDTResponse {}
+
+message MsgBurnUUSDT {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1;
+  string from_address = 2;
+  string amount = 3;
+}
+
+message MsgBurnUUSDTResponse {}
+
 service Msg {
   option (cosmos.msg.v1.service) = true;
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc MintUUSDT(MsgMintUUSDT) returns (MsgMintUUSDTResponse);
+  rpc BurnUUSDT(MsgBurnUUSDT) returns (MsgBurnUUSDTResponse);
 }

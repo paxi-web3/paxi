@@ -1,0 +1,204 @@
+syntax = "proto3";
+package x.prediction.types;
+
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/api/annotations.proto";
+import "x/prediction/types/tx.proto";
+
+option go_package = "github.com/paxi-web3/paxi/x/prediction/types";
+
+message QueryParamsRequest {}
+
+message QueryParamsResponse {
+  reserved 1;
+  uint64 max_batch_size = 2;
+  string create_market_bond = 3;
+  string create_market_bond_denom = 4;
+  uint64 market_fee_bps = 5;
+  uint64 resolver_fee_share_percent = 6;
+  uint64 max_order_lifetime_bh = 7;
+  uint64 max_open_orders_per_user = 8;
+  uint64 max_open_orders_per_market = 9;
+  uint64 order_prune_interval_bh = 10;
+  uint64 order_prune_retain_bh = 11;
+  uint64 order_prune_scan_limit = 12;
+  uint64 order_prune_delete_limit = 13;
+}
+
+message Market {
+  uint64 id = 1;
+
+  string creator = 2;
+  string resolver = 3;
+
+  string title = 4;
+  string description = 5;
+  string rule = 6;
+
+  string resolution_source = 7;
+
+  string outcome_type = 8;
+  repeated string outcomes = 9;
+
+  CollateralType collateral_type = 10;
+  string collateral_denom = 11;
+  string collateral_contract_addr = 12;
+
+  int64 open_time = 13;
+  int64 close_time = 14;
+  int64 resolve_time = 15;
+
+  reserved 16;
+  uint64 fee_bps = 17;
+
+  MarketStatus status = 18;
+  Outcome winning_outcome = 19;
+
+  reserved 20;
+  string total_yes_shares = 21;
+  string total_no_shares = 22;
+  string create_market_bond = 23;
+  string create_market_bond_denom = 24;
+  uint64 resolver_fee_share_percent = 25;
+  string last_trade_price = 26;
+  string best_bid_price = 27;
+  string best_ask_price = 28;
+  string total_trade_volume = 29;
+}
+
+message Position {
+  uint64 market_id = 1;
+  string address = 2;
+
+  reserved 3;
+  reserved 4;
+
+  string yes_shares = 5;
+  string locked_yes_shares = 6;
+
+  string no_shares = 7;
+  string locked_no_shares = 8;
+
+  bool claimed_payout = 9;
+  bool claimed_void_refund = 10;
+}
+
+message Order {
+  uint64 id = 1;
+  uint64 market_id = 2;
+  string trader = 3;
+
+  OrderSide side = 4;
+  OrderType order_type = 5;
+
+  string amount = 6;
+  string filled_amount = 7;
+  string remaining_amount = 8;
+
+  string limit_price = 9;
+  string worst_price = 10;
+
+  OrderStatus status = 11;
+
+  int64 created_bh = 12;
+  int64 expire_bh = 13;
+  int64 closed_bh = 14;
+}
+
+message QueryMarketRequest {
+  uint64 market_id = 1;
+}
+
+message QueryMarketResponse {
+  Market market = 1;
+}
+
+message QueryMarketsRequest {
+  MarketStatus status = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QueryMarketsResponse {
+  repeated Market markets = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryOrderRequest {
+  uint64 market_id = 1;
+  uint64 order_id = 2;
+}
+
+message QueryOrderResponse {
+  Order order = 1;
+}
+
+message QueryOrderByIdRequest {
+  uint64 order_id = 1;
+}
+
+message QueryOrderByIdResponse {
+  Order order = 1;
+}
+
+message QueryOrdersByAddressRequest {
+  string address = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QueryOrdersByAddressResponse {
+  repeated Order orders = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryPositionRequest {
+  uint64 market_id = 1;
+  string address = 2;
+}
+
+message QueryPositionResponse {
+  Position position = 1;
+}
+
+message QueryPositionsByAddressRequest {
+  string address = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QueryPositionsByAddressResponse {
+  repeated Position positions = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+service Query {
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/paxi/prediction/params";
+  }
+
+  rpc Market(QueryMarketRequest) returns (QueryMarketResponse) {
+    option (google.api.http).get = "/paxi/prediction/market/{market_id}";
+  }
+
+  rpc Markets(QueryMarketsRequest) returns (QueryMarketsResponse) {
+    option (google.api.http).get = "/paxi/prediction/markets";
+  }
+
+  rpc Order(QueryOrderRequest) returns (QueryOrderResponse) {
+    option (google.api.http).get = "/paxi/prediction/order/{market_id}/{order_id}";
+  }
+
+  rpc OrderById(QueryOrderByIdRequest) returns (QueryOrderByIdResponse) {
+    option (google.api.http).get = "/paxi/prediction/order_by_id/{order_id}";
+  }
+
+  rpc OrdersByAddress(QueryOrdersByAddressRequest) returns (QueryOrdersByAddressResponse) {
+    option (google.api.http).get = "/paxi/prediction/orders/{address}";
+  }
+
+  rpc Position(QueryPositionRequest) returns (QueryPositionResponse) {
+    option (google.api.http).get = "/paxi/prediction/position/{market_id}/{address}";
+  }
+
+  rpc PositionsByAddress(QueryPositionsByAddressRequest) returns (QueryPositionsByAddressResponse) {
+    option (google.api.http).get = "/paxi/prediction/positions/{address}";
+  }
+}

@@ -9,5 +9,7 @@ func RegisterMsg(cdc codectypes.InterfaceRegistry) {
 	cdc.RegisterImplementations(
 		(*sdk.Msg)(nil),
 		&MsgUpdateParams{},
+		&MsgMintUUSDT{},
+		&MsgBurnUUSDT{},
 	)
 }

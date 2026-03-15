@@ -61,6 +61,7 @@ func (q *queryServer) Params(ctx context.Context, req *types.QueryParamsRequest)
 		FirstYearInflation:  params.FirstYearInflation.String(),
 		SecondYearInflation: params.SecondYearInflation.String(),
 		OtherYearInflation:  params.OtherYearInflation.String(),
+		UusdtAuthority:      params.UUSDTAuthority,
 	}, nil
 }
 

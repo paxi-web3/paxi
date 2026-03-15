@@ -1,0 +1,303 @@
+syntax = "proto3";
+package x.prediction.types;
+
+import "cosmos/msg/v1/msg.proto";
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/paxi-web3/paxi/x/prediction/types";
+
+enum MarketStatus {
+  MARKET_STATUS_UNSPECIFIED = 0;
+  MARKET_STATUS_OPEN = 1;
+  MARKET_STATUS_CLOSED = 2;
+  MARKET_STATUS_RESOLVED = 3;
+  MARKET_STATUS_VOIDED = 4;
+}
+
+enum Outcome {
+  OUTCOME_UNSPECIFIED = 0;
+  OUTCOME_YES = 1;
+  OUTCOME_NO = 2;
+}
+
+enum CollateralType {
+  COLLATERAL_TYPE_UNSPECIFIED = 0;
+  COLLATERAL_TYPE_NATIVE = 1;
+  COLLATERAL_TYPE_PRC20 = 2;
+}
+
+enum OrderSide {
+  ORDER_SIDE_UNSPECIFIED = 0;
+  ORDER_SIDE_BUY_YES = 1;
+  ORDER_SIDE_BUY_NO = 2;
+  ORDER_SIDE_SELL_YES = 3;
+  ORDER_SIDE_SELL_NO = 4;
+}
+
+enum OrderType {
+  ORDER_TYPE_UNSPECIFIED = 0;
+  ORDER_TYPE_LIMIT = 1;
+  ORDER_TYPE_MARKET = 2;
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_OPEN = 1;
+  ORDER_STATUS_PARTIALLY_FILLED = 2;
+  ORDER_STATUS_FILLED = 3;
+  ORDER_STATUS_CANCELLED = 4;
+  ORDER_STATUS_EXPIRED = 5;
+}
+
+message ParamsInput {
+  uint64 max_batch_size = 1;
+  string create_market_bond = 2;
+  string create_market_bond_denom = 3;
+  uint64 market_fee_bps = 4;
+  uint64 resolver_fee_share_percent = 5;
+  uint64 max_order_lifetime_bh = 6;
+  uint64 max_open_orders_per_user = 7;
+  uint64 max_open_orders_per_market = 8;
+  uint64 order_prune_interval_bh = 9;
+  uint64 order_prune_retain_bh = 10;
+  uint64 order_prune_scan_limit = 11;
+  uint64 order_prune_delete_limit = 12;
+}
+
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1;
+  ParamsInput params = 2 [(gogoproto.nullable) = false];
+}
+
+message MsgUpdateParamsResponse {}
+
+message TradeMatch {
+  string trade_id = 1;
+  uint64 order_a_id = 2;
+  uint64 order_b_id = 3;
+  string match_amount = 4;
+  string execution_price = 5;
+}
+
+message MsgCreateMarket {
+  option (cosmos.msg.v1.signer) = "creator";
+
+  string creator = 1;
+  string resolver = 2;
+
+  string title = 3;
+  string description = 4;
+  string rule = 5;
+
+  string resolution_source = 6;
+
+  string outcome_type = 7;
+  repeated string outcomes = 8;
+
+  CollateralType collateral_type = 9;
+  string collateral_denom = 10;
+  string collateral_contract_addr = 11;
+
+  int64 open_time = 12;
+  int64 close_time = 13;
+  int64 resolve_time = 14;
+
+  reserved 15;
+  // Deprecated: fee_bps is ignored. Market fee is loaded from params.market_fee_bps at creation time.
+  uint64 fee_bps = 16 [deprecated = true];
+}
+
+message MsgCreateMarketResponse {
+  uint64 market_id = 1;
+}
+
+message MsgPlaceOrder {
+  option (cosmos.msg.v1.signer) = "trader";
+
+  string trader = 1;
+  uint64 market_id = 2;
+
+  OrderSide side = 3;
+  OrderType order_type = 4;
+
+  string amount = 5;
+  string limit_price = 6;
+  string worst_price = 7;
+  // Expire block height. Must be > current block height and within params.max_order_lifetime_bh.
+  int64 expire_bh = 8;
+}
+
+message MsgPlaceOrderResponse {
+  uint64 order_id = 1;
+}
+
+message MsgCancelOrder {
+  option (cosmos.msg.v1.signer) = "trader";
+
+  string trader = 1;
+  uint64 market_id = 2;
+  uint64 order_id = 3;
+}
+
+message MsgCancelOrderResponse {}
+
+message MsgSplitPosition {
+  option (cosmos.msg.v1.signer) = "trader";
+
+  string trader = 1;
+  uint64 market_id = 2;
+  string amount = 3;
+}
+
+message MsgSplitPositionResponse {}
+
+message MsgMergePosition {
+  option (cosmos.msg.v1.signer) = "trader";
+
+  string trader = 1;
+  uint64 market_id = 2;
+  string amount = 3;
+}
+
+message MsgMergePositionResponse {}
+
+message MsgApplyTradeBatch {
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1;
+  uint64 market_id = 2;
+  string batch_id = 3;
+  repeated TradeMatch trades = 4 [(gogoproto.nullable) = false];
+}
+
+message MsgApplyTradeBatchResponse {
+  uint64 settled_count = 1;
+  string total_fees = 2;
+}
+
+message MsgResolveMarket {
+  option (cosmos.msg.v1.signer) = "resolver";
+
+  string resolver = 1;
+  uint64 market_id = 2;
+  Outcome winning_outcome = 3;
+  string resolution_source = 4;
+}
+
+message MsgResolveMarketResponse {}
+
+message MsgVoidMarket {
+  option (cosmos.msg.v1.signer) = "resolver";
+
+  string resolver = 1;
+  uint64 market_id = 2;
+  string reason = 3;
+}
+
+message MsgVoidMarketResponse {}
+
+message MsgClaimPayout {
+  option (cosmos.msg.v1.signer) = "creator";
+
+  string creator = 1;
+  uint64 market_id = 2;
+}
+
+message MsgClaimPayoutResponse {
+  string payout = 1;
+}
+
+message MsgClaimVoidRefund {
+  option (cosmos.msg.v1.signer) = "creator";
+
+  string creator = 1;
+  uint64 market_id = 2;
+}
+
+message MsgClaimVoidRefundResponse {
+  string refund = 1;
+}
+
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/update_params"
+      body: "*"
+    };
+  }
+
+  rpc CreateMarket(MsgCreateMarket) returns (MsgCreateMarketResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/create_market"
+      body: "*"
+    };
+  }
+
+  rpc PlaceOrder(MsgPlaceOrder) returns (MsgPlaceOrderResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/place_order"
+      body: "*"
+    };
+  }
+
+  rpc CancelOrder(MsgCancelOrder) returns (MsgCancelOrderResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/cancel_order"
+      body: "*"
+    };
+  }
+
+  rpc SplitPosition(MsgSplitPosition) returns (MsgSplitPositionResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/split_position"
+      body: "*"
+    };
+  }
+
+  rpc MergePosition(MsgMergePosition) returns (MsgMergePositionResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/merge_position"
+      body: "*"
+    };
+  }
+
+  rpc ApplyTradeBatch(MsgApplyTradeBatch) returns (MsgApplyTradeBatchResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/apply_trade_batch"
+      body: "*"
+    };
+  }
+
+  rpc ResolveMarket(MsgResolveMarket) returns (MsgResolveMarketResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/resolve_market"
+      body: "*"
+    };
+  }
+
+  rpc VoidMarket(MsgVoidMarket) returns (MsgVoidMarketResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/void_market"
+      body: "*"
+    };
+  }
+
+  rpc ClaimPayout(MsgClaimPayout) returns (MsgClaimPayoutResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/claim_payout"
+      body: "*"
+    };
+  }
+
+  rpc ClaimVoidRefund(MsgClaimVoidRefund) returns (MsgClaimVoidRefundResponse) {
+    option (google.api.http) = {
+      post: "/tx/prediction/claim_void_refund"
+      body: "*"
+    };
+  }
+}

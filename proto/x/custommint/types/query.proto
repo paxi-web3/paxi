@@ -58,6 +58,7 @@ message QueryParamsResponse {
   string first_year_inflation = 4;
   string second_year_inflation = 5;
   string other_year_inflation = 6;
+  string uusdt_authority = 7;
 }
 
 message QueryInflationRequest {}
