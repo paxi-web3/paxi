@@ -105,6 +105,14 @@ message Order {
   int64 closed_bh = 14;
 }
 
+message ResolveRequest {
+  uint64 market_id = 1;
+  string creator = 2;
+  Outcome requested_outcome = 3;
+  string requested_source = 4;
+  int64 requested_bh = 5;
+}
+
 message QueryMarketRequest {
   uint64 market_id = 1;
 }
@@ -114,7 +122,8 @@ message QueryMarketResponse {
 }
 
 message QueryMarketsRequest {
-  MarketStatus status = 1;
+  // status accepts either enum name (e.g. MARKET_STATUS_OPEN) or numeric value (e.g. 1).
+  string status = 1;
   cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
@@ -148,6 +157,24 @@ message QueryOrdersByAddressRequest {
 message QueryOrdersByAddressResponse {
   repeated Order orders = 1;
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryOrdersByMarketRequest {
+  uint64 market_id = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QueryOrdersByMarketResponse {
+  repeated Order orders = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryResolveRequestRequest {
+  uint64 market_id = 1;
+}
+
+message QueryResolveRequestResponse {
+  ResolveRequest resolve_request = 1;
 }
 
 message QueryPositionRequest {
@@ -192,6 +219,14 @@ service Query {
 
   rpc OrdersByAddress(QueryOrdersByAddressRequest) returns (QueryOrdersByAddressResponse) {
     option (google.api.http).get = "/paxi/prediction/orders/{address}";
+  }
+
+  rpc OrdersByMarket(QueryOrdersByMarketRequest) returns (QueryOrdersByMarketResponse) {
+    option (google.api.http).get = "/paxi/prediction/orders_by_market/{market_id}";
+  }
+
+  rpc ResolveRequest(QueryResolveRequestRequest) returns (QueryResolveRequestResponse) {
+    option (google.api.http).get = "/paxi/prediction/resolve_request/{market_id}";
   }
 
   rpc Position(QueryPositionRequest) returns (QueryPositionResponse) {

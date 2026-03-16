@@ -45,13 +45,17 @@ func (m *MsgCreateMarket) ValidateBasic() error {
 	if strings.TrimSpace(m.Title) == "" {
 		return fmt.Errorf("title cannot be empty")
 	}
-	if m.OpenTime <= 0 || m.CloseTime <= 0 || m.ResolveTime <= 0 {
-		return fmt.Errorf("open_time, close_time, resolve_time must be > 0")
+	if m.OpenTime <= 0 || m.CloseTime <= 0 {
+		return fmt.Errorf("open_time and close_time must be > 0")
 	}
 	if m.OpenTime > m.CloseTime {
 		return fmt.Errorf("open_time cannot be greater than close_time")
 	}
-	if m.CloseTime > m.ResolveTime {
+	if m.ResolveTime < 0 {
+		return fmt.Errorf("resolve_time must be >= 0")
+	}
+	// resolve_time = 0 means no earliest resolve-time restriction.
+	if m.ResolveTime > 0 && m.CloseTime > m.ResolveTime {
 		return fmt.Errorf("close_time cannot be greater than resolve_time")
 	}
 
@@ -205,6 +209,22 @@ func (m *MsgResolveMarket) ValidateBasic() error {
 	}
 	if m.WinningOutcome != Outcome_OUTCOME_YES && m.WinningOutcome != Outcome_OUTCOME_NO {
 		return fmt.Errorf("winning_outcome must be YES or NO")
+	}
+	return nil
+}
+
+func (m *MsgRequestResolve) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(m.Creator); err != nil {
+		return fmt.Errorf("invalid creator address: %w", err)
+	}
+	if m.MarketId == 0 {
+		return fmt.Errorf("market_id must be > 0")
+	}
+	if m.RequestedOutcome != Outcome_OUTCOME_YES && m.RequestedOutcome != Outcome_OUTCOME_NO {
+		return fmt.Errorf("requested_outcome must be YES or NO")
+	}
+	if strings.TrimSpace(m.RequestedSource) == "" {
+		return fmt.Errorf("requested_source cannot be empty")
 	}
 	return nil
 }

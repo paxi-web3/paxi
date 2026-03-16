@@ -21,6 +21,16 @@ type prc20AllowanceResponse struct {
 	Allowance string `json:"allowance"`
 }
 
+type prc20BalanceQuery struct {
+	Balance struct {
+		Address string `json:"address"`
+	} `json:"balance"`
+}
+
+type prc20BalanceResponse struct {
+	Balance string `json:"balance"`
+}
+
 func (k Keeper) transferCollateralBetweenAccounts(ctx sdk.Context, market *types.Market, from sdk.AccAddress, to sdk.AccAddress, amount sdkmath.Int) error {
 	if !amount.IsPositive() {
 		return nil
@@ -186,4 +196,69 @@ func (k Keeper) ensurePRC20Allowance(ctx sdk.Context, contract string, owner sdk
 	}
 
 	return nil
+}
+
+func (k Keeper) ensurePRC20Balance(ctx sdk.Context, contract string, owner sdk.AccAddress, required sdkmath.Int) error {
+	if !required.IsPositive() {
+		return nil
+	}
+	if k.prc20Query == nil {
+		return fmt.Errorf("prc20 query keeper is not configured")
+	}
+
+	contractAddr, err := sdk.AccAddressFromBech32(contract)
+	if err != nil {
+		return fmt.Errorf("invalid prc20 contract address: %w", err)
+	}
+
+	query := prc20BalanceQuery{}
+	query.Balance.Address = owner.String()
+	queryBz, err := json.Marshal(query)
+	if err != nil {
+		return fmt.Errorf("failed to marshal prc20 balance query: %w", err)
+	}
+
+	respBz, err := k.prc20Query.QuerySmart(ctx, contractAddr, queryBz)
+	if err != nil {
+		return fmt.Errorf("failed to query prc20 balance: %w", err)
+	}
+
+	var resp prc20BalanceResponse
+	if err := json.Unmarshal(respBz, &resp); err != nil {
+		return fmt.Errorf("failed to decode prc20 balance response: %w", err)
+	}
+	balance, err := parseNonNegativeInt(resp.Balance, "balance")
+	if err != nil {
+		return fmt.Errorf("invalid prc20 balance response: %w", err)
+	}
+	if balance.LT(required) {
+		return fmt.Errorf("insufficient prc20 balance: required=%s balance=%s", required.String(), balance.String())
+	}
+
+	return nil
+}
+
+func (k Keeper) ensureCollateralBalance(ctx sdk.Context, market *types.Market, owner sdk.AccAddress, required sdkmath.Int) error {
+	if !required.IsPositive() {
+		return nil
+	}
+
+	switch market.CollateralType {
+	case types.CollateralType_COLLATERAL_TYPE_NATIVE:
+		bal := k.bankKeeper.GetBalance(ctx, owner, market.CollateralDenom).Amount
+		if bal.LT(required) {
+			return fmt.Errorf("insufficient funds: required=%s balance=%s", required.String(), bal.String())
+		}
+		return nil
+	case types.CollateralType_COLLATERAL_TYPE_PRC20:
+		if err := k.ensurePRC20Balance(ctx, market.CollateralContractAddr, owner, required); err != nil {
+			return err
+		}
+		if err := k.ensurePRC20Allowance(ctx, market.CollateralContractAddr, owner, required); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return fmt.Errorf("unsupported collateral type")
+	}
 }

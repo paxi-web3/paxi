@@ -8,16 +8,17 @@ import (
 )
 
 var (
-	MarketPrefix        = []byte{0x01}
-	PositionPrefix      = []byte{0x02}
-	NextMarketIDKey     = []byte{0x03}
-	AppliedTradePrefix  = []byte{0x04}
-	OrderPrefix         = []byte{0x05}
-	NextOrderIDKey      = []byte{0x06}
-	OpenOrderUserKey    = []byte{0x07}
-	OpenOrderUserMktKey = []byte{0x08}
-	OrderPruneCursorKey = []byte{0x09}
-	OrderIDIndexPrefix  = []byte{0x0A}
+	MarketPrefix         = []byte{0x01}
+	PositionPrefix       = []byte{0x02}
+	NextMarketIDKey      = []byte{0x03}
+	AppliedTradePrefix   = []byte{0x04}
+	OrderPrefix          = []byte{0x05}
+	NextOrderIDKey       = []byte{0x06}
+	OpenOrderUserKey     = []byte{0x07}
+	OpenOrderUserMktKey  = []byte{0x08}
+	OrderPruneCursorKey  = []byte{0x09}
+	OrderIDIndexPrefix   = []byte{0x0A}
+	ResolveRequestPrefix = []byte{0x0B}
 )
 
 func MarketStoreKey(marketID uint64) []byte {
@@ -87,5 +88,15 @@ func OrderIDIndexKey(orderID uint64) []byte {
 	key := make([]byte, 0, len(OrderIDIndexPrefix)+len(orderBz))
 	key = append(key, OrderIDIndexPrefix...)
 	key = append(key, orderBz...)
+	return key
+}
+
+func ResolveRequestStoreKey(marketID uint64) []byte {
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, marketID)
+
+	key := make([]byte, 0, len(ResolveRequestPrefix)+len(bz))
+	key = append(key, ResolveRequestPrefix...)
+	key = append(key, bz...)
 	return key
 }

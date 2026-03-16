@@ -8,6 +8,7 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
+	predictiontypes "github.com/paxi-web3/paxi/x/prediction/types"
 )
 
 // UpgradeName is the name of the upgrade.
@@ -89,7 +90,7 @@ func (app *PaxiApp) RegisterUpgradeHandlers() {
 			// Store upgrades for v1.0.7
 			// v1.0.7 adds x/feegrant module store
 			var v107Stores *storetypes.StoreUpgrades = &storetypes.StoreUpgrades{
-				Added: []string{feegrant.StoreKey},
+				Added: []string{feegrant.StoreKey, predictiontypes.StoreKey},
 				// Deleted: []string{"oldmodule"},
 			}
 			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, v107Stores))

@@ -17,6 +17,7 @@ func RegisterMsg(cdc codectypes.InterfaceRegistry) {
 		&MsgMergePosition{},
 		&MsgApplyTradeBatch{},
 		&MsgResolveMarket{},
+		&MsgRequestResolve{},
 		&MsgVoidMarket{},
 		&MsgClaimPayout{},
 		&MsgClaimVoidRefund{},

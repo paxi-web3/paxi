@@ -4,6 +4,8 @@ APP_NAME = paxid
 VERSION ?= v1.0.6
 DOCKER_IMAGE = paxi-node
 BUILD_TAGS = "cosmwasm pebbledb"
+GO_TOOLCHAIN ?= go1.25.5
+GO_CMD = GOTOOLCHAIN=$(GO_TOOLCHAIN) go
 CGO_ENABLED=1
 CGO_CFLAGS="-I/usr/local/include" 
 
@@ -13,11 +15,11 @@ all: build
 
 build:
 	@echo "🔨 Building $(APP_NAME)..."
-	go build -mod=readonly -tags $(BUILD_TAGS) -o build/$(APP_NAME) ./cmd/$(APP_NAME)
+	$(GO_CMD) build -mod=readonly -tags $(BUILD_TAGS) -o build/$(APP_NAME) ./cmd/$(APP_NAME)
 
 install:
 	@echo "📦 Installing $(APP_NAME) to $$HOME/paxid..."
-	go build -mod=readonly -tags $(BUILD_TAGS) -o $$HOME/paxid/$(APP_NAME) ./cmd/$(APP_NAME)
+	$(GO_CMD) build -mod=readonly -tags $(BUILD_TAGS) -o $$HOME/paxid/$(APP_NAME) ./cmd/$(APP_NAME)
 
 clean:
 	@echo "🧹 Cleaning build files..."
@@ -32,7 +34,7 @@ version:
 
 test:
 	@echo "🧪 Running unit tests..."
-	go test ./... -v
+	$(GO_CMD) test ./... -v
 
 docker:
 	@echo docker run -d --name $(DOCKER_IMAGE)"🐳 Building Docker image $(DOCKER_IMAGE)..."

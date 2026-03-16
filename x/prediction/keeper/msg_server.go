@@ -102,6 +102,14 @@ func (m msgServer) ResolveMarket(goCtx context.Context, msg *types.MsgResolveMar
 	return &types.MsgResolveMarketResponse{}, nil
 }
 
+func (m msgServer) RequestResolve(goCtx context.Context, msg *types.MsgRequestResolve) (*types.MsgRequestResolveResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	if err := m.Keeper.RequestResolve(ctx, msg); err != nil {
+		return nil, err
+	}
+	return &types.MsgRequestResolveResponse{}, nil
+}
+
 func (m msgServer) VoidMarket(goCtx context.Context, msg *types.MsgVoidMarket) (*types.MsgVoidMarketResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	if err := m.Keeper.VoidMarket(ctx, msg); err != nil {

@@ -142,21 +142,8 @@ func (k Keeper) PlaceOrder(ctx sdk.Context, msg *types.MsgPlaceOrder) (uint64, e
 	}
 
 	amount, _ := sdkmath.NewIntFromString(msg.Amount)
-	if market.CollateralType == types.CollateralType_COLLATERAL_TYPE_PRC20 && isBuySide(msg.Side) {
-		var maxUnitPrice sdkmath.Int
-		switch msg.OrderType {
-		case types.OrderType_ORDER_TYPE_LIMIT:
-			maxUnitPrice, _ = types.ParsePriceTicks(msg.LimitPrice, "limit_price")
-		case types.OrderType_ORDER_TYPE_MARKET:
-			maxUnitPrice, _ = types.ParsePriceTicks(msg.WorstPrice, "worst_price")
-		default:
-			return 0, errors.Wrap(types.ErrInvalidRequest, "invalid order_type")
-		}
-
-		required := amount.Mul(maxUnitPrice)
-		if err := k.ensurePRC20Allowance(ctx, market.CollateralContractAddr, traderAddr, required); err != nil {
-			return 0, errors.Wrap(types.ErrInsufficientFunds, err.Error())
-		}
+	if err := k.ensurePlaceOrderCapacity(ctx, market, traderAddr, msg.Side, msg.OrderType, msg.LimitPrice, msg.WorstPrice, amount); err != nil {
+		return 0, errors.Wrap(types.ErrInsufficientFunds, err.Error())
 	}
 
 	id := k.NextOrderID(ctx)
@@ -405,7 +392,8 @@ func (k Keeper) ResolveMarket(ctx sdk.Context, msg *types.MsgResolveMarket) erro
 	if market.Status != types.MarketStatus_MARKET_STATUS_OPEN && market.Status != types.MarketStatus_MARKET_STATUS_CLOSED {
 		return errors.Wrap(types.ErrInvalidMarketStatus, "market must be OPEN or CLOSED")
 	}
-	if ctx.BlockTime().Unix() < market.ResolveTime {
+	// resolve_time = 0 means resolver can resolve at any time.
+	if market.ResolveTime > 0 && ctx.BlockTime().Unix() < market.ResolveTime {
 		return fmt.Errorf("cannot resolve before resolve_time")
 	}
 
@@ -445,6 +433,46 @@ func (k Keeper) ResolveMarket(ctx sdk.Context, msg *types.MsgResolveMarket) erro
 			sdk.NewAttribute(types.AttributeKeyWinning, winStr),
 			sdk.NewAttribute(types.AttributeKeyBond, createBond.String()),
 			sdk.NewAttribute(types.AttributeKeyBondDenom, market.CreateMarketBondDenom),
+		),
+	)
+
+	return nil
+}
+
+func (k Keeper) RequestResolve(ctx sdk.Context, msg *types.MsgRequestResolve) error {
+	if err := msg.ValidateBasic(); err != nil {
+		return errors.Wrap(types.ErrInvalidRequest, err.Error())
+	}
+
+	market, found := k.GetMarket(ctx, msg.MarketId)
+	if !found {
+		return types.ErrMarketNotFound
+	}
+	if market.Creator != msg.Creator {
+		return types.ErrUnauthorized
+	}
+	if market.Status != types.MarketStatus_MARKET_STATUS_OPEN && market.Status != types.MarketStatus_MARKET_STATUS_CLOSED {
+		return errors.Wrap(types.ErrInvalidMarketStatus, "market must be OPEN or CLOSED")
+	}
+
+	req := &types.ResolveRequest{
+		MarketId:         msg.MarketId,
+		Creator:          msg.Creator,
+		RequestedOutcome: msg.RequestedOutcome,
+		RequestedSource:  msg.RequestedSource,
+		RequestedBh:      ctx.BlockHeight(),
+	}
+	k.SetResolveRequest(ctx, req)
+
+	outcomeStr, _ := parseOutcome(msg.RequestedOutcome)
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventResolveRequested,
+			sdk.NewAttribute(types.AttributeKeyMarketID, intToStr(msg.MarketId)),
+			sdk.NewAttribute(types.AttributeKeyAddress, msg.Creator),
+			sdk.NewAttribute(types.AttributeKeyWinning, outcomeStr),
+			sdk.NewAttribute("requested_source", msg.RequestedSource),
+			sdk.NewAttribute("requested_bh", intToStr(uint64(ctx.BlockHeight()))),
 		),
 	)
 

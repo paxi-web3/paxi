@@ -41,6 +41,10 @@ func (m *mockBankKeeper) addAccountBalance(addr, denom string, amount sdkmath.In
 	m.accountBalances[key] = cur.Add(amount)
 }
 
+func (m *mockBankKeeper) setAccountBalance(addr, denom string, amount sdkmath.Int) {
+	m.accountBalances[balanceKey(addr, denom)] = amount
+}
+
 func (m *mockBankKeeper) addModuleBalance(denom string, amount sdkmath.Int) {
 	cur, ok := m.moduleBalances[denom]
 	if !ok {
@@ -143,6 +147,10 @@ func (m *mockBankKeeper) SendCoins(_ context.Context, fromAddr sdk.AccAddress, t
 	return nil
 }
 
+func (m *mockBankKeeper) GetBalance(_ context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+	return sdk.NewCoin(denom, m.AccountBalance(addr.String(), denom))
+}
+
 type mockAccountKeeper struct{}
 
 func (m mockAccountKeeper) GetModuleAddress(moduleName string) sdk.AccAddress {
@@ -153,10 +161,14 @@ func (m mockAccountKeeper) GetModuleAddress(moduleName string) sdk.AccAddress {
 
 type mockPRC20QueryKeeper struct {
 	allowances map[string]sdkmath.Int
+	balances   map[string]sdkmath.Int
 }
 
 func newMockPRC20QueryKeeper() *mockPRC20QueryKeeper {
-	return &mockPRC20QueryKeeper{allowances: make(map[string]sdkmath.Int)}
+	return &mockPRC20QueryKeeper{
+		allowances: make(map[string]sdkmath.Int),
+		balances:   make(map[string]sdkmath.Int),
+	}
 }
 
 func allowanceKey(contract, owner, spender string) string {
@@ -167,17 +179,43 @@ func (m *mockPRC20QueryKeeper) setAllowance(contract, owner, spender string, all
 	m.allowances[allowanceKey(contract, owner, spender)] = allowance
 }
 
+func (m *mockPRC20QueryKeeper) setBalance(contract, owner string, balance sdkmath.Int) {
+	m.balances[contract+"|"+owner] = balance
+}
+
 func (m *mockPRC20QueryKeeper) QuerySmart(_ context.Context, contractAddress sdk.AccAddress, req []byte) ([]byte, error) {
-	var query prc20AllowanceQuery
-	if err := json.Unmarshal(req, &query); err != nil {
+	raw := map[string]json.RawMessage{}
+	if err := json.Unmarshal(req, &raw); err != nil {
 		return nil, err
 	}
-
-	allowance, ok := m.allowances[allowanceKey(contractAddress.String(), query.Allowance.Owner, query.Allowance.Spender)]
-	if !ok {
-		allowance = sdkmath.ZeroInt()
+	if allowanceRaw, ok := raw["allowance"]; ok {
+		var allowanceReq struct {
+			Owner   string `json:"owner"`
+			Spender string `json:"spender"`
+		}
+		if err := json.Unmarshal(allowanceRaw, &allowanceReq); err != nil {
+			return nil, err
+		}
+		allowance, ok := m.allowances[allowanceKey(contractAddress.String(), allowanceReq.Owner, allowanceReq.Spender)]
+		if !ok {
+			allowance = sdkmath.ZeroInt()
+		}
+		return json.Marshal(prc20AllowanceResponse{Allowance: allowance.String()})
 	}
-	return json.Marshal(prc20AllowanceResponse{Allowance: allowance.String()})
+	if balanceRaw, ok := raw["balance"]; ok {
+		var balanceReq struct {
+			Address string `json:"address"`
+		}
+		if err := json.Unmarshal(balanceRaw, &balanceReq); err != nil {
+			return nil, err
+		}
+		balance, ok := m.balances[contractAddress.String()+"|"+balanceReq.Address]
+		if !ok {
+			balance = sdkmath.ZeroInt()
+		}
+		return json.Marshal(prc20BalanceResponse{Balance: balance.String()})
+	}
+	return nil, fmt.Errorf("unsupported query")
 }
 
 func setupKeeper(tb testing.TB) (Keeper, sdk.Context, *mockBankKeeper) {
@@ -325,6 +363,7 @@ func TestPlaceOrderWithoutEscrow(t *testing.T) {
 	creator := testAddress(1)
 	resolver := testAddress(2)
 	trader := testAddress(3)
+	mustFund(bank, trader, 200_000)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
 	beforeTransfers := bank.transferCount
@@ -353,12 +392,34 @@ func TestPlaceOrderWithoutEscrow(t *testing.T) {
 	require.Equal(t, trader, byID.Trader)
 }
 
+func TestPlaceOrderRequiresSufficientBalance(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(4)
+	resolver := testAddress(5)
+	trader := testAddress(6)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, trader, 50_000)
+
+	_, err := k.PlaceOrder(ctx, &types.MsgPlaceOrder{
+		Trader:     trader,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "10",
+		LimitPrice: "10000",
+		ExpireBh:   ctx.BlockHeight() + 100,
+	})
+	require.ErrorContains(t, err, "insufficient funds")
+}
+
 func TestPlaceOrderValidation(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	creator := testAddress(11)
 	resolver := testAddress(12)
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
 	trader := testAddress(13)
+	mustFund(bank, trader, 1_000_000)
 
 	tests := []struct {
 		name    string
@@ -479,7 +540,8 @@ func TestPlaceOrderBuyPRC20AllowanceCheck(t *testing.T) {
 	require.NoError(t, err)
 
 	moduleAddr := mockAccountKeeper{}.GetModuleAddress(types.ModuleName)
-	prc20Query.setAllowance(contract, buyer, moduleAddr.String(), sdkmath.NewInt(99_999))
+	prc20Query.setBalance(contract, buyer, sdkmath.NewInt(101_000))
+	prc20Query.setAllowance(contract, buyer, moduleAddr.String(), sdkmath.NewInt(100_999))
 
 	_, err = k.PlaceOrder(ctx, &types.MsgPlaceOrder{
 		Trader:     buyer,
@@ -492,7 +554,7 @@ func TestPlaceOrderBuyPRC20AllowanceCheck(t *testing.T) {
 	})
 	require.ErrorContains(t, err, "insufficient prc20 allowance")
 
-	prc20Query.setAllowance(contract, buyer, moduleAddr.String(), sdkmath.NewInt(100_000))
+	prc20Query.setAllowance(contract, buyer, moduleAddr.String(), sdkmath.NewInt(101_000))
 
 	_, err = k.PlaceOrder(ctx, &types.MsgPlaceOrder{
 		Trader:     buyer,
@@ -543,6 +605,7 @@ func TestPlaceOrderOpenOrderLimitAndCancelRelease(t *testing.T) {
 	creator := testAddress(94)
 	resolver := testAddress(95)
 	trader := testAddress(96)
+	mustFund(bank, trader, 200_000)
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
 
 	params := k.GetParams(ctx)
@@ -606,6 +669,7 @@ func TestAutoPruneOrders(t *testing.T) {
 	creator := testAddress(101)
 	resolver := testAddress(102)
 	trader := testAddress(103)
+	mustFund(bank, trader, 200_000)
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
 
 	params := k.GetParams(ctx)
@@ -662,6 +726,7 @@ func TestAutoPruneOrdersWithCursorAndDeleteLimit(t *testing.T) {
 	creator := testAddress(111)
 	resolver := testAddress(112)
 	trader := testAddress(113)
+	mustFund(bank, trader, 200_000)
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
 
 	params := k.GetParams(ctx)
@@ -857,7 +922,7 @@ func TestApplyTradeBatchPartialFill(t *testing.T) {
 	k.SetParams(ctx, params)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, buyer, 50_000)
+	mustFund(bank, buyer, 500_000)
 	mustFund(bank, seller, 10)
 
 	sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
@@ -893,7 +958,7 @@ func TestApplyTradeBatchPartialFill(t *testing.T) {
 	require.Equal(t, "10", buyerPos.YesShares)
 	require.Equal(t, "10", sellerPos.YesShares)
 
-	require.Equal(t, sdkmath.NewInt(40_000), bank.AccountBalance(buyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(490_000), bank.AccountBalance(buyer, "upaxi"))
 	require.Equal(t, sdkmath.NewInt(9_910), bank.AccountBalance(seller, "upaxi"))
 	require.Equal(t, sdkmath.NewInt(100), bank.AccountBalance(resolver, "upaxi"))
 
@@ -908,6 +973,7 @@ func TestCancelOrder(t *testing.T) {
 	resolver := testAddress(32)
 	trader := testAddress(33)
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, trader, 100_000)
 
 	orderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 		Trader:     trader,
@@ -938,7 +1004,7 @@ func TestCancelOrderPartialKeepsOrder(t *testing.T) {
 	k.SetParams(ctx, params)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, buyer, 50_000)
+	mustFund(bank, buyer, 300_000)
 
 	sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
 	k.mustSetPositionInts(sellerPos, sdkmath.NewInt(20), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
@@ -989,7 +1055,11 @@ func TestMarketBestBidAskUpdatedOnPlaceAndCancel(t *testing.T) {
 	creator := testAddress(211)
 	resolver := testAddress(212)
 	trader := testAddress(213)
+	mustFund(bank, trader, 1_000_000)
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	pos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(trader))
+	k.mustSetPositionInts(pos, sdkmath.NewInt(10), sdkmath.ZeroInt(), sdkmath.NewInt(10), sdkmath.ZeroInt())
+	k.SetPosition(ctx, pos)
 
 	buyLowID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 		Trader:     trader,
@@ -1054,7 +1124,52 @@ func TestMarketBestBidAskUpdatedOnPlaceAndCancel(t *testing.T) {
 	require.Empty(t, market.BestAskPrice)
 }
 
-func TestDuplicateTradeIDRejected(t *testing.T) {
+func TestQueryOrdersByMarket(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(221)
+	resolver := testAddress(222)
+	trader := testAddress(223)
+	other := testAddress(224)
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	otherMarketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, trader, 1_000_000)
+	mustFund(bank, other, 1_000_000)
+
+	mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     trader,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "20000",
+	})
+	mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     other,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "2",
+		LimitPrice: "30000",
+	})
+	mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     trader,
+		MarketId:   otherMarketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "3",
+		LimitPrice: "40000",
+	})
+
+	qs := NewQueryServer(k)
+	resp, err := qs.OrdersByMarket(ctx, &types.QueryOrdersByMarketRequest{MarketId: marketID})
+	require.NoError(t, err)
+	require.Len(t, resp.Orders, 2)
+	for _, order := range resp.Orders {
+		require.Equal(t, marketID, order.MarketId)
+	}
+}
+
+func TestDuplicateTradeIDSkipped(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	creator := testAddress(41)
 	resolver := testAddress(42)
@@ -1065,7 +1180,7 @@ func TestDuplicateTradeIDRejected(t *testing.T) {
 	k.SetParams(ctx, params)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, buyer, 20_000)
+	mustFund(bank, buyer, 50_000)
 
 	sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
 	k.mustSetPositionInts(sellerPos, sdkmath.NewInt(10), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
@@ -1088,7 +1203,7 @@ func TestDuplicateTradeIDRejected(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
 		Sender:   resolver,
 		MarketId: marketID,
 		BatchId:  "batch-2",
@@ -1100,8 +1215,13 @@ func TestDuplicateTradeIDRejected(t *testing.T) {
 			ExecutionPrice: "10000",
 		}},
 	})
-	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrDuplicateTrade)
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), resp.SettledCount)
+
+	buyOrder, found := k.GetOrder(ctx, marketID, buyOrderID)
+	require.True(t, found)
+	require.Equal(t, "1", buyOrder.FilledAmount)
+	require.Equal(t, "1", buyOrder.RemainingAmount)
 }
 
 func TestApplyTradeBatchUpdatesLastTradePrice(t *testing.T) {
@@ -1112,7 +1232,7 @@ func TestApplyTradeBatchUpdatesLastTradePrice(t *testing.T) {
 	seller := testAddress(217)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, buyer, 20_000)
+	mustFund(bank, buyer, 40_000)
 
 	sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
 	k.mustSetPositionInts(sellerPos, sdkmath.NewInt(1), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
@@ -1168,7 +1288,7 @@ func TestSettlementInsufficientWalletBalance(t *testing.T) {
 	k.SetParams(ctx, params)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, buyer, 500)
+	mustFund(bank, buyer, 20_000)
 
 	sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
 	k.mustSetPositionInts(sellerPos, sdkmath.NewInt(10), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
@@ -1176,8 +1296,9 @@ func TestSettlementInsufficientWalletBalance(t *testing.T) {
 
 	buyOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{Trader: buyer, MarketId: marketID, Side: types.OrderSide_ORDER_SIDE_BUY_YES, OrderType: types.OrderType_ORDER_TYPE_LIMIT, Amount: "1", LimitPrice: "10000"})
 	sellOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{Trader: seller, MarketId: marketID, Side: types.OrderSide_ORDER_SIDE_SELL_YES, OrderType: types.OrderType_ORDER_TYPE_LIMIT, Amount: "1", LimitPrice: "10000"})
+	bank.setAccountBalance(buyer, "upaxi", sdkmath.NewInt(500))
 
-	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
 		Sender:   resolver,
 		MarketId: marketID,
 		BatchId:  "batch-insufficient-balance",
@@ -1189,7 +1310,13 @@ func TestSettlementInsufficientWalletBalance(t *testing.T) {
 			ExecutionPrice: "10000",
 		}},
 	})
-	require.ErrorContains(t, err, "insufficient funds")
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), resp.SettledCount)
+	_, found := k.GetOrder(ctx, marketID, buyOrderID)
+	require.False(t, found, "insufficient buy order should be cancelled and deleted when unfilled")
+	sellOrder, found := k.GetOrder(ctx, marketID, sellOrderID)
+	require.True(t, found)
+	require.Equal(t, types.OrderStatus_ORDER_STATUS_OPEN, sellOrder.Status)
 }
 
 func TestSettlementInsufficientYesShares(t *testing.T) {
@@ -1204,11 +1331,19 @@ func TestSettlementInsufficientYesShares(t *testing.T) {
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
 	mustFund(bank, buyer, 20_000)
+	sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+	k.mustSetPositionInts(sellerPos, sdkmath.NewInt(1), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+	k.SetPosition(ctx, sellerPos)
 
 	buyOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{Trader: buyer, MarketId: marketID, Side: types.OrderSide_ORDER_SIDE_BUY_YES, OrderType: types.OrderType_ORDER_TYPE_LIMIT, Amount: "1", LimitPrice: "10000"})
 	sellOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{Trader: seller, MarketId: marketID, Side: types.OrderSide_ORDER_SIDE_SELL_YES, OrderType: types.OrderType_ORDER_TYPE_LIMIT, Amount: "1", LimitPrice: "10000"})
 
-	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+	// Drain seller YES shares after order placement to simulate race at settlement.
+	sellerPos, _ = k.GetPosition(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+	k.mustSetPositionInts(sellerPos, sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+	k.SetPosition(ctx, sellerPos)
+
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
 		Sender:   resolver,
 		MarketId: marketID,
 		BatchId:  "batch-insufficient-yes",
@@ -1220,7 +1355,13 @@ func TestSettlementInsufficientYesShares(t *testing.T) {
 			ExecutionPrice: "10000",
 		}},
 	})
-	require.ErrorContains(t, err, "seller YES shares")
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), resp.SettledCount)
+	_, found := k.GetOrder(ctx, marketID, sellOrderID)
+	require.False(t, found, "insufficient sell order should be cancelled and deleted when unfilled")
+	buyOrder, found := k.GetOrder(ctx, marketID, buyOrderID)
+	require.True(t, found)
+	require.Equal(t, types.OrderStatus_ORDER_STATUS_OPEN, buyOrder.Status)
 }
 
 func TestSettlementInsufficientNoShares(t *testing.T) {
@@ -1235,11 +1376,19 @@ func TestSettlementInsufficientNoShares(t *testing.T) {
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
 	mustFund(bank, buyer, 20_000)
+	sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+	k.mustSetPositionInts(sellerPos, sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.NewInt(1), sdkmath.ZeroInt())
+	k.SetPosition(ctx, sellerPos)
 
 	buyOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{Trader: buyer, MarketId: marketID, Side: types.OrderSide_ORDER_SIDE_BUY_NO, OrderType: types.OrderType_ORDER_TYPE_LIMIT, Amount: "1", LimitPrice: "10000"})
 	sellOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{Trader: seller, MarketId: marketID, Side: types.OrderSide_ORDER_SIDE_SELL_NO, OrderType: types.OrderType_ORDER_TYPE_LIMIT, Amount: "1", LimitPrice: "10000"})
 
-	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+	// Drain seller NO shares after order placement to simulate race at settlement.
+	sellerPos, _ = k.GetPosition(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+	k.mustSetPositionInts(sellerPos, sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+	k.SetPosition(ctx, sellerPos)
+
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
 		Sender:   resolver,
 		MarketId: marketID,
 		BatchId:  "batch-insufficient-no",
@@ -1251,7 +1400,314 @@ func TestSettlementInsufficientNoShares(t *testing.T) {
 			ExecutionPrice: "10000",
 		}},
 	})
-	require.ErrorContains(t, err, "seller NO shares")
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), resp.SettledCount)
+	_, found := k.GetOrder(ctx, marketID, sellOrderID)
+	require.False(t, found, "insufficient sell order should be cancelled and deleted when unfilled")
+	buyOrder, found := k.GetOrder(ctx, marketID, buyOrderID)
+	require.True(t, found)
+	require.Equal(t, types.OrderStatus_ORDER_STATUS_OPEN, buyOrder.Status)
+}
+
+func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
+	type testCase struct {
+		name                string
+		buildInvalidTrade   func(marketID uint64, validA uint64, validB uint64) types.TradeMatch
+		preApply            func(k Keeper, ctx sdk.Context, marketID uint64, validA uint64, validB uint64) sdk.Context
+		expectedSettled     uint64
+		expectedValidFilled string
+	}
+
+	tests := []testCase{
+		{
+			name: "invalid order id is skipped while valid trade settles",
+			buildInvalidTrade: func(_ uint64, _ uint64, validB uint64) types.TradeMatch {
+				return types.TradeMatch{
+					TradeId:        "invalid-order-not-found",
+					OrderAId:       99999999,
+					OrderBId:       validB,
+					MatchAmount:    "1",
+					ExecutionPrice: "10000",
+				}
+			},
+			expectedSettled:     1,
+			expectedValidFilled: "1",
+		},
+		{
+			name: "expired order is skipped while valid trade settles",
+			buildInvalidTrade: func(_ uint64, validA uint64, validB uint64) types.TradeMatch {
+				return types.TradeMatch{
+					TradeId:        "invalid-expired-order",
+					OrderAId:       validA,
+					OrderBId:       validB,
+					MatchAmount:    "1",
+					ExecutionPrice: "10000",
+				}
+			},
+			preApply: func(k Keeper, ctx sdk.Context, marketID uint64, validA uint64, validB uint64) sdk.Context {
+				orderA, found := k.GetOrder(ctx, marketID, validA)
+				require.True(t, found)
+				orderB, found := k.GetOrder(ctx, marketID, validB)
+				require.True(t, found)
+				orderA.ExpireBh = 1
+				orderB.ExpireBh = 1
+				k.SetOrder(ctx, orderA)
+				k.SetOrder(ctx, orderB)
+				return ctx.WithBlockHeight(1)
+			},
+			expectedSettled:     1,
+			expectedValidFilled: "1",
+		},
+		{
+			name: "duplicate trade id is skipped while valid trade settles",
+			buildInvalidTrade: func(marketID uint64, validA uint64, validB uint64) types.TradeMatch {
+				return types.TradeMatch{
+					TradeId:        "dup-trade-id",
+					OrderAId:       validA,
+					OrderBId:       validB,
+					MatchAmount:    "1",
+					ExecutionPrice: "10000",
+				}
+			},
+			preApply: func(k Keeper, ctx sdk.Context, marketID uint64, _ uint64, _ uint64) sdk.Context {
+				k.SetAppliedTrade(ctx, marketID, "dup-trade-id")
+				return ctx
+			},
+			expectedSettled:     1,
+			expectedValidFilled: "1",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			k, ctx, bank := setupKeeper(t)
+			creator := testAddress(241)
+			resolver := testAddress(242)
+			yesBuyer := testAddress(243)
+			noBuyer := testAddress(244)
+			yesBuyer2 := testAddress(245)
+			noBuyer2 := testAddress(246)
+
+			marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+			mustFund(bank, yesBuyer, 100_000)
+			mustFund(bank, noBuyer, 100_000)
+			mustFund(bank, yesBuyer2, 100_000)
+			mustFund(bank, noBuyer2, 100_000)
+
+			validA := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+				Trader:     yesBuyer,
+				MarketId:   marketID,
+				Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+				OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+				Amount:     "1",
+				LimitPrice: "10000",
+				ExpireBh:   ctx.BlockHeight() + 100,
+			})
+			validB := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+				Trader:     noBuyer,
+				MarketId:   marketID,
+				Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+				OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+				Amount:     "1",
+				LimitPrice: "10000",
+				ExpireBh:   ctx.BlockHeight() + 100,
+			})
+
+			invalidA := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+				Trader:     yesBuyer2,
+				MarketId:   marketID,
+				Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+				OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+				Amount:     "1",
+				LimitPrice: "10000",
+				ExpireBh:   ctx.BlockHeight() + 100,
+			})
+			invalidB := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+				Trader:     noBuyer2,
+				MarketId:   marketID,
+				Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+				OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+				Amount:     "1",
+				LimitPrice: "10000",
+				ExpireBh:   ctx.BlockHeight() + 100,
+			})
+
+			invalidTrade := tc.buildInvalidTrade(marketID, invalidA, invalidB)
+			if tc.preApply != nil {
+				ctx = tc.preApply(k, ctx, marketID, invalidA, invalidB)
+			}
+
+			resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+				Sender:   resolver,
+				MarketId: marketID,
+				BatchId:  "mixed-validity",
+				Trades: []types.TradeMatch{
+					{
+						TradeId:        "valid-trade",
+						OrderAId:       validA,
+						OrderBId:       validB,
+						MatchAmount:    "1",
+						ExecutionPrice: "10000",
+					},
+					invalidTrade,
+				},
+			})
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedSettled, resp.SettledCount)
+
+			validOrder, found := k.GetOrder(ctx, marketID, validA)
+			require.True(t, found)
+			require.Equal(t, tc.expectedValidFilled, validOrder.FilledAmount)
+		})
+	}
+}
+
+func TestApplyTradeBatchSettlementRaceAutoCancelTable(t *testing.T) {
+	type testCase struct {
+		name                  string
+		setupOrdersAndMutate  func(t *testing.T, k Keeper, ctx sdk.Context, bank *mockBankKeeper, marketID uint64) (uint64, uint64)
+		expectedRemovedOrderA bool
+		expectedRemovedOrderB bool
+	}
+
+	tests := []testCase{
+		{
+			name: "buy_yes_buy_no buyer balance drained at settlement",
+			setupOrdersAndMutate: func(t *testing.T, k Keeper, ctx sdk.Context, bank *mockBankKeeper, marketID uint64) (uint64, uint64) {
+				yesBuyer := testAddress(251)
+				noBuyer := testAddress(252)
+				mustFund(bank, yesBuyer, 20_000)
+				mustFund(bank, noBuyer, 20_000)
+
+				orderA := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+					Trader:     yesBuyer,
+					MarketId:   marketID,
+					Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+					OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+					Amount:     "1",
+					LimitPrice: "10000",
+					ExpireBh:   ctx.BlockHeight() + 100,
+				})
+				orderB := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+					Trader:     noBuyer,
+					MarketId:   marketID,
+					Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+					OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+					Amount:     "1",
+					LimitPrice: "10000",
+					ExpireBh:   ctx.BlockHeight() + 100,
+				})
+
+				bank.setAccountBalance(yesBuyer, "upaxi", sdkmath.ZeroInt())
+				return orderA, orderB
+			},
+			expectedRemovedOrderA: true,
+			expectedRemovedOrderB: false,
+		},
+		{
+			name: "buy_yes_sell_yes buyer balance drained at settlement",
+			setupOrdersAndMutate: func(t *testing.T, k Keeper, ctx sdk.Context, bank *mockBankKeeper, marketID uint64) (uint64, uint64) {
+				buyer := testAddress(253)
+				seller := testAddress(254)
+				mustFund(bank, buyer, 20_000)
+				sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+				k.mustSetPositionInts(sellerPos, sdkmath.NewInt(1), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+				k.SetPosition(ctx, sellerPos)
+
+				orderA := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+					Trader:     buyer,
+					MarketId:   marketID,
+					Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+					OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+					Amount:     "1",
+					LimitPrice: "10000",
+					ExpireBh:   ctx.BlockHeight() + 100,
+				})
+				orderB := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+					Trader:     seller,
+					MarketId:   marketID,
+					Side:       types.OrderSide_ORDER_SIDE_SELL_YES,
+					OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+					Amount:     "1",
+					LimitPrice: "10000",
+					ExpireBh:   ctx.BlockHeight() + 100,
+				})
+
+				bank.setAccountBalance(buyer, "upaxi", sdkmath.ZeroInt())
+				return orderA, orderB
+			},
+			expectedRemovedOrderA: true,
+			expectedRemovedOrderB: false,
+		},
+		{
+			name: "buy_no_sell_no seller shares drained at settlement",
+			setupOrdersAndMutate: func(t *testing.T, k Keeper, ctx sdk.Context, bank *mockBankKeeper, marketID uint64) (uint64, uint64) {
+				buyer := testAddress(55)
+				seller := testAddress(56)
+				mustFund(bank, buyer, 20_000)
+				sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+				k.mustSetPositionInts(sellerPos, sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.NewInt(1), sdkmath.ZeroInt())
+				k.SetPosition(ctx, sellerPos)
+
+				orderA := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+					Trader:     buyer,
+					MarketId:   marketID,
+					Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+					OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+					Amount:     "1",
+					LimitPrice: "10000",
+					ExpireBh:   ctx.BlockHeight() + 100,
+				})
+				orderB := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+					Trader:     seller,
+					MarketId:   marketID,
+					Side:       types.OrderSide_ORDER_SIDE_SELL_NO,
+					OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+					Amount:     "1",
+					LimitPrice: "10000",
+					ExpireBh:   ctx.BlockHeight() + 100,
+				})
+
+				sellerPos, _ = k.GetPosition(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+				k.mustSetPositionInts(sellerPos, sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+				k.SetPosition(ctx, sellerPos)
+				return orderA, orderB
+			},
+			expectedRemovedOrderA: false,
+			expectedRemovedOrderB: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			k, ctx, bank := setupKeeper(t)
+			creator := testAddress(57)
+			resolver := testAddress(58)
+			marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+
+			orderA, orderB := tc.setupOrdersAndMutate(t, k, ctx, bank, marketID)
+
+			resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+				Sender:   resolver,
+				MarketId: marketID,
+				BatchId:  "race-auto-cancel",
+				Trades: []types.TradeMatch{{
+					TradeId:        "race-t1",
+					OrderAId:       orderA,
+					OrderBId:       orderB,
+					MatchAmount:    "1",
+					ExecutionPrice: "10000",
+				}},
+			})
+			require.NoError(t, err)
+			require.Equal(t, uint64(0), resp.SettledCount)
+
+			_, foundA := k.GetOrder(ctx, marketID, orderA)
+			_, foundB := k.GetOrder(ctx, marketID, orderB)
+			require.Equal(t, !tc.expectedRemovedOrderA, foundA)
+			require.Equal(t, !tc.expectedRemovedOrderB, foundB)
+		})
+	}
 }
 
 func TestTradeAfterMarketCloseRejected(t *testing.T) {
@@ -1265,7 +1721,7 @@ func TestTradeAfterMarketCloseRejected(t *testing.T) {
 	k.SetParams(ctx, params)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, buyer, 2_000)
+	mustFund(bank, buyer, 20_000)
 	sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
 	k.mustSetPositionInts(sellerPos, sdkmath.NewInt(1), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
 	k.SetPosition(ctx, sellerPos)
@@ -1346,6 +1802,93 @@ func TestResolveMarketAndResolverOnlyResolutionSourceUpdate(t *testing.T) {
 	require.Equal(t, types.MarketStatus_MARKET_STATUS_RESOLVED, market.Status)
 	require.Equal(t, types.Outcome_OUTCOME_NO, market.WinningOutcome)
 	require.Equal(t, "official_source", market.ResolutionSource)
+}
+
+func TestRequestResolveCreateAndUpdate(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(231)
+	resolver := testAddress(232)
+	other := testAddress(233)
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+
+	err := k.RequestResolve(ctx, &types.MsgRequestResolve{
+		Creator:          other,
+		MarketId:         marketID,
+		RequestedOutcome: types.Outcome_OUTCOME_YES,
+		RequestedSource:  "other-source",
+	})
+	require.ErrorIs(t, err, types.ErrUnauthorized)
+
+	err = k.RequestResolve(ctx, &types.MsgRequestResolve{
+		Creator:          creator,
+		MarketId:         marketID,
+		RequestedOutcome: types.Outcome_OUTCOME_YES,
+		RequestedSource:  "source-v1",
+	})
+	require.NoError(t, err)
+
+	req, found := k.GetResolveRequest(ctx, marketID)
+	require.True(t, found)
+	require.Equal(t, creator, req.Creator)
+	require.Equal(t, types.Outcome_OUTCOME_YES, req.RequestedOutcome)
+	require.Equal(t, "source-v1", req.RequestedSource)
+
+	err = k.RequestResolve(ctx, &types.MsgRequestResolve{
+		Creator:          creator,
+		MarketId:         marketID,
+		RequestedOutcome: types.Outcome_OUTCOME_NO,
+		RequestedSource:  "source-v2",
+	})
+	require.NoError(t, err)
+
+	req, found = k.GetResolveRequest(ctx, marketID)
+	require.True(t, found)
+	require.Equal(t, types.Outcome_OUTCOME_NO, req.RequestedOutcome)
+	require.Equal(t, "source-v2", req.RequestedSource)
+
+	market, _ := k.GetMarket(ctx, marketID)
+	market.ResolveTime = 0
+	k.SetMarket(ctx, market)
+
+	err = k.ResolveMarket(ctx, &types.MsgResolveMarket{
+		Resolver:         resolver,
+		MarketId:         marketID,
+		WinningOutcome:   types.Outcome_OUTCOME_NO,
+		ResolutionSource: "final",
+	})
+	require.NoError(t, err)
+
+	err = k.RequestResolve(ctx, &types.MsgRequestResolve{
+		Creator:          creator,
+		MarketId:         marketID,
+		RequestedOutcome: types.Outcome_OUTCOME_YES,
+		RequestedSource:  "source-after-resolve",
+	})
+	require.ErrorContains(t, err, "market must be OPEN or CLOSED")
+}
+
+func TestResolveMarketWithZeroResolveTime(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(94)
+	resolver := testAddress(95)
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+
+	market, _ := k.GetMarket(ctx, marketID)
+	market.ResolveTime = 0
+	k.SetMarket(ctx, market)
+
+	err := k.ResolveMarket(ctx, &types.MsgResolveMarket{
+		Resolver:         resolver,
+		MarketId:         marketID,
+		WinningOutcome:   types.Outcome_OUTCOME_YES,
+		ResolutionSource: "instant_source",
+	})
+	require.NoError(t, err)
+
+	market, _ = k.GetMarket(ctx, marketID)
+	require.Equal(t, types.MarketStatus_MARKET_STATUS_RESOLVED, market.Status)
+	require.Equal(t, types.Outcome_OUTCOME_YES, market.WinningOutcome)
+	require.Equal(t, "instant_source", market.ResolutionSource)
 }
 
 func TestClaimPayoutSuccessAndDoubleClaim(t *testing.T) {

@@ -36527,6 +36527,93 @@ paths:
         type: boolean
       tags:
       - Query
+  /paxi/prediction/orders_by_market/{marketId}:
+    get:
+      operationId: Query_OrdersByMarket
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryOrdersByMarketResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: marketId
+        in: path
+        required: true
+        type: string
+        format: uint64
+      - name: pagination.key
+        description: 'key is a value returned in PageResponse.next_key to begin
+
+          querying the next page most efficiently. Only one of offset or key
+
+          should be set.'
+        in: query
+        required: false
+        type: string
+        format: byte
+      - name: pagination.offset
+        description: 'offset is a numeric offset that can be used when key is unavailable.
+
+          It is less efficient than using key. Only one of offset or key should
+
+          be set.'
+        in: query
+        required: false
+        type: string
+        format: uint64
+      - name: pagination.limit
+        description: 'limit is the total number of results to be returned in the result
+          page.
+
+          If left empty it will default to a value to be set by each app.'
+        in: query
+        required: false
+        type: string
+        format: uint64
+      - name: pagination.countTotal
+        description: 'count_total is set to true  to indicate that the result set should
+          include
+
+          a count of the total number of items available for pagination in UIs.
+
+          count_total is only respected when offset is used. It is ignored when key
+
+          is set.'
+        in: query
+        required: false
+        type: boolean
+      - name: pagination.reverse
+        description: reverse is set to true if results are to be returned in the descending
+          order.
+        in: query
+        required: false
+        type: boolean
+      tags:
+      - Query
+  /paxi/prediction/resolve_request/{marketId}:
+    get:
+      operationId: Query_ResolveRequest
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesQueryResolveRequestResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: marketId
+        in: path
+        required: true
+        type: string
+        format: uint64
+      tags:
+      - Query
   /paxi/prediction/params:
     get:
       operationId: Query_Params
@@ -36769,6 +36856,26 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/typesMsgPlaceOrder'
+      tags:
+      - Msg
+  /tx/prediction/request_resolve:
+    post:
+      operationId: Msg_RequestResolve
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/typesMsgRequestResolveResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/typesMsgRequestResolve'
       tags:
       - Msg
   /tx/prediction/resolve_market:
@@ -63623,6 +63730,50 @@ definitions:
         type: boolean
       claimedVoidRefund:
         type: boolean
+  predictiontypesResolveRequest:
+    type: object
+    properties:
+      marketId:
+        type: string
+        format: uint64
+      creator:
+        type: string
+      requestedOutcome:
+        $ref: '#/definitions/typesOutcome'
+      requestedSource:
+        type: string
+      requestedBh:
+        type: string
+        format: int64
+  typesMsgRequestResolve:
+    type: object
+    properties:
+      creator:
+        type: string
+      marketId:
+        type: string
+        format: uint64
+      requestedOutcome:
+        $ref: '#/definitions/typesOutcome'
+      requestedSource:
+        type: string
+  typesMsgRequestResolveResponse:
+    type: object
+  typesQueryOrdersByMarketResponse:
+    type: object
+    properties:
+      orders:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/predictiontypesOrder'
+      pagination:
+        $ref: '#/definitions/v1beta1PageResponse'
+  typesQueryResolveRequestResponse:
+    type: object
+    properties:
+      resolveRequest:
+        $ref: '#/definitions/predictiontypesResolveRequest'
   xpredictiontypesMsgUpdateParams:
     type: object
     properties:

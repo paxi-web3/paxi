@@ -8,6 +8,7 @@ const (
 	EventMerge             = "Merge"
 	EventTradeBatchApplied = "TradeBatchApplied"
 	EventTradeSettled      = "TradeSettled"
+	EventResolveRequested  = "ResolveRequested"
 	EventOrdersPruned      = "OrdersPruned"
 	EventMarketResolved    = "MarketResolved"
 	EventMarketVoided      = "MarketVoided"

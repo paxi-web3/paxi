@@ -2,7 +2,10 @@ package keeper
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"strconv"
+	"strings"
 
 	sdkmath "cosmossdk.io/math"
 	"cosmossdk.io/store/prefix"
@@ -63,6 +66,10 @@ func (q *queryServer) Markets(ctx context.Context, req *types.QueryMarketsReques
 	if req == nil {
 		return nil, fmt.Errorf("request cannot be nil")
 	}
+	status, err := parseMarketStatusFilter(req.Status)
+	if err != nil {
+		return nil, err
+	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	store := sdkCtx.KVStore(q.k.storeKey)
@@ -74,7 +81,7 @@ func (q *queryServer) Markets(ctx context.Context, req *types.QueryMarketsReques
 		if err := q.k.cdc.Unmarshal(value, market); err != nil {
 			return err
 		}
-		if req.Status != types.MarketStatus_MARKET_STATUS_UNSPECIFIED && market.Status != req.Status {
+		if status != types.MarketStatus_MARKET_STATUS_UNSPECIFIED && market.Status != status {
 			return nil
 		}
 		markets = append(markets, market)
@@ -154,6 +161,52 @@ func (q *queryServer) OrdersByAddress(ctx context.Context, req *types.QueryOrder
 	return &types.QueryOrdersByAddressResponse{Orders: orders, Pagination: pageRes}, nil
 }
 
+func (q *queryServer) OrdersByMarket(ctx context.Context, req *types.QueryOrdersByMarketRequest) (*types.QueryOrdersByMarketResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
+	if req.MarketId == 0 {
+		return nil, fmt.Errorf("market_id must be > 0")
+	}
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	store := sdkCtx.KVStore(q.k.storeKey)
+	marketBz := make([]byte, 8)
+	binary.BigEndian.PutUint64(marketBz, req.MarketId)
+	orderStore := prefix.NewStore(store, append(types.OrderPrefix, marketBz...))
+
+	orders := make([]*types.Order, 0)
+	pageRes, err := query.Paginate(orderStore, req.Pagination, func(_ []byte, value []byte) error {
+		order := &types.Order{}
+		if err := q.k.cdc.Unmarshal(value, order); err != nil {
+			return err
+		}
+		orders = append(orders, order)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryOrdersByMarketResponse{Orders: orders, Pagination: pageRes}, nil
+}
+
+func (q *queryServer) ResolveRequest(ctx context.Context, req *types.QueryResolveRequestRequest) (*types.QueryResolveRequestResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request cannot be nil")
+	}
+	if req.MarketId == 0 {
+		return nil, fmt.Errorf("market_id must be > 0")
+	}
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	resolveReq, found := q.k.GetResolveRequest(sdkCtx, req.MarketId)
+	if !found {
+		return &types.QueryResolveRequestResponse{}, nil
+	}
+	return &types.QueryResolveRequestResponse{ResolveRequest: resolveReq}, nil
+}
+
 func (q *queryServer) Position(ctx context.Context, req *types.QueryPositionRequest) (*types.QueryPositionResponse, error) {
 	if req == nil {
 		return nil, fmt.Errorf("request cannot be nil")
@@ -212,4 +265,40 @@ func (q *queryServer) PositionsByAddress(ctx context.Context, req *types.QueryPo
 	}
 
 	return &types.QueryPositionsByAddressResponse{Positions: positions, Pagination: pageRes}, nil
+}
+
+func parseMarketStatusFilter(raw string) (types.MarketStatus, error) {
+	val := strings.TrimSpace(raw)
+	if val == "" {
+		return types.MarketStatus_MARKET_STATUS_UNSPECIFIED, nil
+	}
+
+	if iv, err := strconv.ParseInt(val, 10, 32); err == nil {
+		status := types.MarketStatus(iv)
+		switch status {
+		case types.MarketStatus_MARKET_STATUS_UNSPECIFIED,
+			types.MarketStatus_MARKET_STATUS_OPEN,
+			types.MarketStatus_MARKET_STATUS_CLOSED,
+			types.MarketStatus_MARKET_STATUS_RESOLVED,
+			types.MarketStatus_MARKET_STATUS_VOIDED:
+			return status, nil
+		default:
+			return types.MarketStatus_MARKET_STATUS_UNSPECIFIED, fmt.Errorf("invalid status value: %s", raw)
+		}
+	}
+
+	switch strings.ToUpper(val) {
+	case "MARKET_STATUS_UNSPECIFIED":
+		return types.MarketStatus_MARKET_STATUS_UNSPECIFIED, nil
+	case "MARKET_STATUS_OPEN":
+		return types.MarketStatus_MARKET_STATUS_OPEN, nil
+	case "MARKET_STATUS_CLOSED":
+		return types.MarketStatus_MARKET_STATUS_CLOSED, nil
+	case "MARKET_STATUS_RESOLVED":
+		return types.MarketStatus_MARKET_STATUS_RESOLVED, nil
+	case "MARKET_STATUS_VOIDED":
+		return types.MarketStatus_MARKET_STATUS_VOIDED, nil
+	default:
+		return types.MarketStatus_MARKET_STATUS_UNSPECIFIED, fmt.Errorf("invalid status: %s", raw)
+	}
 }
