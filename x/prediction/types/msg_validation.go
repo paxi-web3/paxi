@@ -3,12 +3,19 @@ package types
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const BPSDenominator = uint64(10_000)
+
+const (
+	MaxMarketTitleChars       = 512
+	MaxMarketDescriptionChars = 4096
+	MaxMarketRuleChars        = 4096
+)
 
 func (m *MsgUpdateParams) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(m.Authority); err != nil {
@@ -44,6 +51,15 @@ func (m *MsgCreateMarket) ValidateBasic() error {
 	}
 	if strings.TrimSpace(m.Title) == "" {
 		return fmt.Errorf("title cannot be empty")
+	}
+	if utf8.RuneCountInString(m.Title) >= MaxMarketTitleChars {
+		return fmt.Errorf("title must be < %d characters", MaxMarketTitleChars)
+	}
+	if utf8.RuneCountInString(m.Description) >= MaxMarketDescriptionChars {
+		return fmt.Errorf("description must be < %d characters", MaxMarketDescriptionChars)
+	}
+	if utf8.RuneCountInString(m.Rule) >= MaxMarketRuleChars {
+		return fmt.Errorf("rule must be < %d characters", MaxMarketRuleChars)
 	}
 	if m.OpenTime <= 0 || m.CloseTime <= 0 {
 		return fmt.Errorf("open_time and close_time must be > 0")

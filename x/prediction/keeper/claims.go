@@ -44,12 +44,13 @@ func (k Keeper) ClaimPayout(ctx sdk.Context, msg *types.MsgClaimPayout) (*types.
 		return nil, fmt.Errorf("invalid market share totals")
 	}
 
+	shareUnit := sdkmath.NewInt(types.CollateralUnit)
 	payout := sdkmath.ZeroInt()
 	switch market.WinningOutcome {
 	case types.Outcome_OUTCOME_YES:
-		payout = burnYes
+		payout = burnYes.Mul(shareUnit)
 	case types.Outcome_OUTCOME_NO:
-		payout = burnNo
+		payout = burnNo.Mul(shareUnit)
 	default:
 		return nil, types.ErrInvalidOutcome
 	}
@@ -123,7 +124,8 @@ func (k Keeper) ClaimVoidRefund(ctx sdk.Context, msg *types.MsgClaimVoidRefund) 
 		return nil, errors.Wrap(types.ErrInsufficientFunds, "no shares to refund")
 	}
 
-	refund := totalShares.QuoRaw(2)
+	shareUnit := sdkmath.NewInt(types.CollateralUnit)
+	refund := totalShares.Mul(shareUnit).QuoRaw(2)
 	if refund.IsPositive() {
 		if err := k.transferCollateralFromModule(ctx, market, creator, refund); err != nil {
 			return nil, err

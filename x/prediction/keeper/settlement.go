@@ -49,7 +49,10 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			return nil, err
 		}
 	}
-	lastTradePrice := ""
+	lastYesTradePrice := market.LastYesTradePrice
+	lastNoTradePrice := market.LastNoTradePrice
+	weightedYesPriceAmount := sdkmath.ZeroInt()
+	weightedPriceAmountDenominator := sdkmath.ZeroInt()
 	settledCount := uint64(0)
 
 	for i := range msg.Trades {
@@ -97,9 +100,12 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			continue
 		}
 
-		feeUnit := executionPrice.MulRaw(int64(market.FeeBps)).QuoRaw(int64(types.BPSDenominator))
+		tradeNotional := executionPrice.Mul(matchAmount)
+		feeTotal := tradeNotional.MulRaw(int64(market.FeeBps)).QuoRaw(int64(types.BPSDenominator))
 		moduleAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
 		skipTrade := false
+		hasYesViewPrice := false
+		yesViewPrice := sdkmath.ZeroInt()
 
 		switch {
 		case isBuyYesBuyNo(orderA.Side, orderB.Side):
@@ -109,16 +115,26 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			} else {
 				yesOrder, noOrder = orderB, orderA
 			}
+			// For BUY_YES <-> BUY_NO, do not allow market-market pairing.
+			// At least one side must be a LIMIT order so execution pricing has
+			// an anchored quote instead of two open-ended worst prices.
+			if yesOrder.OrderType == types.OrderType_ORDER_TYPE_MARKET && noOrder.OrderType == types.OrderType_ORDER_TYPE_MARKET {
+				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "buy_yes_buy_no_market_market_not_allowed")
+				continue
+			}
 
 			yesBuyer := sdk.MustAccAddressFromBech32(yesOrder.Trader)
 			noBuyer := sdk.MustAccAddressFromBech32(noOrder.Trader)
-			if err := k.ensureCollateralBalance(ctx, market, yesBuyer, executionPrice); err != nil {
+			// For BUY_YES <-> BUY_NO, settlement fee is charged on top of notional
+			// from each buyer so module collateral remains fully backed.
+			buyerRequired := tradeNotional.Add(feeTotal)
+			if err := k.ensureCollateralBalance(ctx, market, yesBuyer, buyerRequired); err != nil {
 				if err := k.cancelOrderDueToInsufficient(ctx, yesOrder, err.Error()); err != nil {
 					return nil, err
 				}
 				skipTrade = true
 			}
-			if err := k.ensureCollateralBalance(ctx, market, noBuyer, executionPrice); err != nil {
+			if err := k.ensureCollateralBalance(ctx, market, noBuyer, buyerRequired); err != nil {
 				if err := k.cancelOrderDueToInsufficient(ctx, noOrder, err.Error()); err != nil {
 					return nil, err
 				}
@@ -128,27 +144,34 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "insufficient_balance")
 				continue
 			}
-			if err := k.transferCollateralBetweenAccounts(ctx, market, yesBuyer, moduleAddr, executionPrice); err != nil {
+			if err := k.transferCollateralBetweenAccounts(ctx, market, yesBuyer, moduleAddr, tradeNotional); err != nil {
 				if err := k.cancelOrderDueToInsufficient(ctx, yesOrder, err.Error()); err != nil {
 					return nil, err
 				}
 				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "transfer_from_yes_buyer_failed")
 				continue
 			}
-			if err := k.transferCollateralBetweenAccounts(ctx, market, noBuyer, moduleAddr, executionPrice); err != nil {
+			if err := k.transferCollateralBetweenAccounts(ctx, market, noBuyer, moduleAddr, tradeNotional); err != nil {
 				if err := k.cancelOrderDueToInsufficient(ctx, noOrder, err.Error()); err != nil {
 					return nil, err
 				}
 				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "transfer_from_no_buyer_failed")
 				continue
 			}
-			// BUY_YES <-> BUY_NO fee is deducted from collected trade collateral,
-			// not charged as extra on top of buyer payment.
-			if err := k.chargeAndDistributeFeeFromModule(ctx, market, feeUnit); err != nil {
-				return nil, err
+			// Fee is charged from each buyer on top of collateral notional.
+			if err := k.chargeAndDistributeFee(ctx, market, yesBuyer, feeTotal); err != nil {
+				if err := k.cancelOrderDueToInsufficient(ctx, yesOrder, err.Error()); err != nil {
+					return nil, err
+				}
+				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "yes_buyer_fee_charge_failed")
+				continue
 			}
-			if err := k.chargeAndDistributeFeeFromModule(ctx, market, feeUnit); err != nil {
-				return nil, err
+			if err := k.chargeAndDistributeFee(ctx, market, noBuyer, feeTotal); err != nil {
+				if err := k.cancelOrderDueToInsufficient(ctx, noOrder, err.Error()); err != nil {
+					return nil, err
+				}
+				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "no_buyer_fee_charge_failed")
+				continue
 			}
 
 			yesPos := k.getPositionOrDefault(ctx, market.Id, yesBuyer)
@@ -177,7 +200,9 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 
 			yesTotal = yesTotal.Add(matchAmount)
 			noTotal = noTotal.Add(matchAmount)
-			totalFee = totalFee.Add(feeUnit).Add(feeUnit)
+			totalFee = totalFee.Add(feeTotal).Add(feeTotal)
+			hasYesViewPrice = true
+			yesViewPrice = executionPrice
 
 		case isBuySellSameOutcome(orderA.Side, orderB.Side):
 			var buyOrder, sellOrder *types.Order
@@ -201,12 +226,13 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 				return nil, err
 			}
 
-			netToSeller := executionPrice.Sub(feeUnit)
+			netToSeller := tradeNotional.Sub(feeTotal)
 			if netToSeller.IsNegative() {
 				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "fee_exceeds_execution_price")
 				continue
 			}
-			buyerRequired := executionPrice.Add(feeUnit)
+			// Buyer actual debit equals netToSeller + feeTotal = tradeNotional.
+			buyerRequired := tradeNotional
 			if err := k.ensureCollateralBalance(ctx, market, buyerAddr, buyerRequired); err != nil {
 				if err := k.cancelOrderDueToInsufficient(ctx, buyOrder, err.Error()); err != nil {
 					return nil, err
@@ -229,6 +255,8 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 					sellerYes = sellerYes.Sub(matchAmount)
 					buyerYes = buyerYes.Add(matchAmount)
 				}
+				hasYesViewPrice = true
+				yesViewPrice = executionPrice
 			case buyOrder.Side == types.OrderSide_ORDER_SIDE_BUY_NO && sellOrder.Side == types.OrderSide_ORDER_SIDE_SELL_NO:
 				freeNo := sellerNo.Sub(sellerLockedNo)
 				if freeNo.LT(matchAmount) {
@@ -240,6 +268,8 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 					sellerNo = sellerNo.Sub(matchAmount)
 					buyerNo = buyerNo.Add(matchAmount)
 				}
+				hasYesViewPrice = true
+				yesViewPrice = sdkmath.NewInt(types.CollateralUnit).Sub(executionPrice)
 			default:
 				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "invalid_order_pair")
 				continue
@@ -257,7 +287,7 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 					continue
 				}
 			}
-			if err := k.chargeAndDistributeFee(ctx, market, buyerAddr, feeUnit); err != nil {
+			if err := k.chargeAndDistributeFee(ctx, market, buyerAddr, feeTotal); err != nil {
 				if err := k.cancelOrderDueToInsufficient(ctx, buyOrder, err.Error()); err != nil {
 					return nil, err
 				}
@@ -277,7 +307,7 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			}
 			k.SetPosition(ctx, buyerPos)
 
-			totalFee = totalFee.Add(feeUnit)
+			totalFee = totalFee.Add(feeTotal)
 
 		default:
 			k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "invalid_order_pair")
@@ -304,7 +334,10 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 		k.SetOrder(ctx, orderB)
 		k.SetAppliedTrade(ctx, market.Id, trade.TradeId)
 		totalTradeVolume = totalTradeVolume.Add(matchAmount)
-		lastTradePrice = executionPrice.String()
+		if hasYesViewPrice {
+			weightedYesPriceAmount = weightedYesPriceAmount.Add(yesViewPrice.Mul(matchAmount))
+			weightedPriceAmountDenominator = weightedPriceAmountDenominator.Add(matchAmount)
+		}
 		settledCount++
 
 		ctx.EventManager().EmitEvent(
@@ -316,7 +349,7 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 				sdk.NewAttribute(types.AttributeKeyOrderBID, intToStr(trade.OrderBId)),
 				sdk.NewAttribute(types.AttributeKeyShareAmount, matchAmount.String()),
 				sdk.NewAttribute(types.AttributeKeyPrice, executionPrice.String()),
-				sdk.NewAttribute(types.AttributeKeyFee, feeUnit.String()),
+				sdk.NewAttribute(types.AttributeKeyFee, feeTotal.String()),
 			),
 		)
 	}
@@ -324,7 +357,16 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 	market.TotalYesShares = yesTotal.String()
 	market.TotalNoShares = noTotal.String()
 	market.TotalTradeVolume = totalTradeVolume.String()
-	market.LastTradePrice = lastTradePrice
+	if weightedPriceAmountDenominator.IsPositive() {
+		canonicalLastYes, canonicalLastNo := canonicalOutcomeLastPrices(
+			weightedYesPriceAmount,
+			weightedPriceAmountDenominator,
+		)
+		lastYesTradePrice = canonicalLastYes.String()
+		lastNoTradePrice = canonicalLastNo.String()
+	}
+	market.LastYesTradePrice = lastYesTradePrice
+	market.LastNoTradePrice = lastNoTradePrice
 	k.refreshMarketBookPrices(ctx, market)
 	if err := k.ValidateMarketInvariants(market); err != nil {
 		return nil, err
@@ -345,6 +387,25 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 		SettledCount: settledCount,
 		TotalFees:    totalFee.String(),
 	}, nil
+}
+
+func canonicalOutcomeLastPrices(weightedYesPriceAmount sdkmath.Int, totalAmount sdkmath.Int) (sdkmath.Int, sdkmath.Int) {
+	unit := sdkmath.NewInt(types.CollateralUnit)
+	tick := sdkmath.NewInt(types.PriceTickSize)
+	denominator := totalAmount.Mul(tick)
+	roundedTickCount := weightedYesPriceAmount.Add(denominator.QuoRaw(2)).Quo(denominator)
+	yes := roundedTickCount.Mul(tick)
+	if yes.IsNegative() {
+		yes = sdkmath.ZeroInt()
+	}
+	if yes.GT(unit) {
+		yes = unit
+	}
+	no := unit.Sub(yes)
+	if no.IsNegative() {
+		no = sdkmath.ZeroInt()
+	}
+	return yes, no
 }
 
 func (k Keeper) cancelOrderDueToInsufficient(ctx sdk.Context, order *types.Order, reason string) error {

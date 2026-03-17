@@ -1492,9 +1492,6 @@
           "type": "string",
           "format": "uint64"
         },
-        "lastTradePrice": {
-          "type": "string"
-        },
         "bestBidPrice": {
           "type": "string"
         },
@@ -1502,6 +1499,12 @@
           "type": "string"
         },
         "totalTradeVolume": {
+          "type": "string"
+        },
+        "lastYesTradePrice": {
+          "type": "string"
+        },
+        "lastNoTradePrice": {
           "type": "string"
         }
       }

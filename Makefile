@@ -1,7 +1,7 @@
 # Makefile for building and managing the Paxi blockchain (Cosmos SDK + CometBFT)
 
 APP_NAME = paxid
-VERSION ?= v1.0.6
+VERSION ?= v1.0.7
 DOCKER_IMAGE = paxi-node
 BUILD_TAGS = "cosmwasm pebbledb"
 GO_TOOLCHAIN ?= go1.25.5
@@ -126,6 +126,30 @@ proto:
 	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
 	--gogofaster_out=plugins=grpc,paths=source_relative:./ \
 	./proto/x/customwasm/types/tx.proto
+	
+proto-python:
+	@echo "Generating python proto files..."
+	@mkdir -p ./python_proto
+
+	python3 -m grpc_tools.protoc \
+	--python_out=./python_proto \
+	--grpc_python_out=./python_proto \
+	-I=proto \
+	-I=proto/third_party \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-sdk)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/cosmos-proto)/proto \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/cosmos/gogoproto) \
+	-I=$(shell go list -m -f '{{ .Dir }}' github.com/grpc-ecosystem/grpc-gateway)/third_party/googleapis \
+	proto/x/custommint/types/query.proto \
+	proto/x/custommint/types/tx.proto \
+	proto/x/customwasm/types/query.proto \
+	proto/x/customwasm/types/tx.proto \
+	proto/x/prediction/types/query.proto \
+	proto/x/prediction/types/tx.proto \
+	proto/x/paxi/types/query.proto \
+	proto/x/paxi/types/tx.proto \
+	proto/x/swap/types/query.proto \
+	proto/x/swap/types/tx.proto
 
 proto-ts:
 	@echo "Generating ts-proto files for frontend..."

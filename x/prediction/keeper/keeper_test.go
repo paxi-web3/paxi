@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	sdkmath "cosmossdk.io/math"
@@ -356,6 +357,89 @@ func mustPlaceOrder(tb testing.TB, k Keeper, ctx sdk.Context, msg *types.MsgPlac
 	orderID, err := k.PlaceOrder(ctx, msg)
 	require.NoError(tb, err)
 	return orderID
+}
+
+func TestCreateMarketTextCharLimits(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(220)
+	resolver := testAddress(221)
+	mustFund(bank, creator, 1_000_000)
+	now := ctx.BlockTime().Unix()
+
+	base := types.MsgCreateMarket{
+		Creator:         creator,
+		Resolver:        resolver,
+		Title:           "T",
+		Description:     "D",
+		Rule:            "R",
+		OutcomeType:     "BINARY",
+		Outcomes:        []string{"YES", "NO"},
+		CollateralType:  types.CollateralType_COLLATERAL_TYPE_NATIVE,
+		CollateralDenom: "upaxi",
+		OpenTime:        now - 10,
+		CloseTime:       now + 3600,
+		ResolveTime:     now + 7200,
+	}
+
+	tests := []struct {
+		name    string
+		apply   func(m *types.MsgCreateMarket)
+		wantErr string
+	}{
+		{
+			name: "title at max-1 chars is valid",
+			apply: func(m *types.MsgCreateMarket) {
+				m.Title = strings.Repeat("a", types.MaxMarketTitleChars-1)
+			},
+		},
+		{
+			name: "title at max chars is rejected",
+			apply: func(m *types.MsgCreateMarket) {
+				m.Title = strings.Repeat("a", types.MaxMarketTitleChars)
+			},
+			wantErr: "title must be < 512 characters",
+		},
+		{
+			name: "description at max chars is rejected",
+			apply: func(m *types.MsgCreateMarket) {
+				m.Description = strings.Repeat("b", types.MaxMarketDescriptionChars)
+			},
+			wantErr: "description must be < 4096 characters",
+		},
+		{
+			name: "rule at max chars is rejected",
+			apply: func(m *types.MsgCreateMarket) {
+				m.Rule = strings.Repeat("c", types.MaxMarketRuleChars)
+			},
+			wantErr: "rule must be < 4096 characters",
+		},
+		{
+			name: "multibyte title counts characters not bytes",
+			apply: func(m *types.MsgCreateMarket) {
+				m.Title = strings.Repeat("你", types.MaxMarketTitleChars-1)
+			},
+		},
+		{
+			name: "multibyte title at max chars is rejected",
+			apply: func(m *types.MsgCreateMarket) {
+				m.Title = strings.Repeat("你", types.MaxMarketTitleChars)
+			},
+			wantErr: "title must be < 512 characters",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			msg := base
+			tc.apply(&msg)
+			_, err := k.CreateMarket(ctx, &msg)
+			if tc.wantErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.wantErr)
+			}
+		})
+	}
 }
 
 func TestPlaceOrderWithoutEscrow(t *testing.T) {
@@ -776,7 +860,7 @@ func TestAutoPruneOrdersWithCursorAndDeleteLimit(t *testing.T) {
 	require.False(t, found)
 }
 
-func TestApplyTradeBatchBuyYesBuyNoFeeNotExtra(t *testing.T) {
+func TestApplyTradeBatchBuyYesBuyNoFeeChargedOnTop(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	creator := testAddress(18)
 	resolver := testAddress(19)
@@ -823,10 +907,124 @@ func TestApplyTradeBatchBuyYesBuyNoFeeNotExtra(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Fee should be deducted from collected collateral in module, not extra charged to buyers.
-	require.Equal(t, sdkmath.NewInt(10_000), bank.AccountBalance(yesBuyer, "upaxi"))
-	require.Equal(t, sdkmath.NewInt(10_000), bank.AccountBalance(noBuyer, "upaxi"))
+	// For BUY_YES <-> BUY_NO, fee is charged on top of notional from each buyer.
+	require.Equal(t, sdkmath.NewInt(9_900), bank.AccountBalance(yesBuyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(9_900), bank.AccountBalance(noBuyer, "upaxi"))
 	require.Equal(t, sdkmath.NewInt(200), bank.AccountBalance(resolver, "upaxi"))
+}
+
+func TestApplyTradeBatchBuyYesBuyNoCostScalesWithMatchAmount(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(26)
+	resolver := testAddress(27)
+	yesBuyer := testAddress(28)
+	noBuyer := testAddress(29)
+
+	params := k.GetParams(ctx)
+	params.MarketFeeBps = 0
+	k.SetParams(ctx, params)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, yesBuyer, 200_000)
+	mustFund(bank, noBuyer, 200_000)
+
+	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "10",
+		LimitPrice: "10000",
+	})
+	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "10",
+		LimitPrice: "10000",
+	})
+
+	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-buybuy-scale",
+		Trades: []types.TradeMatch{{
+			TradeId:        "t-buybuy-scale-1",
+			OrderAId:       buyYesID,
+			OrderBId:       buyNoID,
+			MatchAmount:    "10",
+			ExecutionPrice: "10000",
+		}},
+	})
+	require.NoError(t, err)
+
+	// Each side pays match_amount * execution_price = 10 * 10_000.
+	require.Equal(t, sdkmath.NewInt(100_000), bank.AccountBalance(yesBuyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(100_000), bank.AccountBalance(noBuyer, "upaxi"))
+}
+
+func TestApplyTradeBatchBuyYesBuyNoMarketMarketNotAllowed(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(22)
+	resolver := testAddress(23)
+	yesBuyer := testAddress(24)
+	noBuyer := testAddress(25)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, yesBuyer, 1_000_000)
+	mustFund(bank, noBuyer, 1_000_000)
+
+	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_MARKET,
+		Amount:     "1",
+		WorstPrice: "500000",
+	})
+	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_MARKET,
+		Amount:     "1",
+		WorstPrice: "500000",
+	})
+
+	beforeYes := bank.AccountBalance(yesBuyer, "upaxi")
+	beforeNo := bank.AccountBalance(noBuyer, "upaxi")
+
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-buybuy-market-market",
+		Trades: []types.TradeMatch{{
+			TradeId:        "t-buybuy-market-market-1",
+			OrderAId:       buyYesID,
+			OrderBId:       buyNoID,
+			MatchAmount:    "1",
+			ExecutionPrice: "500000",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), resp.SettledCount)
+	require.False(t, k.HasAppliedTrade(ctx, marketID, "t-buybuy-market-market-1"))
+
+	yesOrder, found := k.GetOrder(ctx, marketID, buyYesID)
+	require.True(t, found)
+	require.Equal(t, types.OrderStatus_ORDER_STATUS_OPEN, yesOrder.Status)
+	require.Equal(t, "0", yesOrder.FilledAmount)
+	require.Equal(t, "1", yesOrder.RemainingAmount)
+
+	noOrder, found := k.GetOrder(ctx, marketID, buyNoID)
+	require.True(t, found)
+	require.Equal(t, types.OrderStatus_ORDER_STATUS_OPEN, noOrder.Status)
+	require.Equal(t, "0", noOrder.FilledAmount)
+	require.Equal(t, "1", noOrder.RemainingAmount)
+
+	require.Equal(t, beforeYes, bank.AccountBalance(yesBuyer, "upaxi"))
+	require.Equal(t, beforeNo, bank.AccountBalance(noBuyer, "upaxi"))
 }
 
 func TestSplitMergeNoFee(t *testing.T) {
@@ -958,9 +1156,9 @@ func TestApplyTradeBatchPartialFill(t *testing.T) {
 	require.Equal(t, "10", buyerPos.YesShares)
 	require.Equal(t, "10", sellerPos.YesShares)
 
-	require.Equal(t, sdkmath.NewInt(490_000), bank.AccountBalance(buyer, "upaxi"))
-	require.Equal(t, sdkmath.NewInt(9_910), bank.AccountBalance(seller, "upaxi"))
-	require.Equal(t, sdkmath.NewInt(100), bank.AccountBalance(resolver, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(400_000), bank.AccountBalance(buyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(99_010), bank.AccountBalance(seller, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(1_000), bank.AccountBalance(resolver, "upaxi"))
 
 	market, found := k.GetMarket(ctx, marketID)
 	require.True(t, found)
@@ -1224,7 +1422,7 @@ func TestDuplicateTradeIDSkipped(t *testing.T) {
 	require.Equal(t, "1", buyOrder.RemainingAmount)
 }
 
-func TestApplyTradeBatchUpdatesLastTradePrice(t *testing.T) {
+func TestApplyTradeBatchUpdatesLastOutcomeTradePriceForYesPair(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	creator := testAddress(214)
 	resolver := testAddress(215)
@@ -1271,10 +1469,157 @@ func TestApplyTradeBatchUpdatesLastTradePrice(t *testing.T) {
 
 	market, found := k.GetMarket(ctx, marketID)
 	require.True(t, found)
-	require.Equal(t, "20000", market.LastTradePrice)
+	require.Equal(t, "20000", market.LastYesTradePrice)
+	require.Equal(t, "980000", market.LastNoTradePrice)
 	require.Equal(t, "1", market.TotalTradeVolume)
 	require.Empty(t, market.BestBidPrice)
 	require.Empty(t, market.BestAskPrice)
+}
+
+func TestApplyTradeBatchUpdatesLastOutcomeTradePricesBuyYesBuyNo(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(231)
+	resolver := testAddress(232)
+	yesBuyer := testAddress(233)
+	noBuyer := testAddress(234)
+
+	params := k.GetParams(ctx)
+	params.MarketFeeBps = 0
+	k.SetParams(ctx, params)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, yesBuyer, 20_000)
+	mustFund(bank, noBuyer, 20_000)
+
+	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "10000",
+	})
+	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "10000",
+	})
+
+	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-last-outcome-prices",
+		Trades: []types.TradeMatch{{
+			TradeId:        "t-last-outcome-prices-1",
+			OrderAId:       buyYesID,
+			OrderBId:       buyNoID,
+			MatchAmount:    "1",
+			ExecutionPrice: "10000",
+		}},
+	})
+	require.NoError(t, err)
+
+	market, found := k.GetMarket(ctx, marketID)
+	require.True(t, found)
+	require.Equal(t, "10000", market.LastYesTradePrice)
+	require.Equal(t, "990000", market.LastNoTradePrice)
+}
+
+func TestApplyTradeBatchCanonicalOutcomeLastPricesWeightedAcrossTrades(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(241)
+	resolver := testAddress(242)
+	yesBuyer := testAddress(243)
+	noBuyer := testAddress(244)
+	yesSeller := testAddress(245)
+	noSeller := testAddress(246)
+
+	params := k.GetParams(ctx)
+	params.MarketFeeBps = 0
+	k.SetParams(ctx, params)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, yesBuyer, 2_000_000)
+	mustFund(bank, noBuyer, 500_000)
+
+	yesSellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(yesSeller))
+	k.mustSetPositionInts(yesSellerPos, sdkmath.NewInt(2), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+	k.SetPosition(ctx, yesSellerPos)
+
+	noSellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(noSeller))
+	k.mustSetPositionInts(noSellerPos, sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.NewInt(1), sdkmath.ZeroInt())
+	k.SetPosition(ctx, noSellerPos)
+
+	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "2",
+		LimitPrice: "600000",
+	})
+	sellYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesSeller,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_SELL_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "2",
+		LimitPrice: "10000",
+	})
+	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "200000",
+	})
+	sellNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noSeller,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_SELL_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "10000",
+	})
+
+	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-canonical-last-prices",
+		Trades: []types.TradeMatch{
+			{
+				TradeId:        "t-canonical-yes-1",
+				OrderAId:       buyYesID,
+				OrderBId:       sellYesID,
+				MatchAmount:    "2",
+				ExecutionPrice: "600000",
+			},
+			{
+				TradeId:        "t-canonical-no-1",
+				OrderAId:       buyNoID,
+				OrderBId:       sellNoID,
+				MatchAmount:    "1",
+				ExecutionPrice: "200000",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// YES-view weighted price:
+	// (600000*2 + (1000000-200000)*1) / 3 = 666666..., rounded to nearest 10000 = 670000.
+	market, found := k.GetMarket(ctx, marketID)
+	require.True(t, found)
+	require.Equal(t, "670000", market.LastYesTradePrice)
+	require.Equal(t, "330000", market.LastNoTradePrice)
+	lastYes, ok := sdkmath.NewIntFromString(market.LastYesTradePrice)
+	require.True(t, ok)
+	lastNo, ok := sdkmath.NewIntFromString(market.LastNoTradePrice)
+	require.True(t, ok)
+	require.Equal(t, sdkmath.NewInt(types.CollateralUnit), lastYes.Add(lastNo))
 }
 
 func TestSettlementInsufficientWalletBalance(t *testing.T) {
@@ -1907,12 +2252,13 @@ func TestClaimPayoutSuccessAndDoubleClaim(t *testing.T) {
 	pos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(creator))
 	k.mustSetPositionInts(pos, sdkmath.NewInt(5), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
 	k.SetPosition(ctx, pos)
+	bank.addModuleBalance("upaxi", sdkmath.NewInt(5_000_000))
 
 	before := bank.AccountBalance(creator, "upaxi")
 	resp, err := k.ClaimPayout(ctx, &types.MsgClaimPayout{Creator: creator, MarketId: marketID})
 	require.NoError(t, err)
-	require.Equal(t, "5", resp.Payout)
-	require.Equal(t, before.AddRaw(5), bank.AccountBalance(creator, "upaxi"))
+	require.Equal(t, "5000000", resp.Payout)
+	require.Equal(t, before.AddRaw(5_000_000), bank.AccountBalance(creator, "upaxi"))
 
 	_, err = k.ClaimPayout(ctx, &types.MsgClaimPayout{Creator: creator, MarketId: marketID})
 	require.ErrorIs(t, err, types.ErrAlreadyClaimed)
@@ -1933,12 +2279,13 @@ func TestClaimVoidRefundSuccessAndDoubleClaim(t *testing.T) {
 	pos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(creator))
 	k.mustSetPositionInts(pos, sdkmath.NewInt(6), sdkmath.ZeroInt(), sdkmath.NewInt(2), sdkmath.ZeroInt())
 	k.SetPosition(ctx, pos)
+	bank.addModuleBalance("upaxi", sdkmath.NewInt(4_000_000))
 
 	before := bank.AccountBalance(creator, "upaxi")
 	resp, err := k.ClaimVoidRefund(ctx, &types.MsgClaimVoidRefund{Creator: creator, MarketId: marketID})
 	require.NoError(t, err)
-	require.Equal(t, "4", resp.Refund)
-	require.Equal(t, before.AddRaw(4), bank.AccountBalance(creator, "upaxi"))
+	require.Equal(t, "4000000", resp.Refund)
+	require.Equal(t, before.AddRaw(4_000_000), bank.AccountBalance(creator, "upaxi"))
 
 	_, err = k.ClaimVoidRefund(ctx, &types.MsgClaimVoidRefund{Creator: creator, MarketId: marketID})
 	require.ErrorIs(t, err, types.ErrAlreadyClaimed)
