@@ -8,26 +8,7 @@ import (
 	"github.com/paxi-web3/paxi/x/prediction/types"
 )
 
-func isTerminalOrderStatus(status types.OrderStatus) bool {
-	return status == types.OrderStatus_ORDER_STATUS_FILLED ||
-		status == types.OrderStatus_ORDER_STATUS_CANCELLED ||
-		status == types.OrderStatus_ORDER_STATUS_EXPIRED
-}
-
-func pruneAnchorHeight(order *types.Order) int64 {
-	if order.ClosedBh > 0 {
-		return order.ClosedBh
-	}
-	if order.Status == types.OrderStatus_ORDER_STATUS_EXPIRED && order.ExpireBh > 0 {
-		return order.ExpireBh
-	}
-	return order.CreatedBh
-}
-
-func (k Keeper) shouldPruneOrder(order *types.Order, thresholdBh int64) bool {
-	if !isTerminalOrderStatus(order.Status) {
-		return false
-	}
+func (k Keeper) shouldPruneOrder(ctx sdk.Context, order *types.Order, thresholdBh int64) bool {
 	filled, err := parseNonNegativeInt(order.FilledAmount, "filled_amount")
 	if err != nil {
 		return false
@@ -36,11 +17,16 @@ func (k Keeper) shouldPruneOrder(order *types.Order, thresholdBh int64) bool {
 	if !filled.IsZero() {
 		return false
 	}
-	anchor := pruneAnchorHeight(order)
-	if anchor <= 0 {
+	if order.CreatedBh <= 0 {
 		return false
 	}
-	return anchor <= thresholdBh
+	// Eligible when older than threshold and not effectively open.
+	// This includes terminal orders and stale expired-by-height OPEN orders.
+	if order.CreatedBh > thresholdBh && ctx.BlockHeight() < order.ExpireBh && order.Status != types.OrderStatus_ORDER_STATUS_CANCELLED {
+		return false
+	}
+
+	return true
 }
 
 func (k Keeper) AutoPruneOrders(ctx sdk.Context) {
@@ -91,7 +77,7 @@ func (k Keeper) AutoPruneOrders(ctx sdk.Context) {
 		if err := k.cdc.Unmarshal(it.Value(), order); err != nil {
 			continue
 		}
-		if !k.shouldPruneOrder(order, thresholdBh) {
+		if !k.shouldPruneOrder(ctx, order, thresholdBh) {
 			continue
 		}
 

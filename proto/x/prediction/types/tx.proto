@@ -79,7 +79,10 @@ message TradeMatch {
   uint64 order_a_id = 2;
   uint64 order_b_id = 3;
   string match_amount = 4;
-  string execution_price = 5;
+  // Required per-outcome execution prices.
+  // For BUY_YES <-> BUY_NO matching, their sum must equal 1_000_000.
+  string yes_execution_price = 6;
+  string no_execution_price = 7;
 }
 
 message MsgCreateMarket {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	sdkmath "cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
@@ -476,6 +477,143 @@ func TestPlaceOrderWithoutEscrow(t *testing.T) {
 	require.Equal(t, trader, byID.Trader)
 }
 
+func TestSetMarketUpdatesCloseIndexOnCloseTimeChange(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(41)
+	resolver := testAddress(42)
+	mustFund(bank, creator, 1_000_000)
+	now := ctx.BlockTime().Unix()
+
+	marketID, err := k.CreateMarket(ctx, &types.MsgCreateMarket{
+		Creator:         creator,
+		Resolver:        resolver,
+		Title:           "index refresh",
+		Description:     "index refresh",
+		Rule:            "rule",
+		OutcomeType:     "BINARY",
+		Outcomes:        []string{"YES", "NO"},
+		CollateralType:  types.CollateralType_COLLATERAL_TYPE_NATIVE,
+		CollateralDenom: "upaxi",
+		OpenTime:        now - 10,
+		CloseTime:       now + 100,
+		ResolveTime:     now + 200,
+	})
+	require.NoError(t, err)
+
+	market, found := k.GetMarket(ctx, marketID)
+	require.True(t, found)
+	oldClose := market.CloseTime
+	oldKey := types.MarketCloseIndexKey(oldClose, marketID)
+
+	store := k.storeService.OpenKVStore(ctx)
+	oldIndex, err := store.Get(oldKey)
+	require.NoError(t, err)
+	require.NotNil(t, oldIndex)
+
+	market.CloseTime = now + 300
+	k.SetMarket(ctx, market)
+
+	oldIndex, err = store.Get(oldKey)
+	require.NoError(t, err)
+	require.Nil(t, oldIndex)
+	newIndex, err := store.Get(types.MarketCloseIndexKey(market.CloseTime, marketID))
+	require.NoError(t, err)
+	require.NotNil(t, newIndex)
+}
+
+func TestAutoCloseExpiredMarketsUsesCloseIndex(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(43)
+	resolver := testAddress(44)
+	mustFund(bank, creator, 2_000_000)
+	now := ctx.BlockTime().Unix()
+
+	create := func(title string, closeTime int64) uint64 {
+		marketID, err := k.CreateMarket(ctx, &types.MsgCreateMarket{
+			Creator:         creator,
+			Resolver:        resolver,
+			Title:           title,
+			Description:     "auto close",
+			Rule:            "rule",
+			OutcomeType:     "BINARY",
+			Outcomes:        []string{"YES", "NO"},
+			CollateralType:  types.CollateralType_COLLATERAL_TYPE_NATIVE,
+			CollateralDenom: "upaxi",
+			OpenTime:        now - 10,
+			CloseTime:       closeTime,
+			ResolveTime:     closeTime + 100,
+		})
+		require.NoError(t, err)
+		return marketID
+	}
+
+	expiredID := create("expired", now+1)
+	openID := create("open", now+100)
+
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(2 * time.Second))
+	k.AutoCloseExpiredMarkets(ctx)
+
+	expiredMarket, found := k.GetMarket(ctx, expiredID)
+	require.True(t, found)
+	require.Equal(t, types.MarketStatus_MARKET_STATUS_CLOSED, expiredMarket.Status)
+
+	openMarket, found := k.GetMarket(ctx, openID)
+	require.True(t, found)
+	require.Equal(t, types.MarketStatus_MARKET_STATUS_OPEN, openMarket.Status)
+
+	store := k.storeService.OpenKVStore(ctx)
+	expiredIndex, err := store.Get(types.MarketCloseIndexKey(expiredMarket.CloseTime, expiredID))
+	require.NoError(t, err)
+	require.Nil(t, expiredIndex)
+
+	openIndex, err := store.Get(types.MarketCloseIndexKey(openMarket.CloseTime, openID))
+	require.NoError(t, err)
+	require.NotNil(t, openIndex)
+}
+
+func TestAutoCloseExpiredMarketsBackfillsLegacyIndex(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(45)
+	resolver := testAddress(46)
+	mustFund(bank, creator, 1_000_000)
+	now := ctx.BlockTime().Unix()
+
+	marketID, err := k.CreateMarket(ctx, &types.MsgCreateMarket{
+		Creator:         creator,
+		Resolver:        resolver,
+		Title:           "legacy backfill",
+		Description:     "legacy backfill",
+		Rule:            "rule",
+		OutcomeType:     "BINARY",
+		Outcomes:        []string{"YES", "NO"},
+		CollateralType:  types.CollateralType_COLLATERAL_TYPE_NATIVE,
+		CollateralDenom: "upaxi",
+		OpenTime:        now - 10,
+		CloseTime:       now + 1,
+		ResolveTime:     now + 100,
+	})
+	require.NoError(t, err)
+
+	market, found := k.GetMarket(ctx, marketID)
+	require.True(t, found)
+
+	store := k.storeService.OpenKVStore(ctx)
+	k.mustDelete(store, types.MarketCloseIndexKey(market.CloseTime, marketID))
+	k.mustDelete(store, types.MarketCloseIdxReady)
+	k.mustDelete(store, types.MarketCloseIdxCursor)
+
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(2 * time.Second))
+	k.AutoCloseExpiredMarkets(ctx)
+
+	updated, found := k.GetMarket(ctx, marketID)
+	require.True(t, found)
+	require.Equal(t, types.MarketStatus_MARKET_STATUS_CLOSED, updated.Status)
+
+	indexBz, err := store.Get(types.MarketCloseIndexKey(updated.CloseTime, marketID))
+	require.NoError(t, err)
+	require.Nil(t, indexBz)
+}
+
 func TestPlaceOrderRequiresSufficientBalance(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	creator := testAddress(4)
@@ -803,6 +941,44 @@ func TestAutoPruneOrders(t *testing.T) {
 	require.True(t, found)
 }
 
+func TestAutoPruneOrdersPrunesStaleUnusedOpenOrders(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	ctx = ctx.WithBlockHeight(300)
+
+	creator := testAddress(104)
+	resolver := testAddress(105)
+	trader := testAddress(106)
+	mustFund(bank, trader, 200_000)
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+
+	params := k.GetParams(ctx)
+	params.OrderPruneIntervalBh = 1
+	params.OrderPruneRetainBh = 2
+	params.OrderPruneScanLimit = 100
+	params.OrderPruneDeleteLimit = 100
+	k.SetParams(ctx, params)
+
+	// This order is never matched/cancelled and remains OPEN in storage, but
+	// becomes effectively closed after expiry by height.
+	staleOpenOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     trader,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "10000",
+		ExpireBh:   ctx.BlockHeight() + 1,
+	})
+
+	ctx = ctx.WithBlockHeight(303) // threshold = 301, order created at 300
+	k.AutoPruneOrders(ctx)
+
+	_, found := k.GetOrder(ctx, marketID, staleOpenOrderID)
+	require.False(t, found)
+	_, found = k.GetOrderByID(ctx, staleOpenOrderID)
+	require.False(t, found)
+}
+
 func TestAutoPruneOrdersWithCursorAndDeleteLimit(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	ctx = ctx.WithBlockHeight(200)
@@ -873,8 +1049,8 @@ func TestApplyTradeBatchBuyYesBuyNoFeeChargedOnTop(t *testing.T) {
 	k.SetParams(ctx, params)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, yesBuyer, 20_000)
-	mustFund(bank, noBuyer, 20_000)
+	mustFund(bank, yesBuyer, 600_000)
+	mustFund(bank, noBuyer, 600_000)
 
 	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 		Trader:     yesBuyer,
@@ -882,7 +1058,7 @@ func TestApplyTradeBatchBuyYesBuyNoFeeChargedOnTop(t *testing.T) {
 		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
 		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 		Amount:     "1",
-		LimitPrice: "10000",
+		LimitPrice: "500000",
 	})
 	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 		Trader:     noBuyer,
@@ -890,7 +1066,7 @@ func TestApplyTradeBatchBuyYesBuyNoFeeChargedOnTop(t *testing.T) {
 		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
 		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 		Amount:     "1",
-		LimitPrice: "10000",
+		LimitPrice: "500000",
 	})
 
 	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
@@ -898,19 +1074,20 @@ func TestApplyTradeBatchBuyYesBuyNoFeeChargedOnTop(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-buybuy-fee",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-buybuy-fee-1",
-			OrderAId:       buyYesID,
-			OrderBId:       buyNoID,
-			MatchAmount:    "1",
-			ExecutionPrice: "10000",
+			TradeId:           "t-buybuy-fee-1",
+			OrderAId:          buyYesID,
+			OrderBId:          buyNoID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "500000",
+			NoExecutionPrice:  "500000",
 		}},
 	})
 	require.NoError(t, err)
 
 	// For BUY_YES <-> BUY_NO, fee is charged on top of notional from each buyer.
-	require.Equal(t, sdkmath.NewInt(9_900), bank.AccountBalance(yesBuyer, "upaxi"))
-	require.Equal(t, sdkmath.NewInt(9_900), bank.AccountBalance(noBuyer, "upaxi"))
-	require.Equal(t, sdkmath.NewInt(200), bank.AccountBalance(resolver, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(95_000), bank.AccountBalance(yesBuyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(95_000), bank.AccountBalance(noBuyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(10_000), bank.AccountBalance(resolver, "upaxi"))
 }
 
 func TestApplyTradeBatchBuyYesBuyNoCostScalesWithMatchAmount(t *testing.T) {
@@ -925,8 +1102,8 @@ func TestApplyTradeBatchBuyYesBuyNoCostScalesWithMatchAmount(t *testing.T) {
 	k.SetParams(ctx, params)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, yesBuyer, 200_000)
-	mustFund(bank, noBuyer, 200_000)
+	mustFund(bank, yesBuyer, 6_000_000)
+	mustFund(bank, noBuyer, 6_000_000)
 
 	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 		Trader:     yesBuyer,
@@ -934,7 +1111,7 @@ func TestApplyTradeBatchBuyYesBuyNoCostScalesWithMatchAmount(t *testing.T) {
 		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
 		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 		Amount:     "10",
-		LimitPrice: "10000",
+		LimitPrice: "500000",
 	})
 	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 		Trader:     noBuyer,
@@ -942,7 +1119,7 @@ func TestApplyTradeBatchBuyYesBuyNoCostScalesWithMatchAmount(t *testing.T) {
 		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
 		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 		Amount:     "10",
-		LimitPrice: "10000",
+		LimitPrice: "500000",
 	})
 
 	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
@@ -950,18 +1127,19 @@ func TestApplyTradeBatchBuyYesBuyNoCostScalesWithMatchAmount(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-buybuy-scale",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-buybuy-scale-1",
-			OrderAId:       buyYesID,
-			OrderBId:       buyNoID,
-			MatchAmount:    "10",
-			ExecutionPrice: "10000",
+			TradeId:           "t-buybuy-scale-1",
+			OrderAId:          buyYesID,
+			OrderBId:          buyNoID,
+			MatchAmount:       "10",
+			YesExecutionPrice: "500000",
+			NoExecutionPrice:  "500000",
 		}},
 	})
 	require.NoError(t, err)
 
-	// Each side pays match_amount * execution_price = 10 * 10_000.
-	require.Equal(t, sdkmath.NewInt(100_000), bank.AccountBalance(yesBuyer, "upaxi"))
-	require.Equal(t, sdkmath.NewInt(100_000), bank.AccountBalance(noBuyer, "upaxi"))
+	// Each side pays match_amount * side_execution_price = 10 * 500_000.
+	require.Equal(t, sdkmath.NewInt(1_000_000), bank.AccountBalance(yesBuyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(1_000_000), bank.AccountBalance(noBuyer, "upaxi"))
 }
 
 func TestApplyTradeBatchBuyYesBuyNoMarketMarketNotAllowed(t *testing.T) {
@@ -1000,11 +1178,12 @@ func TestApplyTradeBatchBuyYesBuyNoMarketMarketNotAllowed(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-buybuy-market-market",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-buybuy-market-market-1",
-			OrderAId:       buyYesID,
-			OrderBId:       buyNoID,
-			MatchAmount:    "1",
-			ExecutionPrice: "500000",
+			TradeId:           "t-buybuy-market-market-1",
+			OrderAId:          buyYesID,
+			OrderBId:          buyNoID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "500000",
+			NoExecutionPrice:  "500000",
 		}},
 	})
 	require.NoError(t, err)
@@ -1027,6 +1206,189 @@ func TestApplyTradeBatchBuyYesBuyNoMarketMarketNotAllowed(t *testing.T) {
 	require.Equal(t, beforeNo, bank.AccountBalance(noBuyer, "upaxi"))
 }
 
+func TestApplyTradeBatchBuyYesBuyNoPriceMustSumToOne(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(225)
+	resolver := testAddress(226)
+	yesBuyer := testAddress(227)
+	noBuyer := testAddress(228)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, yesBuyer, 1_000_000)
+	mustFund(bank, noBuyer, 1_000_000)
+
+	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "600000",
+	})
+	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "600000",
+	})
+
+	beforeYes := bank.AccountBalance(yesBuyer, "upaxi")
+	beforeNo := bank.AccountBalance(noBuyer, "upaxi")
+
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-buybuy-price-not-one",
+		Trades: []types.TradeMatch{{
+			TradeId:           "t-buybuy-price-not-one-1",
+			OrderAId:          buyYesID,
+			OrderBId:          buyNoID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "600000",
+			NoExecutionPrice:  "600000",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), resp.SettledCount)
+	require.False(t, k.HasAppliedTrade(ctx, marketID, "t-buybuy-price-not-one-1"))
+
+	yesOrder, found := k.GetOrder(ctx, marketID, buyYesID)
+	require.True(t, found)
+	require.Equal(t, types.OrderStatus_ORDER_STATUS_OPEN, yesOrder.Status)
+
+	noOrder, found := k.GetOrder(ctx, marketID, buyNoID)
+	require.True(t, found)
+	require.Equal(t, types.OrderStatus_ORDER_STATUS_OPEN, noOrder.Status)
+
+	require.Equal(t, beforeYes, bank.AccountBalance(yesBuyer, "upaxi"))
+	require.Equal(t, beforeNo, bank.AccountBalance(noBuyer, "upaxi"))
+}
+
+func TestApplyTradeBatchBuyYesBuyNoDualExecutionPrice(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(229)
+	resolver := testAddress(230)
+	yesBuyer := testAddress(231)
+	noBuyer := testAddress(232)
+
+	params := k.GetParams(ctx)
+	params.MarketFeeBps = 0
+	k.SetParams(ctx, params)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, yesBuyer, 1_000_000)
+	mustFund(bank, noBuyer, 1_000_000)
+
+	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "600000",
+	})
+	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "400000",
+	})
+
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-buybuy-dual-price",
+		Trades: []types.TradeMatch{{
+			TradeId:           "t-buybuy-dual-price-1",
+			OrderAId:          buyYesID,
+			OrderBId:          buyNoID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "600000",
+			NoExecutionPrice:  "400000",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), resp.SettledCount)
+	require.Equal(t, sdkmath.NewInt(400_000), bank.AccountBalance(yesBuyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(600_000), bank.AccountBalance(noBuyer, "upaxi"))
+
+	yesOrder, found := k.GetOrder(ctx, marketID, buyYesID)
+	require.True(t, found)
+	require.Equal(t, "600000", yesOrder.SpentCollateral)
+	require.Equal(t, "0", yesOrder.ReceivedCollateral)
+
+	noOrder, found := k.GetOrder(ctx, marketID, buyNoID)
+	require.True(t, found)
+	require.Equal(t, "400000", noOrder.SpentCollateral)
+	require.Equal(t, "0", noOrder.ReceivedCollateral)
+}
+
+func TestApplyTradeBatchTracksOrderSpentAndReceivedCollateral(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(120)
+	resolver := testAddress(121)
+	buyer := testAddress(122)
+	seller := testAddress(123)
+
+	params := k.GetParams(ctx)
+	params.MarketFeeBps = 100
+	params.ResolverFeeSharePercent = 100
+	k.SetParams(ctx, params)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, buyer, 2_000_000)
+
+	sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+	k.mustSetPositionInts(sellerPos, sdkmath.NewInt(2), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+	k.SetPosition(ctx, sellerPos)
+
+	buyOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     buyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "2",
+		LimitPrice: "500000",
+	})
+	sellOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     seller,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_SELL_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "2",
+		LimitPrice: "500000",
+	})
+
+	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-order-collateral-tracking",
+		Trades: []types.TradeMatch{{
+			TradeId:           "t-order-collateral-tracking-1",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "2",
+			YesExecutionPrice: "500000",
+			NoExecutionPrice:  "500000",
+		}},
+	})
+	require.NoError(t, err)
+
+	buyOrder, found := k.GetOrder(ctx, marketID, buyOrderID)
+	require.True(t, found)
+	require.Equal(t, "1000000", buyOrder.SpentCollateral)
+	require.Equal(t, "0", buyOrder.ReceivedCollateral)
+
+	sellOrder, found := k.GetOrder(ctx, marketID, sellOrderID)
+	require.True(t, found)
+	require.Equal(t, "0", sellOrder.SpentCollateral)
+	require.Equal(t, "990000", sellOrder.ReceivedCollateral)
+}
+
 func TestSplitMergeNoFee(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	creator := testAddress(26)
@@ -1039,10 +1401,15 @@ func TestSplitMergeNoFee(t *testing.T) {
 	k.SetParams(ctx, params)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, trader, 20_000)
+	mustFund(bank, trader, 2_000_000_000)
 
 	moduleBefore := bank.ModuleBalance("upaxi")
 	traderBefore := bank.AccountBalance(trader, "upaxi")
+	shareUnit := sdkmath.NewInt(types.CollateralUnit)
+	splitShares := sdkmath.NewInt(1000)
+	mergeShares := sdkmath.NewInt(400)
+	splitCollateral := splitShares.Mul(shareUnit)
+	mergeCollateral := mergeShares.Mul(shareUnit)
 
 	err := k.SplitPosition(ctx, &types.MsgSplitPosition{
 		Trader:   trader,
@@ -1055,8 +1422,8 @@ func TestSplitMergeNoFee(t *testing.T) {
 	require.True(t, found)
 	require.Equal(t, "1000", pos.YesShares)
 	require.Equal(t, "1000", pos.NoShares)
-	require.Equal(t, traderBefore.SubRaw(1000), bank.AccountBalance(trader, "upaxi"))
-	require.Equal(t, moduleBefore.AddRaw(1000), bank.ModuleBalance("upaxi"))
+	require.Equal(t, traderBefore.Sub(splitCollateral), bank.AccountBalance(trader, "upaxi"))
+	require.Equal(t, moduleBefore.Add(splitCollateral), bank.ModuleBalance("upaxi"))
 
 	market, found := k.GetMarket(ctx, marketID)
 	require.True(t, found)
@@ -1074,8 +1441,8 @@ func TestSplitMergeNoFee(t *testing.T) {
 	pos, _ = k.GetPosition(ctx, marketID, sdk.MustAccAddressFromBech32(trader))
 	require.Equal(t, "600", pos.YesShares)
 	require.Equal(t, "600", pos.NoShares)
-	require.Equal(t, traderBefore.SubRaw(600), bank.AccountBalance(trader, "upaxi"))
-	require.Equal(t, moduleBefore.AddRaw(600), bank.ModuleBalance("upaxi"))
+	require.Equal(t, traderBefore.Sub(splitCollateral).Add(mergeCollateral), bank.AccountBalance(trader, "upaxi"))
+	require.Equal(t, moduleBefore.Add(splitCollateral).Sub(mergeCollateral), bank.ModuleBalance("upaxi"))
 	require.Equal(t, resolverBefore, bank.AccountBalance(resolver, "upaxi"), "split/merge must not charge fee")
 
 	market, _ = k.GetMarket(ctx, marketID)
@@ -1090,7 +1457,7 @@ func TestMergeInsufficientSharesRejected(t *testing.T) {
 	trader := testAddress(31)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, trader, 20_000)
+	mustFund(bank, trader, 200_000_000)
 
 	err := k.SplitPosition(ctx, &types.MsgSplitPosition{
 		Trader:   trader,
@@ -1135,11 +1502,12 @@ func TestApplyTradeBatchPartialFill(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-1",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-1",
-			OrderAId:       buyOrderID,
-			OrderBId:       sellOrderID,
-			MatchAmount:    "10",
-			ExecutionPrice: "10000",
+			TradeId:           "t-1",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "10",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
 		}},
 	})
 	require.NoError(t, err)
@@ -1162,7 +1530,7 @@ func TestApplyTradeBatchPartialFill(t *testing.T) {
 
 	market, found := k.GetMarket(ctx, marketID)
 	require.True(t, found)
-	require.Equal(t, "10", market.TotalTradeVolume)
+	require.Equal(t, "100000", market.TotalTradeVolume)
 }
 
 func TestCancelOrder(t *testing.T) {
@@ -1230,11 +1598,12 @@ func TestCancelOrderPartialKeepsOrder(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "partial-cancel-batch",
 		Trades: []types.TradeMatch{{
-			TradeId:        "partial-cancel-trade",
-			OrderAId:       buyOrderID,
-			OrderBId:       sellOrderID,
-			MatchAmount:    "10",
-			ExecutionPrice: "10000",
+			TradeId:           "partial-cancel-trade",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "10",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
 		}},
 	})
 	require.NoError(t, err)
@@ -1392,11 +1761,12 @@ func TestDuplicateTradeIDSkipped(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-1",
 		Trades: []types.TradeMatch{{
-			TradeId:        "dup-trade",
-			OrderAId:       buyOrderID,
-			OrderBId:       sellOrderID,
-			MatchAmount:    "1",
-			ExecutionPrice: "10000",
+			TradeId:           "dup-trade",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
 		}},
 	})
 	require.NoError(t, err)
@@ -1406,11 +1776,12 @@ func TestDuplicateTradeIDSkipped(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-2",
 		Trades: []types.TradeMatch{{
-			TradeId:        "dup-trade",
-			OrderAId:       buyOrderID,
-			OrderBId:       sellOrderID,
-			MatchAmount:    "1",
-			ExecutionPrice: "10000",
+			TradeId:           "dup-trade",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
 		}},
 	})
 	require.NoError(t, err)
@@ -1458,11 +1829,12 @@ func TestApplyTradeBatchUpdatesLastOutcomeTradePriceForYesPair(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-last-price",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-last-price",
-			OrderAId:       buyOrderID,
-			OrderBId:       sellOrderID,
-			MatchAmount:    "1",
-			ExecutionPrice: "20000",
+			TradeId:           "t-last-price",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "20000",
+			NoExecutionPrice:  "20000",
 		}},
 	})
 	require.NoError(t, err)
@@ -1471,7 +1843,7 @@ func TestApplyTradeBatchUpdatesLastOutcomeTradePriceForYesPair(t *testing.T) {
 	require.True(t, found)
 	require.Equal(t, "20000", market.LastYesTradePrice)
 	require.Equal(t, "980000", market.LastNoTradePrice)
-	require.Equal(t, "1", market.TotalTradeVolume)
+	require.Equal(t, "20000", market.TotalTradeVolume)
 	require.Empty(t, market.BestBidPrice)
 	require.Empty(t, market.BestAskPrice)
 }
@@ -1488,8 +1860,8 @@ func TestApplyTradeBatchUpdatesLastOutcomeTradePricesBuyYesBuyNo(t *testing.T) {
 	k.SetParams(ctx, params)
 
 	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-	mustFund(bank, yesBuyer, 20_000)
-	mustFund(bank, noBuyer, 20_000)
+	mustFund(bank, yesBuyer, 600_000)
+	mustFund(bank, noBuyer, 600_000)
 
 	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 		Trader:     yesBuyer,
@@ -1497,7 +1869,7 @@ func TestApplyTradeBatchUpdatesLastOutcomeTradePricesBuyYesBuyNo(t *testing.T) {
 		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
 		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 		Amount:     "1",
-		LimitPrice: "10000",
+		LimitPrice: "500000",
 	})
 	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 		Trader:     noBuyer,
@@ -1505,7 +1877,7 @@ func TestApplyTradeBatchUpdatesLastOutcomeTradePricesBuyYesBuyNo(t *testing.T) {
 		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
 		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 		Amount:     "1",
-		LimitPrice: "10000",
+		LimitPrice: "500000",
 	})
 
 	_, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
@@ -1513,19 +1885,20 @@ func TestApplyTradeBatchUpdatesLastOutcomeTradePricesBuyYesBuyNo(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-last-outcome-prices",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-last-outcome-prices-1",
-			OrderAId:       buyYesID,
-			OrderBId:       buyNoID,
-			MatchAmount:    "1",
-			ExecutionPrice: "10000",
+			TradeId:           "t-last-outcome-prices-1",
+			OrderAId:          buyYesID,
+			OrderBId:          buyNoID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "500000",
+			NoExecutionPrice:  "500000",
 		}},
 	})
 	require.NoError(t, err)
 
 	market, found := k.GetMarket(ctx, marketID)
 	require.True(t, found)
-	require.Equal(t, "10000", market.LastYesTradePrice)
-	require.Equal(t, "990000", market.LastNoTradePrice)
+	require.Equal(t, "500000", market.LastYesTradePrice)
+	require.Equal(t, "500000", market.LastNoTradePrice)
 }
 
 func TestApplyTradeBatchCanonicalOutcomeLastPricesWeightedAcrossTrades(t *testing.T) {
@@ -1592,18 +1965,20 @@ func TestApplyTradeBatchCanonicalOutcomeLastPricesWeightedAcrossTrades(t *testin
 		BatchId:  "batch-canonical-last-prices",
 		Trades: []types.TradeMatch{
 			{
-				TradeId:        "t-canonical-yes-1",
-				OrderAId:       buyYesID,
-				OrderBId:       sellYesID,
-				MatchAmount:    "2",
-				ExecutionPrice: "600000",
+				TradeId:           "t-canonical-yes-1",
+				OrderAId:          buyYesID,
+				OrderBId:          sellYesID,
+				MatchAmount:       "2",
+				YesExecutionPrice: "600000",
+				NoExecutionPrice:  "600000",
 			},
 			{
-				TradeId:        "t-canonical-no-1",
-				OrderAId:       buyNoID,
-				OrderBId:       sellNoID,
-				MatchAmount:    "1",
-				ExecutionPrice: "200000",
+				TradeId:           "t-canonical-no-1",
+				OrderAId:          buyNoID,
+				OrderBId:          sellNoID,
+				MatchAmount:       "1",
+				YesExecutionPrice: "200000",
+				NoExecutionPrice:  "200000",
 			},
 		},
 	})
@@ -1648,11 +2023,12 @@ func TestSettlementInsufficientWalletBalance(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-insufficient-balance",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-wallet-1",
-			OrderAId:       buyOrderID,
-			OrderBId:       sellOrderID,
-			MatchAmount:    "1",
-			ExecutionPrice: "10000",
+			TradeId:           "t-wallet-1",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
 		}},
 	})
 	require.NoError(t, err)
@@ -1693,11 +2069,12 @@ func TestSettlementInsufficientYesShares(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-insufficient-yes",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-yes-1",
-			OrderAId:       buyOrderID,
-			OrderBId:       sellOrderID,
-			MatchAmount:    "1",
-			ExecutionPrice: "10000",
+			TradeId:           "t-yes-1",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
 		}},
 	})
 	require.NoError(t, err)
@@ -1738,11 +2115,12 @@ func TestSettlementInsufficientNoShares(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-insufficient-no",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-no-1",
-			OrderAId:       buyOrderID,
-			OrderBId:       sellOrderID,
-			MatchAmount:    "1",
-			ExecutionPrice: "10000",
+			TradeId:           "t-no-1",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
 		}},
 	})
 	require.NoError(t, err)
@@ -1768,11 +2146,12 @@ func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
 			name: "invalid order id is skipped while valid trade settles",
 			buildInvalidTrade: func(_ uint64, _ uint64, validB uint64) types.TradeMatch {
 				return types.TradeMatch{
-					TradeId:        "invalid-order-not-found",
-					OrderAId:       99999999,
-					OrderBId:       validB,
-					MatchAmount:    "1",
-					ExecutionPrice: "10000",
+					TradeId:           "invalid-order-not-found",
+					OrderAId:          99999999,
+					OrderBId:          validB,
+					MatchAmount:       "1",
+					YesExecutionPrice: "500000",
+					NoExecutionPrice:  "500000",
 				}
 			},
 			expectedSettled:     1,
@@ -1782,11 +2161,12 @@ func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
 			name: "expired order is skipped while valid trade settles",
 			buildInvalidTrade: func(_ uint64, validA uint64, validB uint64) types.TradeMatch {
 				return types.TradeMatch{
-					TradeId:        "invalid-expired-order",
-					OrderAId:       validA,
-					OrderBId:       validB,
-					MatchAmount:    "1",
-					ExecutionPrice: "10000",
+					TradeId:           "invalid-expired-order",
+					OrderAId:          validA,
+					OrderBId:          validB,
+					MatchAmount:       "1",
+					YesExecutionPrice: "500000",
+					NoExecutionPrice:  "500000",
 				}
 			},
 			preApply: func(k Keeper, ctx sdk.Context, marketID uint64, validA uint64, validB uint64) sdk.Context {
@@ -1807,11 +2187,12 @@ func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
 			name: "duplicate trade id is skipped while valid trade settles",
 			buildInvalidTrade: func(marketID uint64, validA uint64, validB uint64) types.TradeMatch {
 				return types.TradeMatch{
-					TradeId:        "dup-trade-id",
-					OrderAId:       validA,
-					OrderBId:       validB,
-					MatchAmount:    "1",
-					ExecutionPrice: "10000",
+					TradeId:           "dup-trade-id",
+					OrderAId:          validA,
+					OrderBId:          validB,
+					MatchAmount:       "1",
+					YesExecutionPrice: "500000",
+					NoExecutionPrice:  "500000",
 				}
 			},
 			preApply: func(k Keeper, ctx sdk.Context, marketID uint64, _ uint64, _ uint64) sdk.Context {
@@ -1834,10 +2215,10 @@ func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
 			noBuyer2 := testAddress(246)
 
 			marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
-			mustFund(bank, yesBuyer, 100_000)
-			mustFund(bank, noBuyer, 100_000)
-			mustFund(bank, yesBuyer2, 100_000)
-			mustFund(bank, noBuyer2, 100_000)
+			mustFund(bank, yesBuyer, 700_000)
+			mustFund(bank, noBuyer, 700_000)
+			mustFund(bank, yesBuyer2, 700_000)
+			mustFund(bank, noBuyer2, 700_000)
 
 			validA := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 				Trader:     yesBuyer,
@@ -1845,7 +2226,7 @@ func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
 				Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
 				OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 				Amount:     "1",
-				LimitPrice: "10000",
+				LimitPrice: "500000",
 				ExpireBh:   ctx.BlockHeight() + 100,
 			})
 			validB := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
@@ -1854,7 +2235,7 @@ func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
 				Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
 				OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 				Amount:     "1",
-				LimitPrice: "10000",
+				LimitPrice: "500000",
 				ExpireBh:   ctx.BlockHeight() + 100,
 			})
 
@@ -1864,7 +2245,7 @@ func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
 				Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
 				OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 				Amount:     "1",
-				LimitPrice: "10000",
+				LimitPrice: "500000",
 				ExpireBh:   ctx.BlockHeight() + 100,
 			})
 			invalidB := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
@@ -1873,7 +2254,7 @@ func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
 				Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
 				OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 				Amount:     "1",
-				LimitPrice: "10000",
+				LimitPrice: "500000",
 				ExpireBh:   ctx.BlockHeight() + 100,
 			})
 
@@ -1888,11 +2269,12 @@ func TestApplyTradeBatchMixedValidityTable(t *testing.T) {
 				BatchId:  "mixed-validity",
 				Trades: []types.TradeMatch{
 					{
-						TradeId:        "valid-trade",
-						OrderAId:       validA,
-						OrderBId:       validB,
-						MatchAmount:    "1",
-						ExecutionPrice: "10000",
+						TradeId:           "valid-trade",
+						OrderAId:          validA,
+						OrderBId:          validB,
+						MatchAmount:       "1",
+						YesExecutionPrice: "500000",
+						NoExecutionPrice:  "500000",
 					},
 					invalidTrade,
 				},
@@ -1911,6 +2293,7 @@ func TestApplyTradeBatchSettlementRaceAutoCancelTable(t *testing.T) {
 	type testCase struct {
 		name                  string
 		setupOrdersAndMutate  func(t *testing.T, k Keeper, ctx sdk.Context, bank *mockBankKeeper, marketID uint64) (uint64, uint64)
+		executionPrice        string
 		expectedRemovedOrderA bool
 		expectedRemovedOrderB bool
 	}
@@ -1921,8 +2304,8 @@ func TestApplyTradeBatchSettlementRaceAutoCancelTable(t *testing.T) {
 			setupOrdersAndMutate: func(t *testing.T, k Keeper, ctx sdk.Context, bank *mockBankKeeper, marketID uint64) (uint64, uint64) {
 				yesBuyer := testAddress(251)
 				noBuyer := testAddress(252)
-				mustFund(bank, yesBuyer, 20_000)
-				mustFund(bank, noBuyer, 20_000)
+				mustFund(bank, yesBuyer, 600_000)
+				mustFund(bank, noBuyer, 600_000)
 
 				orderA := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
 					Trader:     yesBuyer,
@@ -1930,7 +2313,7 @@ func TestApplyTradeBatchSettlementRaceAutoCancelTable(t *testing.T) {
 					Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
 					OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 					Amount:     "1",
-					LimitPrice: "10000",
+					LimitPrice: "500000",
 					ExpireBh:   ctx.BlockHeight() + 100,
 				})
 				orderB := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
@@ -1939,13 +2322,14 @@ func TestApplyTradeBatchSettlementRaceAutoCancelTable(t *testing.T) {
 					Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
 					OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
 					Amount:     "1",
-					LimitPrice: "10000",
+					LimitPrice: "500000",
 					ExpireBh:   ctx.BlockHeight() + 100,
 				})
 
 				bank.setAccountBalance(yesBuyer, "upaxi", sdkmath.ZeroInt())
 				return orderA, orderB
 			},
+			executionPrice:        "500000",
 			expectedRemovedOrderA: true,
 			expectedRemovedOrderB: false,
 		},
@@ -1981,6 +2365,7 @@ func TestApplyTradeBatchSettlementRaceAutoCancelTable(t *testing.T) {
 				bank.setAccountBalance(buyer, "upaxi", sdkmath.ZeroInt())
 				return orderA, orderB
 			},
+			executionPrice:        "10000",
 			expectedRemovedOrderA: true,
 			expectedRemovedOrderB: false,
 		},
@@ -2018,6 +2403,7 @@ func TestApplyTradeBatchSettlementRaceAutoCancelTable(t *testing.T) {
 				k.SetPosition(ctx, sellerPos)
 				return orderA, orderB
 			},
+			executionPrice:        "10000",
 			expectedRemovedOrderA: false,
 			expectedRemovedOrderB: true,
 		},
@@ -2037,11 +2423,12 @@ func TestApplyTradeBatchSettlementRaceAutoCancelTable(t *testing.T) {
 				MarketId: marketID,
 				BatchId:  "race-auto-cancel",
 				Trades: []types.TradeMatch{{
-					TradeId:        "race-t1",
-					OrderAId:       orderA,
-					OrderBId:       orderB,
-					MatchAmount:    "1",
-					ExecutionPrice: "10000",
+					TradeId:           "race-t1",
+					OrderAId:          orderA,
+					OrderBId:          orderB,
+					MatchAmount:       "1",
+					YesExecutionPrice: tc.executionPrice,
+					NoExecutionPrice:  tc.executionPrice,
 				}},
 			})
 			require.NoError(t, err)
@@ -2083,11 +2470,12 @@ func TestTradeAfterMarketCloseRejected(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-closed",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-closed-1",
-			OrderAId:       buyOrderID,
-			OrderBId:       sellOrderID,
-			MatchAmount:    "1",
-			ExecutionPrice: "10000",
+			TradeId:           "t-closed-1",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
 		}},
 	})
 	require.ErrorContains(t, err, "market must be OPEN")
@@ -2106,11 +2494,12 @@ func TestApplyTradeBatchOnlyResolverAuthorized(t *testing.T) {
 		MarketId: marketID,
 		BatchId:  "batch-unauthorized",
 		Trades: []types.TradeMatch{{
-			TradeId:        "t-unauthorized-1",
-			OrderAId:       1,
-			OrderBId:       2,
-			MatchAmount:    "1",
-			ExecutionPrice: "10000",
+			TradeId:           "t-unauthorized-1",
+			OrderAId:          1,
+			OrderBId:          2,
+			MatchAmount:       "1",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
 		}},
 	})
 	require.ErrorIs(t, err, types.ErrUnauthorized)

@@ -210,7 +210,19 @@ func (m TradeMatch) ValidateBasic() error {
 	if !ok || !matchAmount.IsPositive() {
 		return fmt.Errorf("match_amount must be a positive integer")
 	}
-	if _, err := ParsePriceTicks(m.ExecutionPrice, "execution_price"); err != nil {
+	yesExecutionPriceSet := strings.TrimSpace(m.YesExecutionPrice) != ""
+	noExecutionPriceSet := strings.TrimSpace(m.NoExecutionPrice) != ""
+
+	if yesExecutionPriceSet != noExecutionPriceSet {
+		return fmt.Errorf("yes_execution_price and no_execution_price must be provided together")
+	}
+	if !yesExecutionPriceSet {
+		return fmt.Errorf("yes_execution_price and no_execution_price are required")
+	}
+	if _, err := ParsePriceTicks(m.YesExecutionPrice, "yes_execution_price"); err != nil {
+		return err
+	}
+	if _, err := ParsePriceTicks(m.NoExecutionPrice, "no_execution_price"); err != nil {
 		return err
 	}
 	return nil

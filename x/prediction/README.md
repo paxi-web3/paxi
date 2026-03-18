@@ -21,11 +21,15 @@ This module implements a binary YES/NO prediction market with on-chain market/or
   - `BUY_YES <-> SELL_YES`
   - `BUY_NO <-> SELL_NO`
 - `BUY_YES <-> BUY_NO` does not allow `MARKET <-> MARKET`; at least one side must be `LIMIT`.
-- `execution_price` must satisfy both orders (`LIMIT` / `MARKET.worst_price`) and be within tick bounds.
-- Settlement notional is `trade_notional = match_amount * execution_price`.
+- Every trade must provide both `yes_execution_price` and `no_execution_price`.
+- For `BUY_YES <-> BUY_NO`, `yes_execution_price + no_execution_price` must equal `1_000_000`.
+- Settlement uses side-specific notional:
+  - YES side notional = `match_amount * yes_execution_price`
+  - NO side notional = `match_amount * no_execution_price`
 - Fee per matched leg is computed from notional and split by `resolver_fee_share_percent` (remainder to market creator).
 - For `BUY_YES <-> BUY_NO`, each buyer pays `trade_notional + fee` (fee charged on top, collateral remains fully backed in module).
 - For `BUY_<OUTCOME> <-> SELL_<OUTCOME>`, buyer pays `trade_notional`, seller receives `trade_notional - fee`.
+- `market.total_trade_volume` is accumulated in collateral notional (micro units, e.g. `uusdt`), not share count.
 - `last_yes_trade_price` / `last_no_trade_price` are updated from batch-level amount-weighted canonical price and always satisfy `last_yes_trade_price + last_no_trade_price = 1_000_000`.
 
 ## Resolution and claims

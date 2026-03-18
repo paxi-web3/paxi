@@ -22,13 +22,13 @@ const (
 	DefaultCreateMarketBondDenom = "uusdt"
 	DefaultMarketFeeBps          = uint64(50)
 	DefaultResolverFeeSharePct   = uint64(80)
-	DefaultMaxOrderLifetimeBh    = uint64(216_000)
+	DefaultMaxOrderLifetimeBh    = uint64(10_800) // 12 hours assuming 4s block time
 	DefaultMaxOpenOrdersPerUser  = uint64(1_000)
 	DefaultMaxOpenOrdersPerMkt   = uint64(100)
-	DefaultOrderPruneIntervalBh  = uint64(1_200)
-	DefaultOrderPruneRetainBh    = uint64(216_000)
-	DefaultOrderPruneScanLimit   = uint64(20_000)
-	DefaultOrderPruneDeleteLimit = uint64(2_000)
+	DefaultOrderPruneIntervalBh  = uint64(1_000)
+	DefaultOrderPruneRetainBh    = uint64(21_600)
+	DefaultOrderPruneScanLimit   = uint64(40_000)
+	DefaultOrderPruneDeleteLimit = uint64(20_000)
 )
 
 // Params defines prediction module parameters.

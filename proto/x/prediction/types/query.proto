@@ -105,6 +105,8 @@ message Order {
   int64 created_bh = 12;
   int64 expire_bh = 13;
   int64 closed_bh = 14;
+  string spent_collateral = 15;
+  string received_collateral = 16;
 }
 
 message ResolveRequest {

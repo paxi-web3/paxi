@@ -79,11 +79,12 @@ func BenchmarkApplyTradeBatch500Native(b *testing.B) {
 		trades := make([]types.TradeMatch, benchmarkTradeCount)
 		for j := 0; j < benchmarkTradeCount; j++ {
 			trades[j] = types.TradeMatch{
-				TradeId:        "native-bench-" + intToStr(uint64(j)),
-				OrderAId:       buyOrderID,
-				OrderBId:       sellOrderID,
-				MatchAmount:    "1",
-				ExecutionPrice: "10000",
+				TradeId:           "native-bench-" + intToStr(uint64(j)),
+				OrderAId:          buyOrderID,
+				OrderBId:          sellOrderID,
+				MatchAmount:       "1",
+				YesExecutionPrice: "10000",
+				NoExecutionPrice:  "10000",
 			}
 		}
 
@@ -170,11 +171,12 @@ func BenchmarkApplyTradeBatch500PRC20(b *testing.B) {
 		trades := make([]types.TradeMatch, benchmarkTradeCount)
 		for j := 0; j < benchmarkTradeCount; j++ {
 			trades[j] = types.TradeMatch{
-				TradeId:        "prc20-bench-" + intToStr(uint64(j)),
-				OrderAId:       buyYesID,
-				OrderBId:       buyNoID,
-				MatchAmount:    "1",
-				ExecutionPrice: "10000",
+				TradeId:           "prc20-bench-" + intToStr(uint64(j)),
+				OrderAId:          buyYesID,
+				OrderBId:          buyNoID,
+				MatchAmount:       "1",
+				YesExecutionPrice: "10000",
+				NoExecutionPrice:  "10000",
 			}
 		}
 

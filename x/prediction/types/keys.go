@@ -19,6 +19,9 @@ var (
 	OrderPruneCursorKey  = []byte{0x09}
 	OrderIDIndexPrefix   = []byte{0x0A}
 	ResolveRequestPrefix = []byte{0x0B}
+	MarketCloseIdxPrefix = []byte{0x0C}
+	MarketCloseIdxCursor = []byte{0x0D}
+	MarketCloseIdxReady  = []byte{0x0E}
 )
 
 func MarketStoreKey(marketID uint64) []byte {
@@ -98,5 +101,21 @@ func ResolveRequestStoreKey(marketID uint64) []byte {
 	key := make([]byte, 0, len(ResolveRequestPrefix)+len(bz))
 	key = append(key, ResolveRequestPrefix...)
 	key = append(key, bz...)
+	return key
+}
+
+func MarketCloseIndexKey(closeTime int64, marketID uint64) []byte {
+	closeBz := make([]byte, 8)
+	marketBz := make([]byte, 8)
+	if closeTime < 0 {
+		closeTime = 0
+	}
+	binary.BigEndian.PutUint64(closeBz, uint64(closeTime))
+	binary.BigEndian.PutUint64(marketBz, marketID)
+
+	key := make([]byte, 0, len(MarketCloseIdxPrefix)+len(closeBz)+len(marketBz))
+	key = append(key, MarketCloseIdxPrefix...)
+	key = append(key, closeBz...)
+	key = append(key, marketBz...)
 	return key
 }

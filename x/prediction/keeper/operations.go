@@ -149,20 +149,22 @@ func (k Keeper) PlaceOrder(ctx sdk.Context, msg *types.MsgPlaceOrder) (uint64, e
 
 	id := k.NextOrderID(ctx)
 	order := &types.Order{
-		Id:              id,
-		MarketId:        msg.MarketId,
-		Trader:          msg.Trader,
-		Side:            msg.Side,
-		OrderType:       msg.OrderType,
-		Amount:          amount.String(),
-		FilledAmount:    sdkmath.ZeroInt().String(),
-		RemainingAmount: amount.String(),
-		LimitPrice:      msg.LimitPrice,
-		WorstPrice:      msg.WorstPrice,
-		Status:          types.OrderStatus_ORDER_STATUS_OPEN,
-		CreatedBh:       ctx.BlockHeight(),
-		ExpireBh:        msg.ExpireBh,
-		ClosedBh:        0,
+		Id:                 id,
+		MarketId:           msg.MarketId,
+		Trader:             msg.Trader,
+		Side:               msg.Side,
+		OrderType:          msg.OrderType,
+		Amount:             amount.String(),
+		FilledAmount:       sdkmath.ZeroInt().String(),
+		RemainingAmount:    amount.String(),
+		LimitPrice:         msg.LimitPrice,
+		WorstPrice:         msg.WorstPrice,
+		Status:             types.OrderStatus_ORDER_STATUS_OPEN,
+		CreatedBh:          ctx.BlockHeight(),
+		ExpireBh:           msg.ExpireBh,
+		ClosedBh:           0,
+		SpentCollateral:    sdkmath.ZeroInt().String(),
+		ReceivedCollateral: sdkmath.ZeroInt().String(),
 	}
 
 	if err := k.assertOrderInvariant(order); err != nil {
@@ -261,9 +263,11 @@ func (k Keeper) SplitPosition(ctx sdk.Context, msg *types.MsgSplitPosition) erro
 	}
 
 	amount, _ := sdkmath.NewIntFromString(msg.Amount)
+	shareUnit := sdkmath.NewInt(types.CollateralUnit)
+	collateralAmount := amount.Mul(shareUnit)
 	traderAddr := sdk.MustAccAddressFromBech32(msg.Trader)
 	moduleAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
-	if err := k.transferCollateralBetweenAccounts(ctx, market, traderAddr, moduleAddr, amount); err != nil {
+	if err := k.transferCollateralBetweenAccounts(ctx, market, traderAddr, moduleAddr, collateralAmount); err != nil {
 		return err
 	}
 
@@ -324,6 +328,8 @@ func (k Keeper) MergePosition(ctx sdk.Context, msg *types.MsgMergePosition) erro
 	}
 
 	amount, _ := sdkmath.NewIntFromString(msg.Amount)
+	shareUnit := sdkmath.NewInt(types.CollateralUnit)
+	collateralAmount := amount.Mul(shareUnit)
 	traderAddr := sdk.MustAccAddressFromBech32(msg.Trader)
 	pos := k.getPositionOrDefault(ctx, market.Id, traderAddr)
 	yes, lockedYes, no, lockedNo, err := k.mustPositionInts(pos)
@@ -362,7 +368,7 @@ func (k Keeper) MergePosition(ctx sdk.Context, msg *types.MsgMergePosition) erro
 	}
 	k.SetMarket(ctx, market)
 
-	if err := k.transferCollateralFromModule(ctx, market, traderAddr, amount); err != nil {
+	if err := k.transferCollateralFromModule(ctx, market, traderAddr, collateralAmount); err != nil {
 		return err
 	}
 
