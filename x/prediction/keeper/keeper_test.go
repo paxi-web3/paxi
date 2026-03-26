@@ -1327,6 +1327,381 @@ func TestApplyTradeBatchBuyYesBuyNoDualExecutionPrice(t *testing.T) {
 	require.Equal(t, "0", noOrder.ReceivedCollateral)
 }
 
+func TestApplyTradeBatchBuyYesBuyNoLimitYesMarketNoAnchorsLimitPrice(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(91)
+	resolver := testAddress(92)
+	yesBuyer := testAddress(93)
+	noBuyer := testAddress(94)
+
+	params := k.GetParams(ctx)
+	params.MarketFeeBps = 0
+	k.SetParams(ctx, params)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, yesBuyer, 1_000_000)
+	mustFund(bank, noBuyer, 1_000_000)
+
+	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "400000",
+	})
+	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_MARKET,
+		Amount:     "1",
+		WorstPrice: "630000",
+	})
+
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-buyyes-limit-buyno-market-anchor",
+		Trades: []types.TradeMatch{{
+			TradeId:           "t-buyyes-limit-buyno-market-anchor-1",
+			OrderAId:          buyYesID,
+			OrderBId:          buyNoID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "400000",
+			NoExecutionPrice:  "600000",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), resp.SettledCount)
+	require.Equal(t, sdkmath.NewInt(600_000), bank.AccountBalance(yesBuyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(400_000), bank.AccountBalance(noBuyer, "upaxi"))
+}
+
+func TestApplyTradeBatchBuyYesBuyNoLimitYesMarketNoNonAnchoredInputUsesLimitAnchor(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(95)
+	resolver := testAddress(96)
+	yesBuyer := testAddress(97)
+	noBuyer := testAddress(98)
+
+	params := k.GetParams(ctx)
+	params.MarketFeeBps = 0
+	k.SetParams(ctx, params)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, yesBuyer, 1_000_000)
+	mustFund(bank, noBuyer, 1_000_000)
+
+	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "400000",
+	})
+	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_MARKET,
+		Amount:     "1",
+		WorstPrice: "630000",
+	})
+
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-buyyes-limit-buyno-market-coerce",
+		Trades: []types.TradeMatch{{
+			TradeId:           "t-buyyes-limit-buyno-market-coerce-1",
+			OrderAId:          buyYesID,
+			OrderBId:          buyNoID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "370000",
+			NoExecutionPrice:  "630000",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), resp.SettledCount)
+	// Non-anchored input should still settle using LIMIT anchor:
+	// BUY_YES=400000, BUY_NO=600000.
+	require.Equal(t, sdkmath.NewInt(600_000), bank.AccountBalance(yesBuyer, "upaxi"))
+	require.Equal(t, sdkmath.NewInt(400_000), bank.AccountBalance(noBuyer, "upaxi"))
+}
+
+func TestApplyTradeBatchBuySellSameOutcomeLimitMarketAnchorsLimitPrice(t *testing.T) {
+	type scenario struct {
+		name            string
+		buySide         types.OrderSide
+		sellSide        types.OrderSide
+		limitOnBuy      bool
+		limitPrice      string
+		marketWorst     string
+		nonAnchoredExec string
+		outcomeIsYes    bool
+	}
+
+	scenarios := []scenario{
+		{
+			name:            "limit buy yes <-> market sell yes",
+			buySide:         types.OrderSide_ORDER_SIDE_BUY_YES,
+			sellSide:        types.OrderSide_ORDER_SIDE_SELL_YES,
+			limitOnBuy:      true,
+			limitPrice:      "400000",
+			marketWorst:     "350000",
+			nonAnchoredExec: "380000",
+			outcomeIsYes:    true,
+		},
+		{
+			name:            "limit buy no <-> market sell no",
+			buySide:         types.OrderSide_ORDER_SIDE_BUY_NO,
+			sellSide:        types.OrderSide_ORDER_SIDE_SELL_NO,
+			limitOnBuy:      true,
+			limitPrice:      "420000",
+			marketWorst:     "350000",
+			nonAnchoredExec: "390000",
+			outcomeIsYes:    false,
+		},
+		{
+			name:            "market buy yes <-> limit sell yes",
+			buySide:         types.OrderSide_ORDER_SIDE_BUY_YES,
+			sellSide:        types.OrderSide_ORDER_SIDE_SELL_YES,
+			limitOnBuy:      false,
+			limitPrice:      "400000",
+			marketWorst:     "450000",
+			nonAnchoredExec: "420000",
+			outcomeIsYes:    true,
+		},
+		{
+			name:            "market buy no <-> limit sell no",
+			buySide:         types.OrderSide_ORDER_SIDE_BUY_NO,
+			sellSide:        types.OrderSide_ORDER_SIDE_SELL_NO,
+			limitOnBuy:      false,
+			limitPrice:      "430000",
+			marketWorst:     "470000",
+			nonAnchoredExec: "450000",
+			outcomeIsYes:    false,
+		},
+	}
+
+	for i, sc := range scenarios {
+		t.Run(sc.name+" anchored", func(t *testing.T) {
+			k, ctx, bank := setupKeeper(t)
+			creator := testAddress(byte(120 + i*4))
+			resolver := testAddress(byte(121 + i*4))
+			buyer := testAddress(byte(122 + i*4))
+			seller := testAddress(byte(123 + i*4))
+
+			params := k.GetParams(ctx)
+			params.MarketFeeBps = 0
+			k.SetParams(ctx, params)
+
+			marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+			mustFund(bank, buyer, 1_000_000)
+
+			sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+			if sc.sellSide == types.OrderSide_ORDER_SIDE_SELL_YES {
+				k.mustSetPositionInts(sellerPos, sdkmath.NewInt(1), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+			} else {
+				k.mustSetPositionInts(sellerPos, sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.NewInt(1), sdkmath.ZeroInt())
+			}
+			k.SetPosition(ctx, sellerPos)
+
+			buyOrder := &types.MsgPlaceOrder{
+				Trader:   buyer,
+				MarketId: marketID,
+				Side:     sc.buySide,
+				Amount:   "1",
+			}
+			sellOrder := &types.MsgPlaceOrder{
+				Trader:   seller,
+				MarketId: marketID,
+				Side:     sc.sellSide,
+				Amount:   "1",
+			}
+			if sc.limitOnBuy {
+				buyOrder.OrderType = types.OrderType_ORDER_TYPE_LIMIT
+				buyOrder.LimitPrice = sc.limitPrice
+				sellOrder.OrderType = types.OrderType_ORDER_TYPE_MARKET
+				sellOrder.WorstPrice = sc.marketWorst
+			} else {
+				buyOrder.OrderType = types.OrderType_ORDER_TYPE_MARKET
+				buyOrder.WorstPrice = sc.marketWorst
+				sellOrder.OrderType = types.OrderType_ORDER_TYPE_LIMIT
+				sellOrder.LimitPrice = sc.limitPrice
+			}
+
+			buyOrderID := mustPlaceOrder(t, k, ctx, buyOrder)
+			sellOrderID := mustPlaceOrder(t, k, ctx, sellOrder)
+
+			yesExecution := "500000"
+			noExecution := "500000"
+			if sc.outcomeIsYes {
+				yesExecution = sc.limitPrice
+			} else {
+				noExecution = sc.limitPrice
+			}
+
+			resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+				Sender:   resolver,
+				MarketId: marketID,
+				BatchId:  fmt.Sprintf("batch-anchor-%d", i),
+				Trades: []types.TradeMatch{{
+					TradeId:           fmt.Sprintf("t-anchor-%d", i),
+					OrderAId:          buyOrderID,
+					OrderBId:          sellOrderID,
+					MatchAmount:       "1",
+					YesExecutionPrice: yesExecution,
+					NoExecutionPrice:  noExecution,
+				}},
+			})
+			require.NoError(t, err)
+			require.Equal(t, uint64(1), resp.SettledCount)
+		})
+
+		t.Run(sc.name+" non anchored input uses limit anchor", func(t *testing.T) {
+			k, ctx, bank := setupKeeper(t)
+			creator := testAddress(byte(140 + i*4))
+			resolver := testAddress(byte(141 + i*4))
+			buyer := testAddress(byte(142 + i*4))
+			seller := testAddress(byte(143 + i*4))
+
+			params := k.GetParams(ctx)
+			params.MarketFeeBps = 0
+			k.SetParams(ctx, params)
+
+			marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+			mustFund(bank, buyer, 1_000_000)
+
+			sellerPos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(seller))
+			if sc.sellSide == types.OrderSide_ORDER_SIDE_SELL_YES {
+				k.mustSetPositionInts(sellerPos, sdkmath.NewInt(1), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+			} else {
+				k.mustSetPositionInts(sellerPos, sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.NewInt(1), sdkmath.ZeroInt())
+			}
+			k.SetPosition(ctx, sellerPos)
+
+			buyOrder := &types.MsgPlaceOrder{
+				Trader:   buyer,
+				MarketId: marketID,
+				Side:     sc.buySide,
+				Amount:   "1",
+			}
+			sellOrder := &types.MsgPlaceOrder{
+				Trader:   seller,
+				MarketId: marketID,
+				Side:     sc.sellSide,
+				Amount:   "1",
+			}
+			if sc.limitOnBuy {
+				buyOrder.OrderType = types.OrderType_ORDER_TYPE_LIMIT
+				buyOrder.LimitPrice = sc.limitPrice
+				sellOrder.OrderType = types.OrderType_ORDER_TYPE_MARKET
+				sellOrder.WorstPrice = sc.marketWorst
+			} else {
+				buyOrder.OrderType = types.OrderType_ORDER_TYPE_MARKET
+				buyOrder.WorstPrice = sc.marketWorst
+				sellOrder.OrderType = types.OrderType_ORDER_TYPE_LIMIT
+				sellOrder.LimitPrice = sc.limitPrice
+			}
+
+			buyOrderID := mustPlaceOrder(t, k, ctx, buyOrder)
+			sellOrderID := mustPlaceOrder(t, k, ctx, sellOrder)
+
+			yesExecution := "500000"
+			noExecution := "500000"
+			if sc.outcomeIsYes {
+				yesExecution = sc.nonAnchoredExec
+			} else {
+				noExecution = sc.nonAnchoredExec
+			}
+
+			resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+				Sender:   resolver,
+				MarketId: marketID,
+				BatchId:  fmt.Sprintf("batch-non-anchor-coerce-%d", i),
+				Trades: []types.TradeMatch{{
+					TradeId:           fmt.Sprintf("t-non-anchor-coerce-%d", i),
+					OrderAId:          buyOrderID,
+					OrderBId:          sellOrderID,
+					MatchAmount:       "1",
+					YesExecutionPrice: yesExecution,
+					NoExecutionPrice:  noExecution,
+				}},
+			})
+			require.NoError(t, err)
+			require.Equal(t, uint64(1), resp.SettledCount)
+		})
+	}
+}
+
+func TestApplyTradeBatchBuyYesBuyNoMarketYesLimitNoAnchorsLimitPrice(t *testing.T) {
+	for i, anchored := range []bool{true, false} {
+		testName := "anchored"
+		if !anchored {
+			testName = "non anchored input uses limit anchor"
+		}
+		t.Run(testName, func(t *testing.T) {
+			k, ctx, bank := setupKeeper(t)
+			creator := testAddress(byte(170 + i*4))
+			resolver := testAddress(byte(171 + i*4))
+			yesBuyer := testAddress(byte(172 + i*4))
+			noBuyer := testAddress(byte(173 + i*4))
+
+			params := k.GetParams(ctx)
+			params.MarketFeeBps = 0
+			k.SetParams(ctx, params)
+
+			marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+			mustFund(bank, yesBuyer, 1_000_000)
+			mustFund(bank, noBuyer, 1_000_000)
+
+			buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+				Trader:     yesBuyer,
+				MarketId:   marketID,
+				Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+				OrderType:  types.OrderType_ORDER_TYPE_MARKET,
+				Amount:     "1",
+				WorstPrice: "450000",
+			})
+			buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+				Trader:     noBuyer,
+				MarketId:   marketID,
+				Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+				OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+				Amount:     "1",
+				LimitPrice: "600000",
+			})
+
+			yesExecution := "400000"
+			noExecution := "600000"
+			if !anchored {
+				yesExecution = "420000"
+				noExecution = "580000"
+			}
+
+			tradeID := fmt.Sprintf("t-buyyes-market-buyno-limit-%d", i)
+			resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+				Sender:   resolver,
+				MarketId: marketID,
+				BatchId:  fmt.Sprintf("batch-buyyes-market-buyno-limit-%d", i),
+				Trades: []types.TradeMatch{{
+					TradeId:           tradeID,
+					OrderAId:          buyYesID,
+					OrderBId:          buyNoID,
+					MatchAmount:       "1",
+					YesExecutionPrice: yesExecution,
+					NoExecutionPrice:  noExecution,
+				}},
+			})
+			require.NoError(t, err)
+			require.Equal(t, uint64(1), resp.SettledCount)
+		})
+	}
+}
+
 func TestApplyTradeBatchTracksOrderSpentAndReceivedCollateral(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	creator := testAddress(120)
@@ -1472,6 +1847,126 @@ func TestMergeInsufficientSharesRejected(t *testing.T) {
 		Amount:   "101",
 	})
 	require.ErrorContains(t, err, "insufficient YES shares")
+}
+
+func TestApplyTradeBatchSelfTradeBuySellYesNoShareInflation(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(34)
+	resolver := testAddress(35)
+	trader := testAddress(36)
+
+	params := k.GetParams(ctx)
+	params.MarketFeeBps = 0
+	k.SetParams(ctx, params)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, trader, 1_000_000)
+	beforeBalance := bank.AccountBalance(trader, "upaxi")
+
+	pos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(trader))
+	k.mustSetPositionInts(pos, sdkmath.NewInt(1), sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.ZeroInt())
+	k.SetPosition(ctx, pos)
+
+	buyOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     trader,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "10000",
+	})
+	sellOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     trader,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_SELL_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "10000",
+	})
+
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-self-buy-sell-yes",
+		Trades: []types.TradeMatch{{
+			TradeId:           "t-self-buy-sell-yes-1",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), resp.SettledCount)
+
+	pos, found := k.GetPosition(ctx, marketID, sdk.MustAccAddressFromBech32(trader))
+	require.True(t, found)
+	yes, _, no, _, err := k.mustPositionInts(pos)
+	require.NoError(t, err)
+	require.Equal(t, sdkmath.NewInt(1), yes, "self BUY_YES<->SELL_YES should not mint YES shares")
+	require.True(t, no.IsZero())
+	require.Equal(t, beforeBalance, bank.AccountBalance(trader, "upaxi"), "self trade with zero fee should not change net balance")
+}
+
+func TestApplyTradeBatchSelfTradeBuySellNoNoShareInflation(t *testing.T) {
+	k, ctx, bank := setupKeeper(t)
+	creator := testAddress(37)
+	resolver := testAddress(38)
+	trader := testAddress(39)
+
+	params := k.GetParams(ctx)
+	params.MarketFeeBps = 0
+	k.SetParams(ctx, params)
+
+	marketID := mustCreateMarket(t, k, ctx, bank, creator, resolver)
+	mustFund(bank, trader, 1_000_000)
+	beforeBalance := bank.AccountBalance(trader, "upaxi")
+
+	pos := k.getPositionOrDefault(ctx, marketID, sdk.MustAccAddressFromBech32(trader))
+	k.mustSetPositionInts(pos, sdkmath.ZeroInt(), sdkmath.ZeroInt(), sdkmath.NewInt(1), sdkmath.ZeroInt())
+	k.SetPosition(ctx, pos)
+
+	buyOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     trader,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "10000",
+	})
+	sellOrderID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     trader,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_SELL_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "1",
+		LimitPrice: "10000",
+	})
+
+	resp, err := k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-self-buy-sell-no",
+		Trades: []types.TradeMatch{{
+			TradeId:           "t-self-buy-sell-no-1",
+			OrderAId:          buyOrderID,
+			OrderBId:          sellOrderID,
+			MatchAmount:       "1",
+			YesExecutionPrice: "10000",
+			NoExecutionPrice:  "10000",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), resp.SettledCount)
+
+	pos, found := k.GetPosition(ctx, marketID, sdk.MustAccAddressFromBech32(trader))
+	require.True(t, found)
+	yes, _, no, _, err := k.mustPositionInts(pos)
+	require.NoError(t, err)
+	require.True(t, yes.IsZero())
+	require.Equal(t, sdkmath.NewInt(1), no, "self BUY_NO<->SELL_NO should not mint NO shares")
+	require.Equal(t, beforeBalance, bank.AccountBalance(trader, "upaxi"), "self trade with zero fee should not change net balance")
 }
 
 func TestApplyTradeBatchPartialFill(t *testing.T) {
