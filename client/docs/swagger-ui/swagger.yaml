@@ -63668,10 +63668,6 @@ definitions:
         format: uint64
       lastTradePrice:
         type: string
-      bestBidPrice:
-        type: string
-      bestAskPrice:
-        type: string
       totalTradeVolume:
         type: string
   predictiontypesOrder:

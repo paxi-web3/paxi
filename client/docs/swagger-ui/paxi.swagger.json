@@ -1492,12 +1492,6 @@
           "type": "string",
           "format": "uint64"
         },
-        "bestBidPrice": {
-          "type": "string"
-        },
-        "bestAskPrice": {
-          "type": "string"
-        },
         "totalTradeVolume": {
           "type": "string"
         },

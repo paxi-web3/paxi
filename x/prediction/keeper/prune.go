@@ -20,9 +20,12 @@ func (k Keeper) shouldPruneOrder(ctx sdk.Context, order *types.Order, thresholdB
 	if order.CreatedBh <= 0 {
 		return false
 	}
-	// Eligible when older than threshold and not effectively open.
-	// This includes terminal orders and stale expired-by-height OPEN orders.
-	if order.CreatedBh > thresholdBh && ctx.BlockHeight() < order.ExpireBh && order.Status != types.OrderStatus_ORDER_STATUS_CANCELLED {
+	// Never prune a still-live order. OPEN/PARTIALLY_FILLED orders are only
+	// eligible once they have actually expired by block height.
+	if isOpenOrderStatus(order.Status) {
+		return order.ExpireBh > 0 && ctx.BlockHeight() >= order.ExpireBh
+	}
+	if order.CreatedBh > thresholdBh {
 		return false
 	}
 

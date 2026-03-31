@@ -76,8 +76,6 @@ func (k Keeper) CreateMarket(ctx sdk.Context, msg *types.MsgCreateMarket) (uint6
 		ResolverFeeSharePercent: params.ResolverFeeSharePercent,
 		LastYesTradePrice:       "",
 		LastNoTradePrice:        "",
-		BestBidPrice:            "",
-		BestAskPrice:            "",
 		TotalTradeVolume:        sdkmath.ZeroInt().String(),
 	}
 
@@ -138,10 +136,6 @@ func (k Keeper) PlaceOrder(ctx sdk.Context, msg *types.MsgPlaceOrder) (uint64, e
 	}
 
 	traderAddr := sdk.MustAccAddressFromBech32(msg.Trader)
-	if err := k.enforceOpenOrderLimit(ctx, traderAddr, msg.MarketId, params); err != nil {
-		return 0, errors.Wrap(types.ErrInvalidRequest, err.Error())
-	}
-
 	amount, _ := sdkmath.NewIntFromString(msg.Amount)
 	if err := k.ensurePlaceOrderCapacity(ctx, market, traderAddr, msg.Side, msg.OrderType, msg.LimitPrice, msg.WorstPrice, amount); err != nil {
 		return 0, errors.Wrap(types.ErrInsufficientFunds, err.Error())
@@ -170,12 +164,8 @@ func (k Keeper) PlaceOrder(ctx sdk.Context, msg *types.MsgPlaceOrder) (uint64, e
 	if err := k.assertOrderInvariant(order); err != nil {
 		return 0, err
 	}
-	if err := k.incrementOpenOrderCounts(ctx, traderAddr, order.MarketId); err != nil {
-		return 0, err
-	}
 
 	k.SetOrder(ctx, order)
-	k.refreshMarketBookPrices(ctx, market)
 	k.SetMarket(ctx, market)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -226,7 +216,6 @@ func (k Keeper) CancelOrder(ctx sdk.Context, msg *types.MsgCancelOrder) error {
 		k.SetOrder(ctx, order)
 	}
 	if market, found := k.GetMarket(ctx, order.MarketId); found {
-		k.refreshMarketBookPrices(ctx, market)
 		k.SetMarket(ctx, market)
 	}
 

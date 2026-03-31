@@ -160,36 +160,9 @@ func (k Keeper) ensurePRC20Allowance(ctx sdk.Context, contract string, owner sdk
 	if !required.IsPositive() {
 		return nil
 	}
-	if k.prc20Query == nil {
-		return fmt.Errorf("prc20 query keeper is not configured")
-	}
-
-	contractAddr, err := sdk.AccAddressFromBech32(contract)
+	allowance, err := k.getPRC20Allowance(ctx, contract, owner)
 	if err != nil {
-		return fmt.Errorf("invalid prc20 contract address: %w", err)
-	}
-	moduleAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
-
-	query := prc20AllowanceQuery{}
-	query.Allowance.Owner = owner.String()
-	query.Allowance.Spender = moduleAddr.String()
-	queryBz, err := json.Marshal(query)
-	if err != nil {
-		return fmt.Errorf("failed to marshal prc20 allowance query: %w", err)
-	}
-
-	respBz, err := k.prc20Query.QuerySmart(ctx, contractAddr, queryBz)
-	if err != nil {
-		return fmt.Errorf("failed to query prc20 allowance: %w", err)
-	}
-
-	var resp prc20AllowanceResponse
-	if err := json.Unmarshal(respBz, &resp); err != nil {
-		return fmt.Errorf("failed to decode prc20 allowance response: %w", err)
-	}
-	allowance, err := parseNonNegativeInt(resp.Allowance, "allowance")
-	if err != nil {
-		return fmt.Errorf("invalid prc20 allowance response: %w", err)
+		return err
 	}
 	if allowance.LT(required) {
 		return fmt.Errorf("insufficient prc20 allowance: required=%s allowance=%s", required.String(), allowance.String())
@@ -202,40 +175,85 @@ func (k Keeper) ensurePRC20Balance(ctx sdk.Context, contract string, owner sdk.A
 	if !required.IsPositive() {
 		return nil
 	}
-	if k.prc20Query == nil {
-		return fmt.Errorf("prc20 query keeper is not configured")
-	}
-
-	contractAddr, err := sdk.AccAddressFromBech32(contract)
+	balance, err := k.getPRC20Balance(ctx, contract, owner)
 	if err != nil {
-		return fmt.Errorf("invalid prc20 contract address: %w", err)
-	}
-
-	query := prc20BalanceQuery{}
-	query.Balance.Address = owner.String()
-	queryBz, err := json.Marshal(query)
-	if err != nil {
-		return fmt.Errorf("failed to marshal prc20 balance query: %w", err)
-	}
-
-	respBz, err := k.prc20Query.QuerySmart(ctx, contractAddr, queryBz)
-	if err != nil {
-		return fmt.Errorf("failed to query prc20 balance: %w", err)
-	}
-
-	var resp prc20BalanceResponse
-	if err := json.Unmarshal(respBz, &resp); err != nil {
-		return fmt.Errorf("failed to decode prc20 balance response: %w", err)
-	}
-	balance, err := parseNonNegativeInt(resp.Balance, "balance")
-	if err != nil {
-		return fmt.Errorf("invalid prc20 balance response: %w", err)
+		return err
 	}
 	if balance.LT(required) {
 		return fmt.Errorf("insufficient prc20 balance: required=%s balance=%s", required.String(), balance.String())
 	}
 
 	return nil
+}
+
+func (k Keeper) getPRC20Allowance(ctx sdk.Context, contract string, owner sdk.AccAddress) (sdkmath.Int, error) {
+	if k.prc20Query == nil {
+		return sdkmath.Int{}, fmt.Errorf("prc20 query keeper is not configured")
+	}
+
+	contractAddr, err := sdk.AccAddressFromBech32(contract)
+	if err != nil {
+		return sdkmath.Int{}, fmt.Errorf("invalid prc20 contract address: %w", err)
+	}
+	moduleAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
+
+	query := prc20AllowanceQuery{}
+	query.Allowance.Owner = owner.String()
+	query.Allowance.Spender = moduleAddr.String()
+	queryBz, err := json.Marshal(query)
+	if err != nil {
+		return sdkmath.Int{}, fmt.Errorf("failed to marshal prc20 allowance query: %w", err)
+	}
+
+	respBz, err := k.prc20Query.QuerySmart(ctx, contractAddr, queryBz)
+	if err != nil {
+		return sdkmath.Int{}, fmt.Errorf("failed to query prc20 allowance: %w", err)
+	}
+
+	var resp prc20AllowanceResponse
+	if err := json.Unmarshal(respBz, &resp); err != nil {
+		return sdkmath.Int{}, fmt.Errorf("failed to decode prc20 allowance response: %w", err)
+	}
+	allowance, err := parseNonNegativeInt(resp.Allowance, "allowance")
+	if err != nil {
+		return sdkmath.Int{}, fmt.Errorf("invalid prc20 allowance response: %w", err)
+	}
+
+	return allowance, nil
+}
+
+func (k Keeper) getPRC20Balance(ctx sdk.Context, contract string, owner sdk.AccAddress) (sdkmath.Int, error) {
+	if k.prc20Query == nil {
+		return sdkmath.Int{}, fmt.Errorf("prc20 query keeper is not configured")
+	}
+
+	contractAddr, err := sdk.AccAddressFromBech32(contract)
+	if err != nil {
+		return sdkmath.Int{}, fmt.Errorf("invalid prc20 contract address: %w", err)
+	}
+
+	query := prc20BalanceQuery{}
+	query.Balance.Address = owner.String()
+	queryBz, err := json.Marshal(query)
+	if err != nil {
+		return sdkmath.Int{}, fmt.Errorf("failed to marshal prc20 balance query: %w", err)
+	}
+
+	respBz, err := k.prc20Query.QuerySmart(ctx, contractAddr, queryBz)
+	if err != nil {
+		return sdkmath.Int{}, fmt.Errorf("failed to query prc20 balance: %w", err)
+	}
+
+	var resp prc20BalanceResponse
+	if err := json.Unmarshal(respBz, &resp); err != nil {
+		return sdkmath.Int{}, fmt.Errorf("failed to decode prc20 balance response: %w", err)
+	}
+	balance, err := parseNonNegativeInt(resp.Balance, "balance")
+	if err != nil {
+		return sdkmath.Int{}, fmt.Errorf("invalid prc20 balance response: %w", err)
+	}
+
+	return balance, nil
 }
 
 func (k Keeper) ensureCollateralBalance(ctx sdk.Context, market *types.Market, owner sdk.AccAddress, required sdkmath.Int) error {

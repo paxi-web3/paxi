@@ -56,10 +56,181 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 	settledCount := uint64(0)
 	moduleAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
 	collateralUnit := sdkmath.NewInt(types.CollateralUnit)
+	appliedTradeStore := k.storeService.OpenKVStore(ctx)
+	orderCache := make(map[uint64]*types.Order)
+	dirtyOrders := make(map[uint64]struct{})
+	deletedOrders := make(map[uint64]struct{})
+	positionCache := make(map[string]*types.Position)
+	dirtyPositions := make(map[string]struct{})
+	newAppliedTrades := make(map[string]struct{})
+	appliedTradeExistsCache := make(map[string]bool)
+
+	type collateralAvailability struct {
+		loaded         bool
+		balance        sdkmath.Int
+		allowance      sdkmath.Int
+		balanceDelta   sdkmath.Int
+		allowanceDelta sdkmath.Int
+	}
+
+	collateralCache := make(map[string]*collateralAvailability)
+
+	getOrderCached := func(orderID uint64) (*types.Order, bool) {
+		if _, deleted := deletedOrders[orderID]; deleted {
+			return nil, false
+		}
+		if order, ok := orderCache[orderID]; ok {
+			return order, true
+		}
+		order, found := k.GetOrder(ctx, market.Id, orderID)
+		if !found {
+			return nil, false
+		}
+		orderCache[orderID] = order
+		return order, true
+	}
+	getPositionCached := func(addr sdk.AccAddress) *types.Position {
+		key := addr.String()
+		if pos, ok := positionCache[key]; ok {
+			return pos
+		}
+		pos := k.getPositionOrDefault(ctx, market.Id, addr)
+		positionCache[key] = pos
+		return pos
+	}
+	markOrderDirty := func(order *types.Order) {
+		orderCache[order.Id] = order
+		dirtyOrders[order.Id] = struct{}{}
+		delete(deletedOrders, order.Id)
+	}
+	markOrderDeleted := func(orderID uint64) {
+		delete(orderCache, orderID)
+		delete(dirtyOrders, orderID)
+		deletedOrders[orderID] = struct{}{}
+	}
+	markPositionDirty := func(pos *types.Position) {
+		positionCache[pos.Address] = pos
+		dirtyPositions[pos.Address] = struct{}{}
+	}
+	cancelOrderDueToInsufficientCached := func(order *types.Order, reason string) error {
+		filled, err := parseNonNegativeInt(order.FilledAmount, "filled_amount")
+		if err != nil {
+			return err
+		}
+		if err := k.cancelOrderDueToInsufficient(ctx, order, reason); err != nil {
+			return err
+		}
+		if filled.IsZero() {
+			markOrderDeleted(order.Id)
+			return nil
+		}
+		orderCache[order.Id] = order
+		delete(dirtyOrders, order.Id)
+		return nil
+	}
+	getCollateralState := func(owner sdk.AccAddress) *collateralAvailability {
+		key := owner.String()
+		if state, ok := collateralCache[key]; ok {
+			return state
+		}
+		state := &collateralAvailability{
+			balance:        sdkmath.ZeroInt(),
+			allowance:      sdkmath.ZeroInt(),
+			balanceDelta:   sdkmath.ZeroInt(),
+			allowanceDelta: sdkmath.ZeroInt(),
+		}
+		collateralCache[key] = state
+		return state
+	}
+	loadCollateralState := func(owner sdk.AccAddress) (*collateralAvailability, error) {
+		state := getCollateralState(owner)
+		if state.loaded {
+			return state, nil
+		}
+		switch market.CollateralType {
+		case types.CollateralType_COLLATERAL_TYPE_NATIVE:
+			state.balance = k.bankKeeper.GetBalance(ctx, owner, market.CollateralDenom).Amount.Add(state.balanceDelta)
+		case types.CollateralType_COLLATERAL_TYPE_PRC20:
+			balance, err := k.getPRC20Balance(ctx, market.CollateralContractAddr, owner)
+			if err != nil {
+				return nil, err
+			}
+			allowance, err := k.getPRC20Allowance(ctx, market.CollateralContractAddr, owner)
+			if err != nil {
+				return nil, err
+			}
+			state.balance = balance.Add(state.balanceDelta)
+			state.allowance = allowance.Add(state.allowanceDelta)
+		default:
+			return nil, fmt.Errorf("unsupported collateral type")
+		}
+		state.loaded = true
+		return state, nil
+	}
+	ensureCollateralBalanceCached := func(owner sdk.AccAddress, required sdkmath.Int) error {
+		if !required.IsPositive() {
+			return nil
+		}
+		state, err := loadCollateralState(owner)
+		if err != nil {
+			return err
+		}
+		if state.balance.LT(required) {
+			switch market.CollateralType {
+			case types.CollateralType_COLLATERAL_TYPE_NATIVE:
+				return fmt.Errorf("insufficient funds: required=%s balance=%s", required.String(), state.balance.String())
+			case types.CollateralType_COLLATERAL_TYPE_PRC20:
+				return fmt.Errorf("insufficient prc20 balance: required=%s balance=%s", required.String(), state.balance.String())
+			default:
+				return fmt.Errorf("unsupported collateral type")
+			}
+		}
+		if market.CollateralType == types.CollateralType_COLLATERAL_TYPE_PRC20 && state.allowance.LT(required) {
+			return fmt.Errorf("insufficient prc20 allowance: required=%s allowance=%s", required.String(), state.allowance.String())
+		}
+		return nil
+	}
+	noteCollateralSent := func(owner sdk.AccAddress, amount sdkmath.Int) {
+		if !amount.IsPositive() {
+			return
+		}
+		state := getCollateralState(owner)
+		if state.loaded {
+			state.balance = state.balance.Sub(amount)
+			if market.CollateralType == types.CollateralType_COLLATERAL_TYPE_PRC20 {
+				state.allowance = state.allowance.Sub(amount)
+			}
+			return
+		}
+		state.balanceDelta = state.balanceDelta.Sub(amount)
+		if market.CollateralType == types.CollateralType_COLLATERAL_TYPE_PRC20 {
+			state.allowanceDelta = state.allowanceDelta.Sub(amount)
+		}
+	}
+	noteCollateralReceived := func(owner sdk.AccAddress, amount sdkmath.Int) {
+		if !amount.IsPositive() {
+			return
+		}
+		state := getCollateralState(owner)
+		if state.loaded {
+			state.balance = state.balance.Add(amount)
+			return
+		}
+		state.balanceDelta = state.balanceDelta.Add(amount)
+	}
+	hasAppliedTradeCached := func(tradeID string) bool {
+		if exists, ok := appliedTradeExistsCache[tradeID]; ok {
+			return exists
+		}
+		bz, err := appliedTradeStore.Get(types.AppliedTradeStoreKey(market.Id, tradeID))
+		exists := err == nil && bz != nil
+		appliedTradeExistsCache[tradeID] = exists
+		return exists
+	}
 
 	for i := range msg.Trades {
 		trade := msg.Trades[i]
-		if k.HasAppliedTrade(ctx, market.Id, trade.TradeId) {
+		if _, exists := newAppliedTrades[trade.TradeId]; exists || hasAppliedTradeCached(trade.TradeId) {
 			k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "duplicate_trade_id")
 			continue
 		}
@@ -75,12 +246,12 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			continue
 		}
 
-		orderA, found := k.GetOrder(ctx, market.Id, trade.OrderAId)
+		orderA, found := getOrderCached(trade.OrderAId)
 		if !found {
 			k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "order_a_not_found")
 			continue
 		}
-		orderB, found := k.GetOrder(ctx, market.Id, trade.OrderBId)
+		orderB, found := getOrderCached(trade.OrderBId)
 		if !found {
 			k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "order_b_not_found")
 			continue
@@ -160,14 +331,14 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			// from each buyer so module collateral remains fully backed.
 			yesBuyerRequired := yesTradeNotional.Add(yesFeeTotal)
 			noBuyerRequired := noTradeNotional.Add(noFeeTotal)
-			if err := k.ensureCollateralBalance(ctx, market, yesBuyer, yesBuyerRequired); err != nil {
-				if err := k.cancelOrderDueToInsufficient(ctx, yesOrder, err.Error()); err != nil {
+			if err := ensureCollateralBalanceCached(yesBuyer, yesBuyerRequired); err != nil {
+				if err := cancelOrderDueToInsufficientCached(yesOrder, err.Error()); err != nil {
 					return nil, err
 				}
 				skipTrade = true
 			}
-			if err := k.ensureCollateralBalance(ctx, market, noBuyer, noBuyerRequired); err != nil {
-				if err := k.cancelOrderDueToInsufficient(ctx, noOrder, err.Error()); err != nil {
+			if err := ensureCollateralBalanceCached(noBuyer, noBuyerRequired); err != nil {
+				if err := cancelOrderDueToInsufficientCached(noOrder, err.Error()); err != nil {
 					return nil, err
 				}
 				skipTrade = true
@@ -176,37 +347,24 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "insufficient_balance")
 				continue
 			}
-			if err := k.transferCollateralBetweenAccounts(ctx, market, yesBuyer, moduleAddr, yesTradeNotional); err != nil {
-				if err := k.cancelOrderDueToInsufficient(ctx, yesOrder, err.Error()); err != nil {
+			if err := k.transferCollateralBetweenAccounts(ctx, market, yesBuyer, moduleAddr, yesBuyerRequired); err != nil {
+				if err := cancelOrderDueToInsufficientCached(yesOrder, err.Error()); err != nil {
 					return nil, err
 				}
 				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "transfer_from_yes_buyer_failed")
 				continue
 			}
-			if err := k.transferCollateralBetweenAccounts(ctx, market, noBuyer, moduleAddr, noTradeNotional); err != nil {
-				if err := k.cancelOrderDueToInsufficient(ctx, noOrder, err.Error()); err != nil {
+			noteCollateralSent(yesBuyer, yesBuyerRequired)
+			if err := k.transferCollateralBetweenAccounts(ctx, market, noBuyer, moduleAddr, noBuyerRequired); err != nil {
+				if err := cancelOrderDueToInsufficientCached(noOrder, err.Error()); err != nil {
 					return nil, err
 				}
 				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "transfer_from_no_buyer_failed")
 				continue
 			}
-			// Fee is collected into module collateral and batch-distributed later.
-			if err := k.transferCollateralBetweenAccounts(ctx, market, yesBuyer, moduleAddr, yesFeeTotal); err != nil {
-				if err := k.cancelOrderDueToInsufficient(ctx, yesOrder, err.Error()); err != nil {
-					return nil, err
-				}
-				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "yes_buyer_fee_charge_failed")
-				continue
-			}
-			if err := k.transferCollateralBetweenAccounts(ctx, market, noBuyer, moduleAddr, noFeeTotal); err != nil {
-				if err := k.cancelOrderDueToInsufficient(ctx, noOrder, err.Error()); err != nil {
-					return nil, err
-				}
-				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "no_buyer_fee_charge_failed")
-				continue
-			}
+			noteCollateralSent(noBuyer, noBuyerRequired)
 
-			yesPos := k.getPositionOrDefault(ctx, market.Id, yesBuyer)
+			yesPos := getPositionCached(yesBuyer)
 			yesShares, yesLocked, yesNoShares, yesNoLocked, err := k.mustPositionInts(yesPos)
 			if err != nil {
 				return nil, err
@@ -216,9 +374,9 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			if err := k.assertPositionInvariant(yesPos); err != nil {
 				return nil, err
 			}
-			k.SetPosition(ctx, yesPos)
+			markPositionDirty(yesPos)
 
-			noPos := k.getPositionOrDefault(ctx, market.Id, noBuyer)
+			noPos := getPositionCached(noBuyer)
 			noYesShares, noYesLocked, noShares, noLocked, err := k.mustPositionInts(noPos)
 			if err != nil {
 				return nil, err
@@ -228,7 +386,7 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			if err := k.assertPositionInvariant(noPos); err != nil {
 				return nil, err
 			}
-			k.SetPosition(ctx, noPos)
+			markPositionDirty(noPos)
 
 			yesTotal = yesTotal.Add(matchAmount)
 			noTotal = noTotal.Add(matchAmount)
@@ -286,7 +444,7 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			sellerAddr := sdk.MustAccAddressFromBech32(sellOrder.Trader)
 			isSelfTrade := buyerAddr.Equals(sellerAddr)
 
-			sellerPos := k.getPositionOrDefault(ctx, market.Id, sellerAddr)
+			sellerPos := getPositionCached(sellerAddr)
 			sellerYes, sellerLockedYes, sellerNo, sellerLockedNo, err := k.mustPositionInts(sellerPos)
 			if err != nil {
 				return nil, err
@@ -294,7 +452,7 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			buyerPos := sellerPos
 			buyerYes, buyerLockedYes, buyerNo, buyerLockedNo := sellerYes, sellerLockedYes, sellerNo, sellerLockedNo
 			if !isSelfTrade {
-				buyerPos = k.getPositionOrDefault(ctx, market.Id, buyerAddr)
+				buyerPos = getPositionCached(buyerAddr)
 				buyerYes, buyerLockedYes, buyerNo, buyerLockedNo, err = k.mustPositionInts(buyerPos)
 				if err != nil {
 					return nil, err
@@ -310,8 +468,8 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			}
 			// Buyer actual debit equals netToSeller + feeTotal = tradeNotional.
 			buyerRequired := tradeNotional
-			if err := k.ensureCollateralBalance(ctx, market, buyerAddr, buyerRequired); err != nil {
-				if err := k.cancelOrderDueToInsufficient(ctx, buyOrder, err.Error()); err != nil {
+			if err := ensureCollateralBalanceCached(buyerAddr, buyerRequired); err != nil {
+				if err := cancelOrderDueToInsufficientCached(buyOrder, err.Error()); err != nil {
 					return nil, err
 				}
 				skipTrade = true
@@ -324,7 +482,7 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			case buyOrder.Side == types.OrderSide_ORDER_SIDE_BUY_YES && sellOrder.Side == types.OrderSide_ORDER_SIDE_SELL_YES:
 				freeYes := sellerYes.Sub(sellerLockedYes)
 				if freeYes.LT(matchAmount) {
-					if err := k.cancelOrderDueToInsufficient(ctx, sellOrder, "seller YES shares"); err != nil {
+					if err := cancelOrderDueToInsufficientCached(sellOrder, "seller YES shares"); err != nil {
 						return nil, err
 					}
 					skipTrade = true
@@ -339,7 +497,7 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			case buyOrder.Side == types.OrderSide_ORDER_SIDE_BUY_NO && sellOrder.Side == types.OrderSide_ORDER_SIDE_SELL_NO:
 				freeNo := sellerNo.Sub(sellerLockedNo)
 				if freeNo.LT(matchAmount) {
-					if err := k.cancelOrderDueToInsufficient(ctx, sellOrder, "seller NO shares"); err != nil {
+					if err := cancelOrderDueToInsufficientCached(sellOrder, "seller NO shares"); err != nil {
 						return nil, err
 					}
 					skipTrade = true
@@ -361,39 +519,42 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 			}
 			if netToSeller.IsPositive() && !isSelfTrade {
 				if err := k.transferCollateralBetweenAccounts(ctx, market, buyerAddr, sellerAddr, netToSeller); err != nil {
-					if err := k.cancelOrderDueToInsufficient(ctx, buyOrder, err.Error()); err != nil {
+					if err := cancelOrderDueToInsufficientCached(buyOrder, err.Error()); err != nil {
 						return nil, err
 					}
 					k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "buyer_to_seller_transfer_failed")
 					continue
 				}
+				noteCollateralSent(buyerAddr, netToSeller)
+				noteCollateralReceived(sellerAddr, netToSeller)
 			}
 			if err := k.transferCollateralBetweenAccounts(ctx, market, buyerAddr, moduleAddr, feeTotal); err != nil {
-				if err := k.cancelOrderDueToInsufficient(ctx, buyOrder, err.Error()); err != nil {
+				if err := cancelOrderDueToInsufficientCached(buyOrder, err.Error()); err != nil {
 					return nil, err
 				}
 				k.emitTradeSkipped(ctx, market.Id, trade.TradeId, "fee_charge_failed")
 				continue
 			}
+			noteCollateralSent(buyerAddr, feeTotal)
 
 			if isSelfTrade {
 				k.mustSetPositionInts(sellerPos, sellerYes, sellerLockedYes, sellerNo, sellerLockedNo)
 				if err := k.assertPositionInvariant(sellerPos); err != nil {
 					return nil, err
 				}
-				k.SetPosition(ctx, sellerPos)
+				markPositionDirty(sellerPos)
 			} else {
 				k.mustSetPositionInts(sellerPos, sellerYes, sellerLockedYes, sellerNo, sellerLockedNo)
 				if err := k.assertPositionInvariant(sellerPos); err != nil {
 					return nil, err
 				}
-				k.SetPosition(ctx, sellerPos)
+				markPositionDirty(sellerPos)
 
 				k.mustSetPositionInts(buyerPos, buyerYes, buyerLockedYes, buyerNo, buyerLockedNo)
 				if err := k.assertPositionInvariant(buyerPos); err != nil {
 					return nil, err
 				}
-				k.SetPosition(ctx, buyerPos)
+				markPositionDirty(buyerPos)
 			}
 
 			if err := addOrderSpentCollateral(buyOrder, tradeNotional); err != nil {
@@ -428,9 +589,9 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 		if err := k.onOrderStatusTransition(ctx, orderB, prevStatusB); err != nil {
 			return nil, err
 		}
-		k.SetOrder(ctx, orderA)
-		k.SetOrder(ctx, orderB)
-		k.SetAppliedTrade(ctx, market.Id, trade.TradeId)
+		markOrderDirty(orderA)
+		markOrderDirty(orderB)
+		newAppliedTrades[trade.TradeId] = struct{}{}
 		totalTradeVolume = totalTradeVolume.Add(tradeVolumeContribution)
 		if hasYesViewPrice {
 			weightedYesPriceAmount = weightedYesPriceAmount.Add(yesViewPrice.Mul(matchAmount))
@@ -457,6 +618,19 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 		)
 	}
 
+	for orderID := range dirtyOrders {
+		if _, deleted := deletedOrders[orderID]; deleted {
+			continue
+		}
+		k.SetOrder(ctx, orderCache[orderID])
+	}
+	for addr := range dirtyPositions {
+		k.SetPosition(ctx, positionCache[addr])
+	}
+	for tradeID := range newAppliedTrades {
+		k.SetAppliedTrade(ctx, market.Id, tradeID)
+	}
+
 	market.TotalYesShares = yesTotal.String()
 	market.TotalNoShares = noTotal.String()
 	market.TotalTradeVolume = totalTradeVolume.String()
@@ -473,7 +647,6 @@ func (k Keeper) ApplyTradeBatch(ctx sdk.Context, msg *types.MsgApplyTradeBatch) 
 	}
 	market.LastYesTradePrice = lastYesTradePrice
 	market.LastNoTradePrice = lastNoTradePrice
-	k.refreshMarketBookPrices(ctx, market)
 	if err := k.ValidateMarketInvariants(market); err != nil {
 		return nil, err
 	}

@@ -56,13 +56,13 @@ message Market {
 
   reserved 20;
   reserved 26;
+  reserved 27;
+  reserved 28;
   string total_yes_shares = 21;
   string total_no_shares = 22;
   string create_market_bond = 23;
   string create_market_bond_denom = 24;
   uint64 resolver_fee_share_percent = 25;
-  string best_bid_price = 27;
-  string best_ask_price = 28;
   string total_trade_volume = 29;
   string last_yes_trade_price = 30;
   string last_no_trade_price = 31;

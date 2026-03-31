@@ -162,8 +162,10 @@ func (m mockAccountKeeper) GetModuleAddress(moduleName string) sdk.AccAddress {
 }
 
 type mockPRC20QueryKeeper struct {
-	allowances map[string]sdkmath.Int
-	balances   map[string]sdkmath.Int
+	allowances       map[string]sdkmath.Int
+	balances         map[string]sdkmath.Int
+	allowanceQueries int
+	balanceQueries   int
 }
 
 func newMockPRC20QueryKeeper() *mockPRC20QueryKeeper {
@@ -191,6 +193,7 @@ func (m *mockPRC20QueryKeeper) QuerySmart(_ context.Context, contractAddress sdk
 		return nil, err
 	}
 	if allowanceRaw, ok := raw["allowance"]; ok {
+		m.allowanceQueries++
 		var allowanceReq struct {
 			Owner   string `json:"owner"`
 			Spender string `json:"spender"`
@@ -205,6 +208,7 @@ func (m *mockPRC20QueryKeeper) QuerySmart(_ context.Context, contractAddress sdk
 		return json.Marshal(prc20AllowanceResponse{Allowance: allowance.String()})
 	}
 	if balanceRaw, ok := raw["balance"]; ok {
+		m.balanceQueries++
 		var balanceReq struct {
 			Address string `json:"address"`
 		}
@@ -822,7 +826,7 @@ func TestPlaceOrderExpireBhBounds(t *testing.T) {
 	require.ErrorContains(t, err, "expire_bh exceeds max_order_lifetime_bh")
 }
 
-func TestPlaceOrderOpenOrderLimitAndCancelRelease(t *testing.T) {
+func TestPlaceOrderNoOpenOrderLimit(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	creator := testAddress(94)
 	resolver := testAddress(95)
@@ -863,7 +867,7 @@ func TestPlaceOrderOpenOrderLimitAndCancelRelease(t *testing.T) {
 		LimitPrice: "10000",
 		ExpireBh:   ctx.BlockHeight() + 102,
 	})
-	require.ErrorContains(t, err, "max_open_orders_per_user exceeded")
+	require.NoError(t, err)
 
 	err = k.CancelOrder(ctx, &types.MsgCancelOrder{
 		Trader:   trader,
@@ -1140,6 +1144,87 @@ func TestApplyTradeBatchBuyYesBuyNoCostScalesWithMatchAmount(t *testing.T) {
 	// Each side pays match_amount * side_execution_price = 10 * 500_000.
 	require.Equal(t, sdkmath.NewInt(1_000_000), bank.AccountBalance(yesBuyer, "upaxi"))
 	require.Equal(t, sdkmath.NewInt(1_000_000), bank.AccountBalance(noBuyer, "upaxi"))
+}
+
+func TestApplyTradeBatchPRC20CollateralQueriesCachedPerBuyer(t *testing.T) {
+	prc20Query := newMockPRC20QueryKeeper()
+	k, ctx, bank := setupBenchmarkKeeperWithPRC20(t, mockPRC20ExecKeeper{}, prc20Query)
+	creator := testAddress(230)
+	resolver := testAddress(231)
+	yesBuyer := testAddress(232)
+	noBuyer := testAddress(233)
+	contract := testAddress(234)
+
+	mustFund(bank, creator, 1_000_000)
+	now := ctx.BlockTime().Unix()
+	marketID, err := k.CreateMarket(ctx, &types.MsgCreateMarket{
+		Creator:                creator,
+		Resolver:               resolver,
+		Title:                  "PRC20 market",
+		Description:            "test market",
+		Rule:                   "simple",
+		OutcomeType:            "BINARY",
+		Outcomes:               []string{"YES", "NO"},
+		CollateralType:         types.CollateralType_COLLATERAL_TYPE_PRC20,
+		CollateralContractAddr: contract,
+		OpenTime:               now - 10,
+		CloseTime:              now + 3600,
+		ResolveTime:            now + 7200,
+	})
+	require.NoError(t, err)
+
+	moduleAddr := mockAccountKeeper{}.GetModuleAddress(types.ModuleName)
+	prc20Query.setBalance(contract, yesBuyer, sdkmath.NewInt(2_000_000))
+	prc20Query.setAllowance(contract, yesBuyer, moduleAddr.String(), sdkmath.NewInt(2_000_000))
+	prc20Query.setBalance(contract, noBuyer, sdkmath.NewInt(2_000_000))
+	prc20Query.setAllowance(contract, noBuyer, moduleAddr.String(), sdkmath.NewInt(2_000_000))
+
+	buyYesID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     yesBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_YES,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "2",
+		LimitPrice: "500000",
+	})
+	buyNoID := mustPlaceOrder(t, k, ctx, &types.MsgPlaceOrder{
+		Trader:     noBuyer,
+		MarketId:   marketID,
+		Side:       types.OrderSide_ORDER_SIDE_BUY_NO,
+		OrderType:  types.OrderType_ORDER_TYPE_LIMIT,
+		Amount:     "2",
+		LimitPrice: "500000",
+	})
+
+	prc20Query.allowanceQueries = 0
+	prc20Query.balanceQueries = 0
+
+	_, err = k.ApplyTradeBatch(ctx, &types.MsgApplyTradeBatch{
+		Sender:   resolver,
+		MarketId: marketID,
+		BatchId:  "batch-prc20-cached-collateral",
+		Trades: []types.TradeMatch{
+			{
+				TradeId:           "t-prc20-cached-1",
+				OrderAId:          buyYesID,
+				OrderBId:          buyNoID,
+				MatchAmount:       "1",
+				YesExecutionPrice: "500000",
+				NoExecutionPrice:  "500000",
+			},
+			{
+				TradeId:           "t-prc20-cached-2",
+				OrderAId:          buyYesID,
+				OrderBId:          buyNoID,
+				MatchAmount:       "1",
+				YesExecutionPrice: "500000",
+				NoExecutionPrice:  "500000",
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, prc20Query.balanceQueries)
+	require.Equal(t, 2, prc20Query.allowanceQueries)
 }
 
 func TestApplyTradeBatchBuyYesBuyNoMarketMarketNotAllowed(t *testing.T) {
@@ -2112,7 +2197,7 @@ func TestCancelOrderPartialKeepsOrder(t *testing.T) {
 	require.Equal(t, "10", order.FilledAmount)
 }
 
-func TestMarketBestBidAskUpdatedOnPlaceAndCancel(t *testing.T) {
+func TestMarketPlaceAndCancelWithoutBookPrices(t *testing.T) {
 	k, ctx, bank := setupKeeper(t)
 	creator := testAddress(211)
 	resolver := testAddress(212)
@@ -2164,26 +2249,17 @@ func TestMarketBestBidAskUpdatedOnPlaceAndCancel(t *testing.T) {
 		WorstPrice: "60000",
 	})
 
-	market, found := k.GetMarket(ctx, marketID)
+	_, found := k.GetMarket(ctx, marketID)
 	require.True(t, found)
-	require.Equal(t, "30000", market.BestBidPrice)
-	require.Equal(t, "40000", market.BestAskPrice)
 
 	require.NoError(t, k.CancelOrder(ctx, &types.MsgCancelOrder{Trader: trader, MarketId: marketID, OrderId: buyHighID}))
-	market, _ = k.GetMarket(ctx, marketID)
-	require.Equal(t, "20000", market.BestBidPrice)
-	require.Equal(t, "40000", market.BestAskPrice)
+	_, _ = k.GetMarket(ctx, marketID)
 
 	require.NoError(t, k.CancelOrder(ctx, &types.MsgCancelOrder{Trader: trader, MarketId: marketID, OrderId: askLowID}))
-	market, _ = k.GetMarket(ctx, marketID)
-	require.Equal(t, "20000", market.BestBidPrice)
-	require.Equal(t, "50000", market.BestAskPrice)
+	_, _ = k.GetMarket(ctx, marketID)
 
 	require.NoError(t, k.CancelOrder(ctx, &types.MsgCancelOrder{Trader: trader, MarketId: marketID, OrderId: buyLowID}))
 	require.NoError(t, k.CancelOrder(ctx, &types.MsgCancelOrder{Trader: trader, MarketId: marketID, OrderId: askHighID}))
-	market, _ = k.GetMarket(ctx, marketID)
-	require.Empty(t, market.BestBidPrice)
-	require.Empty(t, market.BestAskPrice)
 }
 
 func TestQueryOrdersByMarket(t *testing.T) {
@@ -2339,8 +2415,6 @@ func TestApplyTradeBatchUpdatesLastOutcomeTradePriceForYesPair(t *testing.T) {
 	require.Equal(t, "20000", market.LastYesTradePrice)
 	require.Equal(t, "980000", market.LastNoTradePrice)
 	require.Equal(t, "20000", market.TotalTradeVolume)
-	require.Empty(t, market.BestBidPrice)
-	require.Empty(t, market.BestAskPrice)
 }
 
 func TestApplyTradeBatchUpdatesLastOutcomeTradePricesBuyYesBuyNo(t *testing.T) {

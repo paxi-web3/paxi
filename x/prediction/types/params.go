@@ -21,12 +21,12 @@ const (
 	DefaultCreateMarketBond      = "20000000"
 	DefaultCreateMarketBondDenom = "uusdt"
 	DefaultMarketFeeBps          = uint64(50)
-	DefaultResolverFeeSharePct   = uint64(60)
-	DefaultMaxOrderLifetimeBh    = uint64(10_800) // 12 hours assuming 4s block time
+	DefaultResolverFeeSharePct   = uint64(50)
+	DefaultMaxOrderLifetimeBh    = uint64(1_000) // 1 hour assuming 4s block time
 	DefaultMaxOpenOrdersPerUser  = uint64(1_000)
 	DefaultMaxOpenOrdersPerMkt   = uint64(100)
-	DefaultOrderPruneIntervalBh  = uint64(1_000)
-	DefaultOrderPruneRetainBh    = uint64(21_600)
+	DefaultOrderPruneIntervalBh  = uint64(100)
+	DefaultOrderPruneRetainBh    = uint64(14_400)
 	DefaultOrderPruneScanLimit   = uint64(40_000)
 	DefaultOrderPruneDeleteLimit = uint64(20_000)
 )
