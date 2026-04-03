@@ -10,7 +10,7 @@ set -euo pipefail
 
 GO_VERSION="1.24.2"
 REPO="https://github.com/paxi-web3/paxi"
-TAG="latest-main"
+TAG="v1.0.7"
 BIN_NAME="$HOME/paxid/paxid"
 
 # Network presets

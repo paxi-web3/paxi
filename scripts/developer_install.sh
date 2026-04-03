@@ -4,7 +4,7 @@ set -e
 GOLANG_VERSION=1.24.2
 ROCKSDB_VERSION=v9.2.1 
 PAXI_REPO="https://github.com/paxi-web3/paxi"
-PAXI_TAG="latest-main"
+PAXI_TAG="v1.0.7"
 CHAIN_ID="my-testnet"
 NODE_MONIKER="test-node-1"
 BINARY_NAME="./paxid"
